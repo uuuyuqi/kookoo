@@ -438,9 +438,6 @@
 "Cycle Sidebar" = "循环切换侧边栏";
 /* App icon selection */
 "App Icon" = "应用图标";
-"Change installed app icon?" = "更改应用图标？";
-"Change Icon" = "更改图标";
-"This changes AppIcon.icns and invalidates the app’s signature integrity. It may affect launching or updates under macOS or your organization’s security policy. Your terminal sessions will not be restarted." = "此操作会修改 AppIcon.icns 图标文件，使应用的签名完整性校验失效。macOS 或所在组织的安全策略可能因此影响应用启动或更新。现有终端会话不会重启。";
 "%@ app icon" = "%@图标";
 "Could not change the app icon: %@ Your saved preference was not changed; the selected icon could not be applied. Install Kookoo in a writable Applications folder; no administrator access is requested." = "无法更改应用图标：%@ 已保存的偏好设置未更改，所选图标未能应用。请将 Kookoo 安装到可写入的“应用程序”文件夹；此操作不会请求管理员权限。";
 "Unknown icon." = "未知图标。";

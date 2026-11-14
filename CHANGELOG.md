@@ -6,7 +6,7 @@ Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
 - Command+B now cycles expanded → icons only → hidden → expanded.
 - Double-clicking unused sidebar workspace-list space creates one workspace, matching the + button. Existing rows, footer and file browser keep their own behavior.
-- Chinese mode now shows Chinese names for all 20 app icon styles and localized icon confirmation/error text. Removed the two permanent explanatory paragraphs; the switch-time risk confirmation remains.
+- Chinese mode now shows Chinese names for all 20 app icon styles and localized icon error text. Removed the two permanent explanatory paragraphs and confirmation dialog; clicking an icon applies it immediately. Existing signature-integrity limitations still apply.
 - Engine, security settings and update-feed host are unchanged.
 
 ## v0.1.8 — 2026-11-14

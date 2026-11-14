@@ -15,6 +15,7 @@ import AppKit
 import ApplicationServices
 let pid = pid_t(CommandLine.arguments[1])!
 let out = CommandLine.arguments[2]
+let resources = URL(fileURLWithPath: CommandLine.arguments[3]).appendingPathComponent("Contents/Resources")
 guard AXIsProcessTrusted() else { print("BLOCKED: Accessibility unavailable; not requesting permission"); exit(3) }
 func value(_ e: AXUIElement, _ key: String) -> AnyObject? { var v: CFTypeRef?; return AXUIElementCopyAttributeValue(e,key as CFString,&v) == .success ? v : nil }
 func children(_ e: AXUIElement) -> [AXUIElement] { value(e,kAXChildrenAttribute) as? [AXUIElement] ?? [] }
@@ -53,15 +54,21 @@ guard find(app,"App Icon") == nil, find(app,"Pearl") == nil else {fatalError("En
 capture("chinese-icons")
 guard let pearl=find(app,"珍珠图标") ?? find(app,"珍珠") else {fatalError("Missing pearl")}
 press(pearl)
-guard find(app,"更改应用图标？") != nil, let cancel=find(app,"取消") else {dump(app);fatalError("Chinese confirmation missing")}
-capture("chinese-confirmation")
-press(cancel)
-guard find(app,"更改应用图标？") == nil else {fatalError("Cancel failed")}
-print("PASS: Chinese icon settings and cancellation verified; Command+B sent three times with screenshots for visual state verification.")
+guard find(app,"更改应用图标？") == nil else { fatalError("Unexpected confirmation dialog") }
+func iconBytes(_ name:String) -> Data { try! Data(contentsOf:resources.appendingPathComponent(name)) }
+guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/01-pearl.icns") else {fatalError("Direct selection did not apply pearl")}
+capture("chinese-pearl-selected")
+press(find(app,"珍珠图标") ?? find(app,"珍珠")!)
+guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/01-pearl.icns") else {fatalError("Repeat selection failed")}
+guard let original=find(app,"Kookoo图标") else {dump(app);fatalError("Missing original icon")}
+press(original)
+guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {fatalError("Default restoration failed")}
+print("PASS: Chinese icon settings, immediate selection, repeat selection and current-default restoration verified; Command+B sent three times with screenshots for visual state verification.")
 SWIFT
 set +e
-swift "$WORK/ui.swift" "$PID" "$OUT" > "$OUT/RESULT.txt" 2>&1
+swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" > "$OUT/RESULT.txt" 2>&1
 rc=$?
 set -e
 cat "$OUT/RESULT.txt"
+[[ "$rc" == 0 ]] && codesign --verify --deep --strict "$APP"
 exit "$rc"

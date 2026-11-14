@@ -19,11 +19,10 @@ final class AppIconLocalizationTests: XCTestCase {
         }
     }
 
-    func testConfirmationAndFailureMessagesAreTranslated() throws {
+    func testFailureMessagesAreTranslated() throws {
         let path = try XCTUnwrap(Bundle.kookyResources.path(forResource: "zh-Hans", ofType: "lproj"))
         let chinese = try XCTUnwrap(Bundle(path: path))
-        for key in ["App Icon", "Change installed app icon?", "Cancel", "Change Icon", "%@ app icon", "Unknown icon.", "The bundled icon is missing or invalid.", "The app icon is not a regular file.",
-                    "This changes AppIcon.icns and invalidates the app’s signature integrity. It may affect launching or updates under macOS or your organization’s security policy. Your terminal sessions will not be restarted.",
+        for key in ["App Icon", "%@ app icon", "Unknown icon.", "The bundled icon is missing or invalid.", "The app icon is not a regular file.",
                     "Could not change the app icon: %@ Your saved preference was not changed; the selected icon could not be applied. Install Kookoo in a writable Applications folder; no administrator access is requested."] {
             let value = chinese.localizedString(forKey: key, value: key, table: nil)
             XCTAssertNotEqual(value, key)
