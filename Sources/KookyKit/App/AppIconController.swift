@@ -5,6 +5,14 @@ struct AppIconChoice: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
 
+    var localizedName: String {
+        localizedName(in: .kookyResources)
+    }
+
+    func localizedName(in bundle: Bundle) -> String {
+        bundle.localizedString(forKey: name, value: name, table: nil)
+    }
+
     static let all: [Self] = [
         .init(id: "default", name: "Kookoo"),
         .init(id: "01-pearl", name: "Pearl"), .init(id: "02-marshmallow", name: "Marshmallow"),
@@ -88,7 +96,7 @@ public final class AppIconController {
             lastError = nil
             return true
         } catch {
-            lastError = "Could not change the app icon: \(error.localizedDescription) Your saved preference was not changed; the selected icon could not be applied. Install Kookoo in a writable Applications folder; no administrator access is requested."
+            lastError = String(format: String(localized: "Could not change the app icon: %@ Your saved preference was not changed; the selected icon could not be applied. Install Kookoo in a writable Applications folder; no administrator access is requested.", bundle: .kookyResources), error.localizedDescription)
             return false
         }
     }
@@ -97,9 +105,9 @@ public final class AppIconController {
         case invalidChoice, invalidImage, invalidTarget
         var errorDescription: String? {
             switch self {
-            case .invalidChoice: "Unknown icon."
-            case .invalidImage: "The bundled icon is missing or invalid."
-            case .invalidTarget: "The app icon is not a regular file."
+            case .invalidChoice: String(localized: "Unknown icon.", bundle: .kookyResources)
+            case .invalidImage: String(localized: "The bundled icon is missing or invalid.", bundle: .kookyResources)
+            case .invalidTarget: String(localized: "The app icon is not a regular file.", bundle: .kookyResources)
             }
         }
     }
