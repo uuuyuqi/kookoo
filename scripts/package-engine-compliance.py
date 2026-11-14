@@ -204,7 +204,7 @@ from the conservative build/test/source supplement.
    misrepresent changed source as matching an original content hash.
 4. With the pinned `zig` on PATH, from the engine source run:
    ```sh
-   zig build -Doptimize=ReleaseFast -Dsentry=false -Demit-xcframework=true \\
+   zig build -Doptimize=ReleaseFast -Dsentry=false -Dversion-string=1.3.2-HEAD-+88c3325 -Demit-xcframework=true \\
      -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false
    ```
 5. Copy the resulting `macos/GhosttyKit.xcframework` into the extracted Kookoo

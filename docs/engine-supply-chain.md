@@ -159,3 +159,15 @@ we are aligning observable binary dependency inventory, not claiming a complete
 reproduction of their build environment. All previously recorded candidate hashes
 remain historical evidence, NOT approved production pins. Rebuild, inventory,
 license/source, GUI and relink evidence must be refreshed for the aligned binary.
+
+The Sentry-disabled run 43595935107 passed. Binary comparison then matched all
+226 archive members, 145 public engine symbols, headers and minimum platform.
+Across all objects only the main Zig object's non-debug sections differed:
+17 instruction bytes and two version strings. Its five affected functions are
+version consumers (CLI, initialization log, VT reporting, ghostty_info, subprocess
+environment). The source tarball lacks `.git`, so the default reports
+`1.3.2-dev+0000000`; the original reports `1.3.2-HEAD-+88c3325`.
+The builder now pins the original runtime version explicitly rather than claiming
+an unknown commit. Sidecar provenance continues to identify the Kookoo build.
+A further exact-section comparison is required before claiming this closes the
+remaining metadata difference; archive/debug bytes are not expected to match.

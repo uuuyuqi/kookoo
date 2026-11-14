@@ -6,6 +6,7 @@ SOURCE_SHA=88c3325dc9698d887da7e07ee0f9b79c53020be2
 SOURCE_URL="https://codeload.github.com/manaflow-ai/ghostty/tar.gz/$SOURCE_SHA"
 SOURCE_SHA256=ce47e588ae6b5e36caf263563040d2a89839b256db87d17cc163a8eb6bc3a6e1
 PATCH_SHA256=cd81f71d04b05f26abf38127e716f221324316ea6026e0c6823186a20fc94f39
+ENGINE_VERSION=1.3.2-HEAD-+88c3325
 ZIG_VERSION=0.16.0
 ZIG_URL=https://ziglang.org/download/0.16.0/zig-aarch64-macos-0.16.0.tar.xz
 ZIG_SHA256=b23d70deaa879b5c2d486ed3316f7eaa53e84acf6fc9cc747de152450d401489
@@ -45,9 +46,9 @@ export PATH="$TMP/zig:$PATH"
 export ZIG_GLOBAL_CACHE_DIR="$TMP/zig-cache"
 (
   cd "$TMP/source"
-  "$TMP/zig/zig" build test --summary all -Doptimize=ReleaseSafe -Dapp-runtime=none -Dsentry=false \
+  "$TMP/zig/zig" build test --summary all -Doptimize=ReleaseSafe -Dapp-runtime=none -Dsentry=false -Dversion-string="$ENGINE_VERSION" \
     -Demit-macos-app=false -Demit-xcframework=false
-  "$TMP/zig/zig" build -Doptimize=ReleaseFast -Dsentry=false -Demit-xcframework=true \
+  "$TMP/zig/zig" build -Doptimize=ReleaseFast -Dsentry=false -Dversion-string="$ENGINE_VERSION" -Demit-xcframework=true \
     -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false
 )
 [[ -d "$TMP/source/macos/GhosttyKit.xcframework" ]]
@@ -72,6 +73,7 @@ cat > "$OUT/PROVENANCE.txt" <<INFO
 Candidate only: not promoted to the Kookoo application engine.
 Source: $SOURCE_URL
 Source commit: $SOURCE_SHA
+Runtime version: $ENGINE_VERSION (matches original engine metadata)
 Source archive SHA256: $SOURCE_SHA256
 Patch SHA256: $PATCH_SHA256
 Zig: $ZIG_URL
