@@ -46,14 +46,27 @@ jobs:
           fi
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/settings-ax.txt" 2>&1 || true
           cat "$ROOT/evidence/settings-ax.txt"
-          osascript <<'AS'
+          cat > "$ROOT/mouse.swift" <<'SWIFT'
+          import Cocoa
+          let p = CGPoint(x:Double(CommandLine.arguments[1])!, y:Double(CommandLine.arguments[2])!)
+          CGEvent(mouseEventSource:nil,mouseType:.mouseMoved,mouseCursorPosition:p,mouseButton:.left)?.post(tap:.cghidEventTap)
+          usleep(200000)
+          CGEvent(mouseEventSource:nil,mouseType:.leftMouseDown,mouseCursorPosition:p,mouseButton:.left)?.post(tap:.cghidEventTap)
+          usleep(100000)
+          CGEvent(mouseEventSource:nil,mouseType:.leftMouseUp,mouseCursorPosition:p,mouseButton:.left)?.post(tap:.cghidEventTap)
+          SWIFT
+          swiftc "$ROOT/mouse.swift" -o "$ROOT/mouse"
+          XY="$(osascript <<'AS'
           tell application "System Events" to tell process "Kookoo"
             set frontmost to true
             set p to position of static text "Appearance" of group 1 of window "Settings"
             set z to size of static text "Appearance" of group 1 of window "Settings"
-            click at {(item 1 of p) + (item 1 of z) / 2, (item 2 of p) + (item 2 of z) / 2}
+            return ((item 1 of p) + (item 1 of z) / 2) as text & " " & ((item 2 of p) + (item 2 of z) / 2) as text
           end tell
           AS
+          )"
+          echo "APPEARANCE_OBSERVED_XY=$XY"
+          "$ROOT/mouse" $XY
           sleep 2
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/icons-ax.txt" 2>&1
           cat "$ROOT/evidence/icons-ax.txt"
