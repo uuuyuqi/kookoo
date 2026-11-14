@@ -76,3 +76,36 @@ GUI smoke, complete shipping-notice reconciliation, durable engine release
 publication, production pin change and normal release/updater checks remain.
 Production download behavior has not changed. The Actions artifact expires;
 it is not a suitable permanent production download URL.
+
+## Privacy review of the pinned candidate
+
+Sentry is compiled by default on macOS, but this is not automatic cloud telemetry.
+At the pinned source, `pkg/sentry/build.zig` defaults to transport `none`,
+`SharedDeps.zig` does not override it, and `src/crash/sentry.zig` installs a custom
+transport that writes `.ghosttycrash` files locally. The built static archive
+contains `sentry_transport_none.o`, not curl or WinHTTP transport objects.
+This does not assert all of Kookoo is offline: update checking has its own network
+behavior. Do not upload local crash reports without reviewing their contents.
+
+The isolated macOS GUI probe passed in run
+https://github.com/uuuyuqi/kookoo/actions/runs/43591884784 : actual shell execution,
+ANSI/CJK/emoji display (screenshot reviewed), alternate-screen round trip,
+5000-line scrollback and OSC-title propagation. Human IME composition and pane
+resize/drag flows remain unverified. SwiftUI AttributeGraph cycle warnings were
+observed without a crash; they have not been attributed to the engine.
+
+## License/source packaging gate
+
+The old filename-prefix scan is not a complete license package. The explicit
+`package-engine-compliance.py` gate additionally requires FreeType FTL, font OFL,
+STB embedded texts, simdutf 9.0.0 MIT, LGPL libintl notices and actual dependency
+sources. It packages the patched engine tree (including fetched `zig-pkg` and
+nested manifests), Zig runtime sources and corresponding Kookoo source, with
+hashes and rebuild/relink instructions. Missing inputs fail the build.
+
+libintl is statically linked under LGPL 2.1; merely labeling the engine MIT is
+insufficient. Preserve modification/reverse-engineering rights and distribute
+corresponding source/relink materials at the durable binary release location.
+The explicit notice bundle still requires review against the shipped inventory,
+and the modified-libintl relink route must be actually exercised before being
+called verified. No production engine pin or configuration behavior is changed.

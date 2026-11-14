@@ -5,6 +5,7 @@ on:
     branches: [fork/independent-engine]
     paths:
       - scripts/build-libghostty.sh
+      - scripts/package-engine-compliance.py
       - scripts/kooky-libghostty-issue53.patch
       - .github/workflows/engine-candidate.yml
 permissions:
@@ -28,8 +29,14 @@ jobs:
           cd ../..
           mkdir -p Vendor
           tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
+          ar -t Vendor/GhosttyKit.xcframework/macos-arm64/libghostty-internal.a > dist/engine-candidate/archive-members.txt
+          grep -q sentry_transport_none.o dist/engine-candidate/archive-members.txt
+          if grep -Eq "sentry_transport_(curl|winhttp)" dist/engine-candidate/archive-members.txt; then exit 1; fi
           swift test --build-system native
           bash scripts/build-app.sh
+          cp -R dist/engine-candidate/EngineCompliance/licenses dist/Kookoo.app/Contents/Resources/EngineLicenses
+          cp dist/engine-candidate/EngineCompliance/README.md dist/Kookoo.app/Contents/Resources/EngineThirdPartyNotices.md
+          codesign --force --sign - dist/Kookoo.app
           codesign --verify --deep --strict dist/Kookoo.app
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()

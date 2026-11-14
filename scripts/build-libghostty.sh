@@ -67,6 +67,7 @@ for label, root in zip(('source', 'zig-cache'), map(pathlib.Path, sys.argv[1:3])
 PY
 cp "$TMP/source/build.zig.zon" "$OUT/dependencies.zon"
 cp "$ROOT/scripts/kooky-libghostty-issue53.patch" "$OUT/applied.patch"
+python3 "$ROOT/scripts/package-engine-compliance.py" "$TMP/source" "$TMP/zig" "$OUT" "$ROOT"
 cat > "$OUT/PROVENANCE.txt" <<INFO
 Candidate only: not promoted to the Kookoo application engine.
 Source: $SOURCE_URL
