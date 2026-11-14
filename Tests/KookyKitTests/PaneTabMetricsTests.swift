@@ -1,6 +1,7 @@
 import XCTest
 @testable import KookyKit
 
+@MainActor
 final class PaneTabMetricsTests: XCTestCase {
     func testCompactHeaderKeepsToolbarTargetsAndClearance() {
         XCTAssertLessThan(Theme.paneTabBarHeight, Theme.contentHeaderHeight)
