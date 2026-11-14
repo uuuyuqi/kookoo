@@ -56,3 +56,23 @@ Ghostty.app is required. Updating Ghostty.app does not update Kookoo's embedded
 engine. This migration intentionally keeps configuration precedence unchanged.
 A future opt-out must be explicit and default-compatible, not silently sever
 existing users' settings.
+
+## Candidate validation record (2026-11-14)
+
+- Builder commit: `7a179e09fce18158ad65e08265468ec408f866f2`.
+- Successful run: https://github.com/uuuyuqi/kookoo/actions/runs/43589634422
+- Source core tests: 86/86 build steps succeeded; 3336/3352 tests passed,
+  16 skipped. These exclude the unrelated Ghostty.app frontend tests.
+- Kookoo suite linked against the rebuilt engine: 1109 tests, 6 skipped,
+  zero failures. Release app assembly and strict/deep code-sign verification
+  succeeded. Ad-hoc signing is not Apple Developer ID signing or notarization.
+- Candidate artifact: `14112572162` (`independent-engine-candidate`).
+- Framework archive SHA256:
+  `c3acd2217f76ad6cec03a07ce5350f56545cbd0919a45eec6fa5536334ae9df3`.
+- Artifact downloaded separately and its SHA256SUMS verified.
+
+This closes the automated build/test portion of promotion gate 1 only.
+GUI smoke, complete shipping-notice reconciliation, durable engine release
+publication, production pin change and normal release/updater checks remain.
+Production download behavior has not changed. The Actions artifact expires;
+it is not a suitable permanent production download URL.
