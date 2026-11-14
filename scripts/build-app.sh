@@ -53,6 +53,8 @@ echo "==> Assembling ${APP} (v${VERSION})"
 rm -rf "$APP"
 mkdir -p "${APP}/Contents/MacOS"
 mkdir -p "${APP}/Contents/Resources"
+# Keep third-party icon attribution and license text with distributed binaries.
+cp LICENSE NOTICE.md "${APP}/Contents/Resources/"
 
 cp .build/release/Kooky "${APP}/Contents/MacOS/${APP_NAME}"
 cp .build/release/KookyHook "${APP}/Contents/MacOS/KookyHook"

@@ -39,3 +39,13 @@ Interactive acceptance still needed on macOS:
 
 Do not restart a user's running app to run these checks without agreement:
 terminal sessions and running agents terminate during an app restart.
+
+## Sidebar card (0.1.5 Preview)
+
+The left sidebar now shares the pane corner radius, outline and outer inset,
+while retaining its existing chrome/glass fill. The titlebar and window
+traffic-light controls remain outside this card. Full/compact outer widths,
+terminal leading offset and the edge resize hit area are unchanged. The
+former straight separator is transparent so the two card edges form the
+same gutter as adjacent terminal panes. Interactive visual acceptance of
+light/dark contrast and collapsed/expanded transitions is still required.

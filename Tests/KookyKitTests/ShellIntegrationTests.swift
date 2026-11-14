@@ -100,8 +100,52 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertNil(hooks["PostToolUse"])
     }
 
+    func testDevinGeneratedWrapperExecutesRealBinaryAndPreservesArgumentsAndStatus() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("devin-wrapper-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let shimDir = root.appendingPathComponent("shim dir")
+        let realDir = root.appendingPathComponent("real dir")
+        for directory in [shimDir, realDir] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        let wrapper = shimDir.appendingPathComponent("devin")
+        let real = realDir.appendingPathComponent("devin")
+        try KookyShellIntegration.bracketWrapperScript(slug: "devin")
+            .write(to: wrapper, atomically: true, encoding: .utf8)
+        // NUL-separated output distinguishes empty args, spaces, and shell metacharacters.
+        try "#!/bin/bash\nprintf '%s\\0' \"$@\"\nexit 23\n".write(to: real, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: real.path)
+
+        func run() throws -> (Int32, Data, String) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/bash")
+            process.arguments = [wrapper.path, "two words", "", "$(not-a-command);*", "--model", "example"]
+            // No inherited credentials, HOME, agent variables, or user-installed binaries.
+            process.environment = ["PATH": "\(shimDir.path):\(realDir.path):/usr/bin:/bin"]
+            process.standardInput = FileHandle.nullDevice
+            let output = Pipe(), errors = Pipe()
+            process.standardOutput = output
+            process.standardError = errors
+            try process.run()
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            let errorData = errors.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            return (process.terminationStatus, data, String(decoding: errorData, as: UTF8.self))
+        }
+        let success = try run()
+        XCTAssertEqual(success.0, 23)
+        XCTAssertEqual(success.1, Data("two words\0\0$(not-a-command);*\0--model\0example\0".utf8))
+        XCTAssertTrue(success.2.isEmpty)
+
+        try FileManager.default.removeItem(at: real)
+        let missing = try run()
+        XCTAssertEqual(missing.0, 127)
+        XCTAssertTrue(missing.1.isEmpty)
+        XCTAssertTrue(missing.2.contains("devin is not installed."))
+    }
+
     func testQoderWrappersResolveTheirOwnBinaryWithoutInstallOrRegionFallback() {
-        for slug in ["qoder", "qodercn", "qodercli"] {
+        for slug in ["qoder", "qodercn", "qodercli", "devin"] {
             let script = KookyShellIntegration.bracketWrapperScript(slug: slug)
             XCTAssertTrue(script.contains("$dir/\(slug)"))
             XCTAssertTrue(script.contains("is not installed."))

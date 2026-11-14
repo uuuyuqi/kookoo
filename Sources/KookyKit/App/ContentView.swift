@@ -27,7 +27,9 @@ struct ContentView: View {
                     if store.sidebarMode != .hidden {
                         SidebarView(store: store, mode: store.sidebarMode)
                             .frame(width: sidebarWidth)
-                        Rectangle().fill(Theme.chromeSeparator)
+                        // The sidebar and terminal card edges define this
+                        // gutter. Keep its width for stable terminal geometry.
+                        Color.clear
                             .frame(width: 1)
                             .offset(x: sidebarWidth)
                     }

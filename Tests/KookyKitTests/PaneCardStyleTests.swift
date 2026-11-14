@@ -30,6 +30,15 @@ final class PaneCardStyleTests: XCTestCase {
         XCTAssertEqual(2 * PaneCardStyle.inset + KookyWindowLayout.separatorWidth, 7)
     }
 
+    func testSidebarCardsKeepFullAndCompactOuterWidths() {
+        for width in [SidebarView.fullWidth, SidebarView.compactWidth, SidebarView.maxWidth] {
+            XCTAssertEqual(SidebarView.cardContentWidth(outerWidth: width) + 2 * PaneCardStyle.inset, width)
+        }
+        // Symmetric padding keeps the compact rail on the existing window-control axis.
+        XCTAssertEqual(SidebarView.cardContentWidth(outerWidth: SidebarView.compactWidth) / 2 + PaneCardStyle.inset,
+                       Theme.sidebarLeadingIconCenterX)
+    }
+
     func testZoomTargetsClickedPaneAndRestoresLayout() throws {
         let store = makeTestStore()
         let workspace = store.workspaces[0]

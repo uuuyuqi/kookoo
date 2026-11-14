@@ -651,6 +651,39 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertTrue(ws.distinctAgents.isEmpty)
     }
 
+    func testDevinLifecyclePromotesAndRestoresTerminalIdentity() {
+        let persistence = InMemoryPersistence()
+        let store = WorkspaceStore(
+            persistence: persistence,
+            engineFactory: { TestEngine() },
+            optionsProvider: { _ in nil },
+            resumeProvider: { true }
+        )
+        let ws = store.addWorkspace(workingDirectory: projectA)
+        let session = firstPane(ws).tabs[0]
+
+        engine(session).emitTitle(AgentStatusMarker.title(slug: "devin", event: .running))
+
+        XCTAssertEqual(session.agent.id, AgentTemplate.terminal.id)
+        XCTAssertEqual(session.displayAgent.id, AgentTemplate.devin.id)
+        XCTAssertEqual(session.activityState, .running)
+        XCTAssertNil(session.terminalTitle)
+        XCTAssertEqual(ws.distinctAgents.map(\.id), [AgentTemplate.devin.id])
+
+        store.flushPersistence()
+        guard case .pane(let persistedPane)? = persistence.saved?.workspaces.last?.root.kind else {
+            return XCTFail("expected single-pane persisted workspace")
+        }
+        XCTAssertEqual(persistedPane.tabs.first?.agentId, AgentTemplate.terminal.id)
+
+        engine(session).emitTitle(AgentStatusMarker.title(slug: "devin", event: .ended))
+
+        XCTAssertNil(session.transientAgent)
+        XCTAssertEqual(session.displayAgent.id, AgentTemplate.terminal.id)
+        XCTAssertEqual(session.activityState, .idle)
+        XCTAssertTrue(ws.distinctAgents.isEmpty)
+    }
+
     func testAgentStatusTitleMarkerDoesNotReplaceRemoteShellTitle() {
         let store = makeStore()
         let ws = store.addWorkspace(workingDirectory: projectA)

@@ -121,8 +121,9 @@ struct AgentTemplate: Identifiable, Hashable {
     var isShell: Bool { initialCommand == nil }
 
     /// Legacy qodercli flags are not assumed to match the current Qoder CLI.
-    /// It can be launched normally, but is not offered in the Ask menu.
-    var supportsInitialPrompt: Bool { !isShell && rosterId != "qoder-legacy" }
+    /// Devin is likewise launch-only until its interactive prompt contract is verified.
+    /// These can be launched normally, but are not offered in the Ask menu.
+    var supportsInitialPrompt: Bool { !isShell && !["qoder-legacy", "devin"].contains(rosterId) }
 
     /// The builtin roster id this template answers to — a custom agent
     /// resolves to its frozen base, a builtin to itself. This is the key the
@@ -725,6 +726,12 @@ extension AgentTemplate {
         resumeStrategy: .arguments(["--resume"])
     )
 
+    /// Launch/identity integration only; do not infer interactive prompt or resume flags.
+    static let devin = AgentTemplate(
+        id: "devin", title: "Devin CLI", symbol: "terminal",
+        iconAsset: "devin", tintHex: "5B8DEF", initialCommand: "devin"
+    )
+
     /// Current international and China CLIs have separate accounts/configs.
     /// Never silently fall back across regions or into the legacy executable.
     /// Reference: docs.qoder.com/cli/cli-reference and docs.qoder.cn/cli/cli-reference.
@@ -749,7 +756,7 @@ extension AgentTemplate {
 
     /// The builtin templates shipped with Kookoo. User-defined custom agents are
     /// merged on top via `all` at runtime.
-    static let builtin: [AgentTemplate] = [.terminal, .claudeCode, .codex, .gemini, .opencode, .amp, .cursor, .copilot, .grok, .antigravity, .kimi, .pi, .ohMyPi, .reasonix, .kiro, .droid, .qoder, .qoderCN, .qoderLegacy]
+    static let builtin: [AgentTemplate] = [.terminal, .claudeCode, .codex, .gemini, .opencode, .amp, .cursor, .copilot, .grok, .antigravity, .kimi, .pi, .ohMyPi, .reasonix, .kiro, .droid, .devin, .qoder, .qoderCN, .qoderLegacy]
 
     /// Builtin lookup by id — session-history resume, filter chips, and row
     /// icons all resolve records back to a template through this.

@@ -3,6 +3,17 @@ import XCTest
 
 @MainActor
 final class AgentTemplateTests: XCTestCase {
+    func testDevinManualCommandResolvesToLaunchOnlyBrand() {
+        let template = AgentTemplate.devin
+        XCTAssertEqual(AgentTemplate.from(hookSlug: "devin")?.id, template.id)
+        XCTAssertEqual(template.makeSessionConfig().environment["KOOKOO_AGENT"], "devin")
+        XCTAssertEqual(template.iconAsset, "devin")
+        XCTAssertFalse(template.supportsInitialPrompt)
+        XCTAssertFalse(template.supportsResume)
+        XCTAssertFalse(template.reportsToolCalls)
+        XCTAssertTrue(AgentIcon.isMonochrome("devin"))
+    }
+
     func testQoderRegionsRemainSeparateAndUseInteractivePromptFlag() {
         for (template, binary) in [(AgentTemplate.qoder, "qoder"), (.qoderCN, "qodercn")] {
             XCTAssertEqual(template.initialCommand, binary)
@@ -337,7 +348,7 @@ final class AgentTemplateTests: XCTestCase {
     func testBuiltinResumeSupportMatchesVerifiedCLIContracts() {
         XCTAssertFalse(AgentTemplate.terminal.supportsResume)
         XCTAssertFalse(AgentTemplate.qoderLegacy.supportsResume)
-        for template in AgentTemplate.builtin where !template.isShell && template.id != "qoder-legacy" {
+        for template in AgentTemplate.builtin where !template.isShell && !["qoder-legacy", "devin"].contains(template.id) {
             XCTAssertTrue(template.supportsResume, "\(template.id) must declare a resume strategy")
         }
     }

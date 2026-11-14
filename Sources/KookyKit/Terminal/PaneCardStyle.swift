@@ -16,11 +16,14 @@ enum PaneCardStyle {
 
 struct PaneCardChrome: ViewModifier {
     let isFocused: Bool
+    // Sidebars retain their existing glass/chrome material inside the same
+    // card geometry; terminals keep their own opaque surface background.
+    var fillsTerminalSurface = true
 
     func body(content: Content) -> some View {
         let outline = RoundedRectangle(cornerRadius: PaneCardStyle.cornerRadius, style: .continuous)
         content
-            .background(Color(nsColor: Theme.terminalSurface))
+            .background(fillsTerminalSurface ? Color(nsColor: Theme.terminalSurface) : .clear)
             .clipShape(outline)
             .overlay {
                 outline.strokeBorder(

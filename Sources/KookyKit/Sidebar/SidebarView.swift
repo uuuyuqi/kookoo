@@ -67,6 +67,10 @@ struct SidebarView: View {
     /// floor — the sidebar only grows from its design width).
     static let maxWidth: CGFloat = 480
 
+    static func cardContentWidth(outerWidth: CGFloat) -> CGFloat {
+        outerWidth - 2 * PaneCardStyle.inset
+    }
+
     /// Single source for the width policy — floor `fullWidth`, ceiling
     /// `maxWidth`, and whole points (fractional widths land row text on
     /// per-frame-shifting sub-pixel boundaries → the mono diff badges
@@ -190,8 +194,11 @@ struct SidebarView: View {
             Spacer(minLength: 0)
             if !isCompact { footer() }
         }
-        .frame(width: isCompact ? Self.compactWidth : store.sidebarWidth)
+        // Keep the outer layout width unchanged in full/compact modes.
+        // Symmetric inset preserves the compact rail/traffic-light axis.
+        .frame(width: Self.cardContentWidth(outerWidth: isCompact ? Self.compactWidth : store.sidebarWidth))
         .glassChromeBackground()
+        .modifier(PaneCardChrome(isFocused: false, fillsTerminalSurface: false))
         .overlay(alignment: .trailing) {
             if !isCompact { resizeHandle }
         }

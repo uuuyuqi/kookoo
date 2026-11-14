@@ -25,6 +25,8 @@ jobs:
       - name: Build app and DMG
         run: |
           bash scripts/build-app.sh
+          cmp LICENSE dist/Kookoo.app/Contents/Resources/LICENSE
+          cmp NOTICE.md dist/Kookoo.app/Contents/Resources/NOTICE.md
           bash scripts/build-dmg.sh
           bash scripts/verify-package-icons.sh dist/Kookoo-*.dmg
           codesign --verify --deep --strict dist/Kookoo.app

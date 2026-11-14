@@ -758,6 +758,7 @@ enum KookyShellIntegration {
         writeWrapper(name: "reasonix", script: bracketWrapperScript(slug: "reasonix"))
         writeWrapper(name: "kiro-cli", script: kiroWrapperScript)
         writeWrapper(name: "droid", script: bracketWrapperScript(slug: "droid"))
+        writeWrapper(name: "devin", script: bracketWrapperScript(slug: "devin"))
         // Separate executable identities: never switch account regions silently.
         // Generic wrappers detect the real executable on PATH, report missing
         // installs without installing anything, and emit only process lifecycle.
