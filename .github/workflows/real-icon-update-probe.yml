@@ -96,6 +96,34 @@ jobs:
           sleep 2
           screencapture -x "$ROOT/evidence/after-upgrade.png" || true
           echo "LIMITS: real Kookoo ad-hoc release; unquarantined CI download; not Developer ID/notarized/managed company Mac. No system security disabled. GUI appearance is separate from signature result."
+      - name: Reapply selection and restore only new-version canonical bytes
+        shell: bash
+        run: |
+          set -eu
+          exec > >(tee "$ROOT/evidence/reapply.log") 2>&1
+          APP="$ROOT/Kookoo.app"
+          cp "$APP/Contents/Resources/AppIcon.icns" "$ROOT/current-version-default.icns"
+          echo "NEW_VERSION_BEFORE_REAPPLY"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist"
+          cp "$ROOT/custom.icns" "$APP/Contents/Resources/AppIcon.icns"
+          set +e
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "REAPPLY_STRICT_EXIT=$?"
+          codesign --verify --verbose=2 "$APP"
+          echo "REAPPLY_NORMAL_EXIT=$?"
+          set -e
+          open -n "$APP" --args -SUEnableAutomaticChecks NO
+          sleep 6
+          ps -axo pid,command | grep "$APP/Contents/MacOS/Kookoo" | grep -v grep
+          screencapture -x "$ROOT/evidence/reapply-running.png" || true
+          osascript -e "tell application \"$APP\" to quit" || true
+          sleep 2
+          cp "$ROOT/current-version-default.icns" "$APP/Contents/Resources/AppIcon.icns"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "CURRENT_VERSION_DEFAULT_RESTORE_STRICT=0"
+          cmp "$ROOT/current-version-default.icns" "$APP/Contents/Resources/AppIcon.icns"
+          shasum -a 256 "$ROOT/evidence/original.icns" "$ROOT/current-version-default.icns"
+          echo "Never restored old-version original; no re-sign or security bypass."
       - uses: actions/upload-artifact@v4
         if: always()
         with:
