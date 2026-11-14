@@ -1,0 +1,72 @@
+name: Publish signed Kookoo 0.1.8
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-0.1.8.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/kookoo' && github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: uuuyuqi/kookoo
+      SOURCE_SHA: 2aac2280128ec4c2dd824b5c422ad95426a7e22f
+      VERIFIED_RUN: '43604250145'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact tested and signed artifacts
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.head_sha')" = "$SOURCE_SHA"
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.conclusion')" = success
+          mkdir -p dist
+          gh run download "$VERIFIED_RUN" --repo "$GH_REPO" --name Kookoo-macOS --dir dist
+          shasum -a 256 -c dist/SHA256SUMS
+          signature=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("dist/appcast.xml").find(".//enclosure").attrib["{http://www.andymatuschak.org/xml-namespaces/sparkle}edSignature"])')
+          swift scripts/verify-update-signature.swift dist/Kookoo-v0.1.8.dmg "$(cat config/sparkle-public-key.txt)" "$signature"
+      - name: Publish preview archive without replacing previous releases
+        run: |
+          cat > notes.md <<'NOTES'
+          Kookoo 0.1.8 Preview adds 20 built-in app icon styles in Settings → Appearance, plus the original Kookoo icon. Choices persist between launches and are applied early. Changing an icon does not restart terminal sessions.
+
+          IMPORTANT: choosing a custom icon replaces AppIcon.icns inside the installed app and invalidates its code-signature integrity. macOS or organization security software may block the modified app. Updates replace the bundle; the saved icon is reapplied at the next launch and invalidates the seal again. Selecting the original Kookoo icon restores this release's canonical bytes, not an older-version backup. Finder and pinned Dock caches can refresh at different times. Failed writes do not commit a new preference. Kookoo does not request administrator access, modify Assets.car, clear quarantine, or disable security protections.
+
+          Recovery if a custom icon prevents launching: clear only the saved app preference with `defaults delete com.uuuyuqi.kookoo kookoo.appIconID`, then reinstall the unmodified release. Do not disable security protections.
+
+          The original raw.githubusercontent.com update feed is unchanged. If your network cannot reach that host, checking for updates may still time out. Download/install this preview manually in that case; this release does not fix the network route. No GitHub Pages service is enabled.
+
+          Validation includes 1129 tests (6 skipped, 0 failures), app/DMG icon and strict signature verification, isolated Sparkle installer E2E, and production Ed25519 archive verification. Isolated ad-hoc runtime-mutation tests covered continuing execution, rejected writes, update replacement, selection reapplication, and restoration of the current-version default. Native Settings GUI verification covered the grid, cancellation without file/preference changes, confirmation with the running Dock icon and saved choice, and restoration of the current-version default with strict signature verification; the original app and terminal child processes remained alive. These tests do not establish compatibility with Developer ID/notarization or company-managed security policies.
+
+          Save terminal work before update/restart. Apple silicon/macOS 14+. Ad-hoc signed, not Apple-notarized; Gatekeeper and enterprise policy can still block execution. No user device or running session is modified by this release workflow.
+          NOTES
+          gh release create v0.1.8 --repo "$GH_REPO" --target "$SOURCE_SHA" --title "Kookoo 0.1.8 Preview" --prerelease --notes-file notes.md dist/Kookoo-v0.1.8.dmg dist/SHA256SUMS dist/appcast.xml
+      - name: Verify uploaded asset and activate public update feed
+        run: |
+          mkdir downloaded
+          gh release download v0.1.8 --repo "$GH_REPO" --dir downloaded
+          cmp dist/Kookoo-v0.1.8.dmg downloaded/Kookoo-v0.1.8.dmg
+          cmp dist/appcast.xml downloaded/appcast.xml
+          python3 - <<'PY' > feed-request.json
+          import base64,json,pathlib,subprocess
+          data={"message":"Publish verified 0.1.8 signed update feed","content":base64.b64encode(pathlib.Path("dist/appcast.xml").read_bytes()).decode(),"branch":"main"}
+          p=subprocess.run(["gh","api","repos/uuuyuqi/kookoo/contents/appcast.xml"],capture_output=True,text=True)
+          if p.returncode==0:data["sha"]=json.loads(p.stdout)["sha"]
+          print(json.dumps(data))
+          PY
+          gh api --method PUT repos/$GH_REPO/contents/appcast.xml --input feed-request.json --silent
+          for i in {1..24}; do
+            if curl -fsSL https://raw.githubusercontent.com/uuuyuqi/kookoo/main/appcast.xml -o public-appcast.xml && cmp -s dist/appcast.xml public-appcast.xml; then break; fi
+            sleep 5
+          done
+          cmp dist/appcast.xml public-appcast.xml
+      - name: Verify real published feed can install its signed archive
+        run: |
+          mkdir previous
+          gh release download v0.1.6 --repo "$GH_REPO" --pattern Kookoo-v0.1.6.dmg --dir previous
+          bash scripts/tests/sparkle-production-feed-smoke.sh downloaded/Kookoo-v0.1.8.dmg 0.1.8 previous/Kookoo-v0.1.6.dmg
