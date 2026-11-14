@@ -42,3 +42,31 @@ jobs:
             dist/SHA256SUMS
             dist/appcast.xml
           if-no-files-found: error
+  updater-e2e:
+    needs: test-and-build
+    runs-on: macos-26
+    timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kookoo-macOS
+          path: dist
+      - name: Extract verified app for isolated installer test
+        run: |
+          shasum -a 256 -c dist/SHA256SUMS
+          mount=$(mktemp -d)
+          hdiutil attach dist/Kookoo-*.dmg -mountpoint "$mount" -readonly -nobrowse -quiet
+          ditto "$mount/Kookoo.app" dist/Kookoo.app
+          hdiutil detach "$mount" -quiet
+          rmdir "$mount"
+      - name: Exercise real Sparkle installation in temporary fixtures
+        run: bash scripts/tests/sparkle-install-e2e.sh dist/Kookoo.app
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Kookoo-updater-e2e-evidence
+          path: dist/updater-e2e-logs
+          if-no-files-found: warn
