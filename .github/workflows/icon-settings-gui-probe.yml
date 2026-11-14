@@ -46,6 +46,67 @@ jobs:
           fi
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/settings-ax.txt" 2>&1 || true
           cat "$ROOT/evidence/settings-ax.txt"
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to click static text "Appearance" of group 1 of window "Settings"'
+          sleep 2
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/icons-ax.txt" 2>&1
+          cat "$ROOT/evidence/icons-ax.txt"
+          screencapture -x "$ROOT/evidence/icon-grid.png"
+          cat > "$ROOT/click.applescript" <<'AS'
+          on run argv
+            tell application "System Events"
+              tell process "Kookoo"
+                set elems to entire contents of front window
+                repeat with e in elems
+                  try
+                    if role of e is "AXButton" then
+                      if name of e is item 1 of argv or description of e is item 1 of argv then
+                        click e
+                        return "clicked " & item 1 of argv
+                      end if
+                    end if
+                  end try
+                end repeat
+              end tell
+            end tell
+            error "button not found: " & item 1 of argv
+          end run
+          AS
+          BID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")"
+          ICON="$APP/Contents/Resources/AppIcon.icns"
+          cp "$ICON" "$ROOT/baseline.icns"
+          PID="$(pgrep -f '/Kookoo.app/Contents/MacOS/Kookoo' | head -1)"
+          pgrep -P "$PID" >"$ROOT/children-before.txt" || true
+          defaults read "$BID" kookoo.appIconID >"$ROOT/pref-before.txt" 2>&1 || true
+          osascript "$ROOT/click.applescript" 'Pearl app icon'
+          sleep 1
+          screencapture -x "$ROOT/evidence/confirmation.png"
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/alert-ax.txt"
+          cat "$ROOT/evidence/alert-ax.txt"
+          osascript "$ROOT/click.applescript" 'Cancel'
+          sleep 1
+          cmp "$ROOT/baseline.icns" "$ICON"
+          defaults read "$BID" kookoo.appIconID >"$ROOT/pref-cancel.txt" 2>&1 || true
+          # Missing-key error text includes timestamps; compare only actual defaults if present.
+          echo "CANCEL_ICON_UNCHANGED=YES"
+          cat "$ROOT/pref-before.txt" "$ROOT/pref-cancel.txt"
+          osascript "$ROOT/click.applescript" 'Pearl app icon'
+          sleep 1
+          osascript "$ROOT/click.applescript" 'Change Icon'
+          sleep 2
+          cmp "$ICON" "$APP/Contents/Resources/IconChoices/01-pearl.icns"
+          test "$(defaults read "$BID" kookoo.appIconID)" = "01-pearl"
+          echo "CONFIRM_ICON_AND_PREFERENCE=YES"
+          kill -0 "$PID"
+          while read -r CHILD; do kill -0 "$CHILD"; done < "$ROOT/children-before.txt"
+          echo "APP_AND_CHILD_SESSIONS_SURVIVED=YES"
+          screencapture -x "$ROOT/evidence/selected.png"
+          osascript "$ROOT/click.applescript" 'Kookoo app icon'
+          sleep 1
+          cmp "$ROOT/baseline.icns" "$ICON"
+          test "$(defaults read "$BID" kookoo.appIconID)" = "default"
+          codesign --verify --deep --strict "$APP"
+          echo "DEFAULT_RESTORE_AND_STRICT=YES"
+          screencapture -x "$ROOT/evidence/restored.png"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
