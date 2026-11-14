@@ -1,0 +1,103 @@
+name: Isolated Real Kookoo Icon Update
+on:
+  push:
+    branches: [research/icon-switch-safety-20261114]
+    paths: [.github/workflows/real-icon-update-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Obtain old release and change icon in temporary copy
+        shell: bash
+        run: |
+          set -eu
+          ROOT="$(mktemp -d)"
+          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
+          mkdir -p "$ROOT/evidence" "$ROOT/mount" "$ROOT/download"
+          exec > >(tee "$ROOT/evidence/setup.log") 2>&1
+          sw_vers
+          gh release download v0.1.5 --repo uuuyuqi/kookoo --pattern 'Kookoo-v0.1.5.dmg' --dir "$ROOT/download"
+          hdiutil attach "$ROOT/download/Kookoo-v0.1.5.dmg" -readonly -nobrowse -mountpoint "$ROOT/mount" -quiet
+          ditto "$ROOT/mount/Kookoo.app" "$ROOT/Kookoo.app"
+          hdiutil detach "$ROOT/mount" -quiet
+          APP="$ROOT/Kookoo.app"
+          codesign --verify --deep --strict "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist"
+          cp "$APP/Contents/Resources/AppIcon.icns" "$ROOT/evidence/original.icns"
+          # Build a distinctive test icon, do not alter code or settings.
+          cat > "$ROOT/icon.swift" <<'SWIFT'
+          import AppKit
+          let image=NSImage(size:NSSize(width:1024,height:1024))
+          image.lockFocus()
+          NSColor.systemPink.setFill()
+          NSBezierPath(roundedRect:NSRect(x:40,y:40,width:944,height:944),xRadius:180,yRadius:180).fill()
+          ("K" as NSString).draw(at:NSPoint(x:310,y:270),withAttributes:[.font:NSFont.boldSystemFont(ofSize:480),.foregroundColor:NSColor.white])
+          image.unlockFocus()
+          try NSBitmapImageRep(data:image.tiffRepresentation!)!.representation(using:.png,properties:[:])!.write(to:URL(fileURLWithPath:CommandLine.arguments[1]))
+          SWIFT
+          swift "$ROOT/icon.swift" "$ROOT/custom.png"
+          mkdir "$ROOT/Custom.iconset"
+          for n in 16 32 128 256 512; do
+            sips -z "$n" "$n" "$ROOT/custom.png" --out "$ROOT/Custom.iconset/icon_${n}x${n}.png" >/dev/null
+            d=$((n*2)); sips -z "$d" "$d" "$ROOT/custom.png" --out "$ROOT/Custom.iconset/icon_${n}x${n}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$ROOT/Custom.iconset" -o "$ROOT/custom.icns"
+          # Devin-style in-place resource replacement. Do not re-sign it.
+          cp "$ROOT/custom.icns" "$APP/Contents/Resources/AppIcon.icns"
+          set +e
+          codesign --verify --deep --strict --verbose=2 "$APP" >"$ROOT/evidence/custom-strict.log" 2>&1
+          echo "CUSTOM_STRICT_EXIT=$?"
+          codesign --verify --verbose=2 "$APP" >"$ROOT/evidence/custom-normal.log" 2>&1
+          echo "CUSTOM_NORMAL_EXIT=$?"
+          set -e
+          cat "$ROOT/evidence/custom-strict.log" "$ROOT/evidence/custom-normal.log"
+          # Persist a Dock shortcut only on this disposable runner desktop.
+          defaults write com.apple.dock persistent-apps -array-add "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>file://$APP/</string><key>_CFURLStringType</key><integer>15</integer></dict></dict><key>tile-type</key><string>file-tile</string></dict>"
+          killall Dock || true
+          sleep 2
+          open -R "$APP"
+          sleep 2
+          screencapture -x "$ROOT/evidence/pinned-before-launch.png" || true
+          open -n "$APP" --args -SUEnableAutomaticChecks NO
+          sleep 6
+          ps -axo pid,command | grep "$APP/Contents/MacOS/Kookoo" | grep -v grep | tee "$ROOT/evidence/custom-running-processes.txt"
+          screencapture -x "$ROOT/evidence/custom-running.png" || true
+          osascript -e "tell application \"$APP\" to quit" || true
+          sleep 3
+          screencapture -x "$ROOT/evidence/custom-after-quit.png" || true
+          # Launchpad may not exist on this macOS release; no claims if absent.
+          ls -d /System/Applications/Launchpad.app >"$ROOT/evidence/launchpad-availability.log" 2>&1 || true
+      - name: Build official Sparkle CLI and update the altered app from public signed feed
+        shell: bash
+        run: |
+          set -eu
+          exec > >(tee "$ROOT/evidence/update.log") 2>&1
+          git clone --quiet --depth 1 --branch 2.10.1 https://github.com/sparkle-project/Sparkle.git "$ROOT/Sparkle"
+          test "$(git -C "$ROOT/Sparkle" rev-parse HEAD)" = ab7d71291238df6e0492143b120c9b696a35f603
+          xcodebuild -project "$ROOT/Sparkle/Sparkle.xcodeproj" -scheme sparkle-cli -configuration Release -derivedDataPath "$ROOT/derived" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual ONLY_ACTIVE_ARCH=YES build >"$ROOT/evidence/sparkle-build.log" 2>&1
+          CLI="$ROOT/derived/Build/Products/Release/sparkle.app/Contents/MacOS/sparkle"
+          curl -fsSL https://raw.githubusercontent.com/uuuyuqi/kookoo/main/appcast.xml -o "$ROOT/evidence/feed-before.xml"
+          python3 - "$CLI" "$ROOT/Kookoo.app" <<'PY'
+          import subprocess,sys
+          p=subprocess.run([sys.argv[1],sys.argv[2],"--check-immediately","--grant-automatic-checks","--feed-url","https://raw.githubusercontent.com/uuuyuqi/kookoo/main/appcast.xml","--channels","preview","--user-agent-name","Kookoo-Icon-Isolated-Probe","--verbose"],timeout=240)
+          print("SPARKLE_EXIT=",p.returncode)
+          raise SystemExit(p.returncode)
+          PY
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ROOT/Kookoo.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$ROOT/Kookoo.app/Contents/Info.plist"
+          codesign --verify --deep --strict --verbose=2 "$ROOT/Kookoo.app"
+          shasum -a 256 "$ROOT/custom.icns" "$ROOT/Kookoo.app/Contents/Resources/AppIcon.icns"
+          open -R "$ROOT/Kookoo.app"
+          sleep 2
+          screencapture -x "$ROOT/evidence/after-upgrade.png" || true
+          echo "LIMITS: real Kookoo ad-hoc release; unquarantined CI download; not Developer ID/notarized/managed company Mac. No system security disabled. GUI appearance is separate from signature result."
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-kookoo-icon-update
+          path: ${{ env.ROOT }}/evidence
