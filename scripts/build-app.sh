@@ -291,6 +291,8 @@ with open(path, 'rb') as f:
 info.update(SUEnableAutomaticChecks=False, SUAutomaticallyUpdate=False,
             SUSendProfileInfo=False, SUVerifyUpdateBeforeExtraction=True)
 key = os.environ.get('KOOKOO_UPDATE_PUBLIC_KEY', '')
+if not key and os.path.isfile('config/sparkle-public-key.txt'):
+    key = open('config/sparkle-public-key.txt').read().strip()
 if key:
     try:
         decoded = base64.b64decode(key, validate=True)

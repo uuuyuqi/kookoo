@@ -22,20 +22,6 @@ jobs:
         run: bash scripts/setup-libghostty.sh
       - name: Run tests
         run: swift test --build-system native
-      - name: Inspect previous distribution icon declarations
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download v0.1.0 --repo uuuyuqi/kookoo --pattern '*.dmg' --dir old-package
-          mount=$(mktemp -d)
-          hdiutil attach old-package/*.dmg -mountpoint "$mount" -readonly -nobrowse -quiet
-          plutil -extract CFBundleIconFile raw "$mount/Kookoo.app/Contents/Info.plist"
-          plutil -extract CFBundleIconName raw "$mount/Kookoo.app/Contents/Info.plist" || true
-          ls -l "$mount/Kookoo.app/Contents/Resources/AppIcon.icns"
-          if test -f "$mount/.VolumeIcon.icns"; then echo 'Old volume icon exists'; else echo 'CONFIRMED: old mounted volume has no .VolumeIcon.icns'; fi
-          hdiutil detach "$mount" -quiet
-          rmdir "$mount"
-          spctl --assess --type open --context context:primary-signature --verbose old-package/*.dmg || true
       - name: Build app and DMG
         run: |
           bash scripts/build-app.sh
@@ -43,10 +29,16 @@ jobs:
           bash scripts/verify-package-icons.sh dist/Kookoo-*.dmg
           codesign --verify --deep --strict dist/Kookoo.app
           shasum -a 256 dist/Kookoo-*.dmg > dist/SHA256SUMS
+      - name: Sign trusted main update archive
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'uuuyuqi/kookoo'
+        env:
+          KOOKOO_SPARKLE_PRIVATE_KEY: ${{ secrets.KOOKOO_SPARKLE_PRIVATE_KEY }}
+        run: bash scripts/prepare-signed-update.sh
       - uses: actions/upload-artifact@v4
         with:
           name: Kookoo-macOS
           path: |
             dist/Kookoo-*.dmg
             dist/SHA256SUMS
+            dist/appcast.xml
           if-no-files-found: error
