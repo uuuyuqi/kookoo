@@ -3,7 +3,7 @@
 # No private key, no user Mac, no /Applications changes, no policy bypass.
 set -euo pipefail
 [[ "$(uname -s)" == Darwin && "${CI:-}" == true ]]
-DMG="$1"; EXPECTED="$2"
+DMG="$1"; EXPECTED="$2"; BASELINE_DMG="${3:-}"
 WORK="$(mktemp -d "${RUNNER_TEMP:-/tmp}/kookoo-production-upgrade.XXXXXX")"
 MOUNT="$WORK/mount";mkdir -p "$MOUNT"
 cleanup() { hdiutil detach "$MOUNT" -quiet 2>/dev/null || true; rm -rf "$WORK"; }
@@ -12,11 +12,19 @@ hdiutil attach "$DMG" -mountpoint "$MOUNT" -readonly -nobrowse -quiet
 ditto "$MOUNT/Kookoo.app" "$WORK/Kookoo.app"
 cp "$MOUNT/Kookoo.app/Contents/MacOS/Kookoo" "$WORK/expected-executable"
 hdiutil detach "$MOUNT" -quiet
-# Make an older isolated baseline with the shipped trust anchor. This is not
-# an assertion that previously shipped, unconfigured 0.1.2 can self-update.
-/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 0.1.2' "$WORK/Kookoo.app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.1.2' "$WORK/Kookoo.app/Contents/Info.plist"
-codesign --force --sign - "$WORK/Kookoo.app"
+if [[ -n "$BASELINE_DMG" ]]; then
+  # Exercise the unmodified previously shipped app, not a synthetic version.
+  rm -rf "$WORK/Kookoo.app"
+  hdiutil attach "$BASELINE_DMG" -mountpoint "$MOUNT" -readonly -nobrowse -quiet
+  ditto "$MOUNT/Kookoo.app" "$WORK/Kookoo.app"
+  hdiutil detach "$MOUNT" -quiet
+  codesign --verify --deep --strict "$WORK/Kookoo.app"
+else
+  # Synthetic older fixture for bootstrapping the first configured release.
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 0.1.2' "$WORK/Kookoo.app/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.1.2' "$WORK/Kookoo.app/Contents/Info.plist"
+  codesign --force --sign - "$WORK/Kookoo.app"
+fi
 git clone --quiet --depth 1 --branch 2.10.1 https://github.com/sparkle-project/Sparkle.git "$WORK/Sparkle"
 [[ "$(git -C "$WORK/Sparkle" rev-parse HEAD)" == ab7d71291238df6e0492143b120c9b696a35f603 ]]
 xcodebuild -project "$WORK/Sparkle/Sparkle.xcodeproj" -scheme sparkle-cli -configuration Release -derivedDataPath "$WORK/derived" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual ONLY_ACTIVE_ARCH=YES build > "$WORK/build.log" 2>&1 || { tail -60 "$WORK/build.log"; exit 1; }
