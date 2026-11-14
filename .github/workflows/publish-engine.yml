@@ -1,0 +1,202 @@
+name: Publish reviewed independent engine (not an app release)
+on:
+  push:
+    branches: [fork/engine-adoption-018]
+    paths: [.github/workflows/publish-engine.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-engine-88c3325-kooky53-kookoo1
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/kookoo' && github.ref == 'refs/heads/fork/engine-adoption-018'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: uuuyuqi/kookoo
+      TAG: engine-88c3325-kooky53-kookoo1
+      ENGINE_SHA: 062cf96269218f0c6c39fb809305f81073c6e2e7
+      APP_SHA: 5d2a7159f7e49a77761ba1369cd986ecae9ac7a0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify exact successful runs, artifact identities, and unused release identity
+        run: |
+          set -euo pipefail
+          mkdir -p dist/publication-evidence
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request, urllib.error
+          root = pathlib.Path('dist/publication-evidence')
+          base = 'https://api.github.com/repos/' + os.environ['REPO']
+          def api(path, absent=False):
+              request=urllib.request.Request(base+path, headers={
+                  'Authorization': 'Bearer '+os.environ['GH_TOKEN'],
+                  'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'})
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      data=json.load(response)
+              except urllib.error.HTTPError as error:
+                  if absent and error.code == 404: return None
+                  raise
+              if absent: raise RuntimeError('Refusing existing release/tag: '+path)
+              return data
+          api('/releases/tags/'+os.environ['TAG'], absent=True)
+          api('/git/ref/tags/'+os.environ['TAG'], absent=True)
+          runs=[(43598330698,os.environ['ENGINE_SHA']), (43606097707,os.environ['APP_SHA'])]
+          for run_id,sha in runs:
+              r=api('/actions/runs/'+str(run_id))
+              assert r['status']=='completed' and r['conclusion']=='success' and r['head_sha']==sha
+              assert r['repository']['full_name']==os.environ['REPO']
+              (root/f'run-{run_id}.json').write_text(json.dumps(r,indent=2)+'\n')
+          artifacts=[
+            (14116316964,43598330698,os.environ['ENGINE_SHA'],'independent-engine-candidate','sha256:8c166eff64ae1123538f25fbeb6aae62bc7a0539c7bb0c8404b47b480595f197'),
+            (14118496692,43606097707,os.environ['APP_SHA'],'engine-current-app-evidence','sha256:fc6c603c5fc74445aeca90d43bb11a3efe1c15306707579f06a8ecf16664cd36'),
+            (14118836333,43606097707,os.environ['APP_SHA'],'engine-current-app-relink-evidence','sha256:72c6dcd8cda330ec78c4b17fda895e017730d3cc3c5055c0584186827051771f')]
+          for artifact_id,run_id,sha,name,digest in artifacts:
+              a=api('/actions/artifacts/'+str(artifact_id))
+              assert a['id']==artifact_id and a['name']==name and not a['expired']
+              assert a['workflow_run']['id']==run_id and a['workflow_run']['head_sha']==sha
+              assert a['digest']==digest
+              (root/f'artifact-{artifact_id}.json').write_text(json.dumps(a,indent=2)+'\n')
+          PY
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: 14116316964
+          run-id: 43598330698
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: dist/reviewed-engine
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: 14118496692
+          run-id: 43606097707
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: dist/reviewed-current-app
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: 14118836333
+          run-id: 43606097707
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: dist/reviewed-relink
+      - name: Prepare exact verified assets and notices
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release-assets dist/EngineNotices
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,re,shutil,subprocess
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          engine=pathlib.Path('dist/reviewed-engine')
+          materials=pathlib.Path('dist/reviewed-current-app/app-engine-materials')
+          assert sha(engine/'GhosttyKit.xcframework.tar.gz')=='6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10'
+          assert sha(materials/'SHA256SUMS')=='dcb0f1914e8d679fcc498048ce4a5dfc337b8272405985f25fd618d426396363'
+          def verify(root):
+              expected=set()
+              for line in (root/'SHA256SUMS').read_text().splitlines():
+                  m=re.fullmatch(r'([0-9a-f]{64})  (.+)',line); assert m,line
+                  digest,name=m.groups(); p=pathlib.PurePosixPath(name)
+                  assert not p.is_absolute() and '..' not in p.parts and str(p)==name and name not in expected
+                  f=root/name; assert f.is_file() and not f.is_symlink() and sha(f)==digest,name
+                  expected.add(name)
+              actual=set()
+              for p in root.rglob('*'):
+                  assert not p.is_symlink(),p
+                  if p.is_file() and p.name!='SHA256SUMS': actual.add(p.relative_to(root).as_posix())
+              # Nested preserved historical checksum files are ordinary entries.
+              actual={p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file() and p!=root/'SHA256SUMS'}
+              assert actual==expected
+          verify(materials)
+          record=json.loads((materials/'MATERIALS.json').read_text())
+          assert record['application']['commit']==os.environ['APP_SHA']
+          assert record['engine']['framework_sha256']==sha(engine/'GhosttyKit.xcframework.tar.gz')
+          assert record['engine']['provenance_sha256']==sha(engine/'PROVENANCE.txt')
+          assert sha(materials/'sources/kookoo-source.tar.gz')==record['application']['source_archive_sha256']
+          notices=pathlib.Path('dist/EngineNotices')
+          shutil.copytree(materials/'licenses',notices/'licenses')
+          shutil.copy2(materials/'license-manifest.json',notices/'license-manifest.json')
+          # Notice text comes from the actual tested app source, not branch HEAD.
+          import tarfile
+          with tarfile.open(materials/'sources/kookoo-source.tar.gz') as archive:
+              notice=archive.extractfile('kookoo-source/licenses/ENGINE-NOTICE.md').read()
+          (notices/'ENGINE-NOTICE.md').write_bytes(notice)
+          (notices/'README.md').write_text('''# Independent engine notices
+          Archive root: EngineNotices/. Inside: licenses/, license-manifest.json, ENGINE-NOTICE.md, SHA256SUMS.
+          This is the small notice bundle for installation before app signing.
+          Full source/relink materials are the separate EngineCorrespondingSource.tar.gz
+          asset in this same engine release. Its app snapshot is the explicitly recorded
+          adoption commit, not every future Kookoo release. Preserve the LGPL notification
+          and individual dependency terms; no legal certification is claimed.
+          ''')
+          lines=[f'{sha(p)}  {p.relative_to(notices).as_posix()}' for p in sorted(notices.rglob('*')) if p.is_file()]
+          (notices/'SHA256SUMS').write_text('\n'.join(lines)+'\n')
+          assets=pathlib.Path('dist/release-assets')
+          shutil.copy2(engine/'GhosttyKit.xcframework.tar.gz',assets)
+          shutil.copy2(engine/'PROVENANCE.txt',assets)
+          shutil.copy2(materials/'MATERIALS.json',assets/'APPLICATION-MATERIALS.json')
+          shutil.copy2(materials/'SHA256SUMS',assets/'APPLICATION-SHA256SUMS')
+          # The same successful run supplies recipient modified-libintl evidence.
+          evidence=pathlib.Path('dist/reviewed-relink')
+          assert (evidence/'RESULT.txt').is_file() and 'PASS:' in (evidence/'RESULT.txt').read_text(), 'Missing successful recipient relink evidence'
+          assert '42' in (evidence/'modified-library-execution.txt').read_text()
+          shutil.copy2(pathlib.Path('dist/publication-evidence/run-43606097707.json'), evidence/'SOURCE-RUN.json')
+          PY
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C dist EngineNotices | gzip -n > dist/release-assets/EngineNotices.tar.gz
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C dist/reviewed-current-app/app-engine-materials . | gzip -n > dist/release-assets/EngineCorrespondingSource.tar.gz
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -cf - -C dist/reviewed-relink . | gzip -n > dist/release-assets/EngineRelinkEvidence.tar.gz
+          cp docs/engine-release-notes.md dist/release-assets/RELEASE-NOTES.md
+          (cd dist/release-assets && sha256sum * > SHA256SUMS)
+      - name: Create one new immutable-identity engine prerelease only
+        run: |
+          set -euo pipefail
+          # Atomic tag creation rejects an existing tag, including one created
+          # since the initial check. Never force a ref or overwrite release bytes.
+          gh api -X POST "repos/$REPO/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$APP_SHA" > dist/publication-evidence/tag-created.json
+          gh release create "$TAG" dist/release-assets/* --repo "$REPO" \
+            --verify-tag --prerelease --latest=false \
+            --title "Independent terminal engine: 88c3325 + issue53 (kookoo1)" \
+            --notes-file docs/engine-release-notes.md
+      - name: Download published assets again and verify exact bytes
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$REPO" --json url,isPrerelease,isDraft,tagName,assets > dist/publication-evidence/release.json
+          gh api "repos/$REPO/git/ref/tags/$TAG" > dist/publication-evidence/tag-verified.json
+          gh api "repos/$REPO/releases/latest" > dist/publication-evidence/latest-release.json
+          gh release download "$TAG" --repo "$REPO" --dir dist/published-download
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path('dist/publication-evidence')
+          r=json.loads((root/'release.json').read_text())
+          tag=json.loads((root/'tag-verified.json').read_text())
+          assert r['isPrerelease'] and not r['isDraft'] and r['tagName']==os.environ['TAG']
+          assert json.loads((root/'latest-release.json').read_text())['tag_name']!=os.environ['TAG']
+          assert tag['object']['type']=='commit' and tag['object']['sha']==os.environ['APP_SHA']
+          expected=pathlib.Path('dist/release-assets'); actual=pathlib.Path('dist/published-download')
+          assert {p.name for p in actual.iterdir()}=={p.name for p in expected.iterdir()}
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
+              return h.hexdigest()
+          hashes={}
+          for p in expected.iterdir():
+              assert sha(p)==sha(actual/p.name),p.name
+              hashes[p.name]=sha(p)
+          (root/'published-asset-hashes.json').write_text(json.dumps(hashes,indent=2)+'\n')
+          (root/'VERIFIED.txt').write_text('Verified release metadata, exact tag target and every downloaded asset byte. This publishes an engine prerelease only; no app feed or main changes.\n')
+          PY
+          (cd dist/published-download && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: independent-engine-publication-evidence
+          path: dist/publication-evidence
+          if-no-files-found: error
