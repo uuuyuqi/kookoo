@@ -2,7 +2,7 @@
 
 A native macOS terminal for working with AI coding agents. Independently maintained, derived from [Kooky](https://github.com/iAmCorey/kooky) v0.51.12. Original Git history, copyright, MIT license and third-party notices are retained.
 
-## Kookoo 0.1.2
+## Kookoo 0.1.3
 
 - Native split terminals, multiple workspaces and the existing agent launcher.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
@@ -26,7 +26,7 @@ bash scripts/build-dmg.sh
 
 The Ghostty engine download is pinned by SHA-256. An optional `KOOKOO_SDK=/absolute/path/to/MacOSX.sdk` selects a compatible installed SDK for app builds without changing system settings.
 
-Outputs: `dist/Kookoo.app`, `dist/Kookoo-v0.1.2.dmg`.
+Outputs: `dist/Kookoo.app`, `dist/Kookoo-v0.1.3.dmg`.
 
 ### Signing and managed computers
 
@@ -53,6 +53,14 @@ The optional closed-lid privileged helper remains unchanged from upstream, is no
 ## Validation
 
 GitHub macOS CI runs the repository's XCTest suite, release build and bundle-signature verification before producing a DMG artifact. A successful compile is not a substitute for interactive UI or agent-provider testing. Release notes must identify any skipped or blocked checks.
+
+## Updates
+
+Install 0.1.3 manually once to obtain the signed-update trust anchor. Then use
+Help → Check for Updates for the Sparkle update flow. Restarting stops terminal
+tasks; automatic checks/downloads are off. See [update verification and recovery
+limits](docs/updating.md). Apple notarization and enterprise policy restrictions
+still apply.
 
 ## License and attribution
 

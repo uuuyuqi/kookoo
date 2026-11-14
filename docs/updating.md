@@ -1,15 +1,22 @@
 # In-app updates
 
-Kookoo integrates Sparkle 2.10.1, but in-app installation is **disabled until a
-release-signing public key is configured**. The current preview still uses
-manual browser downloads. That fallback includes GitHub prereleases and excludes
-drafts; stable builds exclude previews. It inspects the newest 100 published
-GitHub release records.
+Kookoo 0.1.3 Preview enables Sparkle 2.10.1 using the embedded public key in
+`config/sparkle-public-key.txt` and the fixed HTTPS appcast. Trusted main builds
+sign their update archives through the protected Actions secret; private keys
+are never part of the app or release artifacts. Builds without a configured
+key fail closed and retain the manual-download fallback.
 
-A first build containing the configured updater must be installed manually.
-Older 0.1.x builds cannot acquire a new updater without that initial install.
+Versions 0.1.0–0.1.2 need one manual installation of 0.1.3 to obtain the trust
+anchor. Thereafter use Help → Check for Updates; installation/restart requires
+user confirmation. Automatic checks and downloads remain off.
 
-## Maintainer setup (not performed automatically)
+Verified: public release asset byte equality and Ed25519 verification; actual
+Sparkle CLI installation from the production HTTPS feed into an isolated older
+full-App fixture; bad-signature rejection; download interruption; read-only
+volume rejection. GUI Later/Restart interaction, running terminal UX and the
+user's Gatekeeper/enterprise admission policies are not covered by those tests.
+
+## Maintainer release procedure
 
 1. Establish approved safe storage for an Ed25519 release-signing private key.
    Generate it using Sparkle's official tooling. Do not commit or log it, place
