@@ -28,7 +28,7 @@ struct TabBarItem: View {
             HoverableIconButton(
                 systemName: "xmark",
                 fontSize: 9,
-                size: 16,
+                size: Theme.paneTabCloseButtonSize,
                 help: "Close tab",
                 action: onClose
             )
@@ -36,7 +36,7 @@ struct TabBarItem: View {
         }
         .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.62))
         .padding(.horizontal, 11)
-        .padding(.vertical, 8)
+        .padding(.vertical, Theme.paneTabVerticalPadding)
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous))
         .contentShape(Rectangle())

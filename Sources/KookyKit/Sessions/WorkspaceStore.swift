@@ -556,6 +556,9 @@ final class WorkspaceStore {
         let pane = Pane()
         let root = PaneNode(pane: pane)
         let workspace = Workspace(workingDirectory: dir, root: root)
+        // Startup seed/restore is quiet; an actively added workspace gets a
+        // single presentation spring without animating terminal geometry.
+        workspace.insertionAnimationPending = !workspaces.isEmpty && activate
         workspace.worktreeParentId = worktreeParent?.id
         workspace.worktreeBranch = worktreeBranch
         workspace.sshRemoteHost = Self.normalizedSSHHost(sshRemoteHost)

@@ -340,6 +340,7 @@ struct SidebarWorkspaceRow: View {
                 onSetTag(tag)
             }
         }
+        .modifier(WorkspaceInsertionPresentation(workspace: workspace))
         .help(workspace.sidebarTooltip(agents: readout.agents))
         .onChange(of: workspace.renameRequested) { _, requested in
             if requested { consumeRenameRequest() }
@@ -595,5 +596,35 @@ struct SidebarWorkspaceRow: View {
         if isActive { return Theme.workspaceSelectionSurface }
         if isHovered { return Theme.workspaceHoverSurface }
         return .clear
+    }
+}
+
+/// Transform only the new sidebar card, never the workspace's terminal or
+/// the list's layout. The transient model claim survives view recreation.
+private struct WorkspaceInsertionPresentation: ViewModifier {
+    let workspace: Workspace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var entered: Bool
+
+    init(workspace: Workspace) {
+        self.workspace = workspace
+        _entered = State(initialValue: !workspace.insertionAnimationPending)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(entered || reduceMotion ? 1 : 0.975, anchor: .leading)
+            .opacity(entered || reduceMotion ? 1 : 0.65)
+            .onAppear {
+                let pending = workspace.consumeInsertionAnimation()
+                if pending && !reduceMotion {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        entered = true
+                    }
+                } else { entered = true }
+            }
+            .onChange(of: reduceMotion) { _, reduced in
+                if reduced { entered = true }
+            }
     }
 }

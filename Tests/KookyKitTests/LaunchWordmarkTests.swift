@@ -3,6 +3,14 @@ import XCTest
 
 @MainActor
 final class LaunchWordmarkTests: XCTestCase {
+    func testWorkspaceInsertionClaimIsTransientAndSingleUse() {
+        let workspace = Workspace(workingDirectory: URL(fileURLWithPath: "/tmp"), root: PaneNode(pane: Pane()))
+        XCTAssertFalse(workspace.consumeInsertionAnimation())
+        workspace.insertionAnimationPending = true
+        XCTAssertTrue(workspace.consumeInsertionAnimation())
+        XCTAssertFalse(workspace.consumeInsertionAnimation())
+    }
+
     func testOnlyOneClaimAcrossSidebarRecreation() {
         let gate = LaunchWordmarkGate()
         XCTAssertEqual(gate.claim(reduceMotion: false, roll: 10), false)

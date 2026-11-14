@@ -4,6 +4,16 @@ import Foundation
 @Observable
 final class Workspace: Identifiable {
     let id: UUID
+    // Presentation-only, excluded from session persistence. Claim once so
+    // reorder, selection, compact/full toggles and remounting never replay it.
+    @ObservationIgnored var insertionAnimationPending = false
+
+    func consumeInsertionAnimation() -> Bool {
+        let pending = insertionAnimationPending
+        insertionAnimationPending = false
+        return pending
+    }
+
     /// Project root. New tabs spawn here; the active pane's active tab's OSC 7
     /// reports keep this in sync — `cd` in any visible terminal updates the
     /// workspace, the next new pane / tab inherits the latest path.

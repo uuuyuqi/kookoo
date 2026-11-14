@@ -41,7 +41,7 @@ struct TabBarView: View {
             // ScrollView so they stay put while the tabs scroll.
             splitButtons
         }
-        .frame(height: Theme.contentHeaderHeight)
+        .frame(height: Theme.paneTabBarHeight)
 
     }
 

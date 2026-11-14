@@ -402,10 +402,14 @@ enum Theme {
         + titlebarControlRadius
         + space3
 
-    /// The left section title, every pane tab strip, and the full right-panel
-    /// title share one baseline. Keeping this in the theme prevents the three
-    /// independently-owned surfaces from drifting apart again.
+    /// Section titles in the sidebars keep their existing baseline.
     static let contentHeaderHeight: CGFloat = 42
+
+    /// Pane tabs are denser than sidebar section titles. Keep the existing
+    /// 28pt add/split controls with 3pt clearance above and below.
+    static let paneTabBarHeight: CGFloat = 34
+    static let paneTabVerticalPadding: CGFloat = 4
+    static let paneTabCloseButtonSize: CGFloat = 20
 
     /// Shared vertical breathing room for the left workspace rows and the
     /// right agent-panel rows so the two sidebars keep the same density.

@@ -5,6 +5,7 @@ Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 ## v0.1.7 — 2026-11-14
 
 - Added a one-time sidebar greeting with native rounded lettering: a small collision, brief pink/violet hold, then a gentle return to the theme foreground. A 10% launch-only “cool cool” variant settles back to Kookoo.
+- Pane tab strips are more compact (42pt to 34pt), preserving button targets and text sizes. Newly added sidebar workspace cards get a restrained single spring without animating terminal geometry.
 - Reduced Motion shows the static title. Workspace changes and sidebar recreation do not replay the greeting. No terminal sessions or engine configuration are changed.
 
 ## v0.51.12 — 2026-10-12
