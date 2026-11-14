@@ -45,6 +45,7 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 | Reasonix | `reasonix` | ✓ | ✓ | ✓ |
 | Kiro CLI | `kiro-cli` | ✗ | ✗ | ✓ |
 | Droid | `droid` | ✓ | ✗ | ✓ |
+| Devin CLI | `devin` | ✓ | ✗ | ✗ |
 | Qoder CLI | `qoder` | ✗ | ✗ | ✗ |
 | Qoder CN CLI | `qodercn` | ✗ | ✗ | ✗ |
 | Qoder CLI (Legacy) | `qodercli` | ✗ | ✗ | ✗ |
