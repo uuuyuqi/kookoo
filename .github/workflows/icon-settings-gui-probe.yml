@@ -38,7 +38,7 @@ jobs:
           set -e
           cat "$ROOT/evidence/open-settings.log"
           echo "OPEN_SETTINGS_EXIT=$RC"
-          sleep 2
+          sleep 5
           screencapture -x "$ROOT/evidence/settings.png"
           if [ "$RC" != 0 ]; then
             echo "GUI_BLOCKED_BY_EXISTING_RUNNER_PERMISSIONS; no permissions granted or bypassed."
@@ -46,7 +46,14 @@ jobs:
           fi
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/settings-ax.txt" 2>&1 || true
           cat "$ROOT/evidence/settings-ax.txt"
-          osascript -e 'tell application "System Events" to tell process "Kookoo" to click static text "Appearance" of group 1 of window "Settings"'
+          osascript <<'AS'
+          tell application "System Events" to tell process "Kookoo"
+            set frontmost to true
+            set p to position of static text "Appearance" of group 1 of window "Settings"
+            set z to size of static text "Appearance" of group 1 of window "Settings"
+            click at {(item 1 of p) + (item 1 of z) / 2, (item 2 of p) + (item 2 of z) / 2}
+          end tell
+          AS
           sleep 2
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/icons-ax.txt" 2>&1
           cat "$ROOT/evidence/icons-ax.txt"
