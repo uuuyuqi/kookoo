@@ -1223,6 +1223,7 @@ struct KookySettingsView: View {
 
     private var appearanceDetail: some View {
         VStack(alignment: .leading, spacing: 0) {
+            AppIconSettingsView()
             SettingsSection(title: "Appearance") {
                 SettingsRow(label: "mode") {
                     Picker("", selection: $model.appearanceMode) {

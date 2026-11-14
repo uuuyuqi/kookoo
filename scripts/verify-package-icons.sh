@@ -13,6 +13,8 @@ if plutil -extract CFBundleIconName raw "$PLIST" >/dev/null 2>&1; then
     echo 'Unexpected asset-catalog icon key in standalone-ICNS app' >&2; exit 1
 fi
 test -s "$APP/Contents/Resources/AppIcon.icns"
+cmp "$APP/Contents/Resources/AppIcon.icns" "$APP/Contents/Resources/IconChoices/default.icns"
+test "$(find "$APP/Contents/Resources/IconChoices" -name '*.icns' | wc -l | tr -d ' ')" = 21
 test -s "$MOUNT/.VolumeIcon.icns"
 cmp "$APP/Contents/Resources/AppIcon.icns" "$MOUNT/.VolumeIcon.icns"
 ATTRS="$(xcrun GetFileInfo -a "$MOUNT")"

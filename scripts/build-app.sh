@@ -118,6 +118,12 @@ else
     exit 1
 fi
 
+# Immutable icon sources are included BEFORE signing. Never use a prior-version
+# backup to restore the default after Sparkle replaces the app.
+mkdir -p "${APP}/Contents/Resources/IconChoices"
+cp "${APP}/Contents/Resources/AppIcon.icns" "${APP}/Contents/Resources/IconChoices/default.icns"
+cp branding/alternates/*.icns "${APP}/Contents/Resources/IconChoices/"
+
 # SPM ships the resource bundle as a flat directory, but its `.bundle` suffix
 # triggers codesign's bundle validator → "bundle format invalid". Promote it
 # to the canonical macOS bundle layout (Contents/Info.plist +
