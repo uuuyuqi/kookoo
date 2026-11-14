@@ -32,7 +32,12 @@ final class LocalizedReadmeTests: XCTestCase {
             XCTAssertTrue(text.contains("include_prereleases"), name)
             XCTAssertTrue(text.contains("Pre-release"), name)
             XCTAssertFalse(text.contains("/releases/latest"), name)
-            XCTAssertFalse(text.contains("iAmCorey/kooky/releases"), name)
+            // The pinned upstream engine link documents a build dependency,
+            // not an application download. All other release links must be ours.
+            let distributionText = text.replacingOccurrences(
+                of: "https://github.com/iAmCorey/kooky/releases/tag/v0.50.5", with: ""
+            )
+            XCTAssertFalse(distributionText.contains("iAmCorey/kooky/releases"), name)
             XCTAssertTrue(text.contains("[Kooky](https://github.com/iAmCorey/kooky)"), name)
             XCTAssertTrue(text.contains("[LICENSE](LICENSE)"), name)
             XCTAssertTrue(text.contains("[NOTICE.md](NOTICE.md)"), name)
