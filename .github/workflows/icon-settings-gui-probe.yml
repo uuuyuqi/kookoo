@@ -1,0 +1,53 @@
+name: Isolated Icon Settings GUI
+on:
+  push:
+    branches: [research/icon-switch-safety-20261114]
+    paths: [.github/workflows/icon-settings-gui-probe.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: macos-26
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - shell: bash
+        run: |
+          set -eu
+          ROOT="$(mktemp -d)"
+          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
+          mkdir -p "$ROOT/evidence" "$ROOT/mount" "$ROOT/download"
+          exec > >(tee "$ROOT/evidence/gui.log") 2>&1
+          gh run download 43602214461 --repo uuuyuqi/kookoo -n Kookoo-macOS -D "$ROOT/download"
+          find "$ROOT/download" -maxdepth 3 -type f
+          DMG="$(find "$ROOT/download" -name '*.dmg' | head -1)"
+          hdiutil attach "$DMG" -readonly -nobrowse -mountpoint "$ROOT/mount" -quiet
+          ditto "$ROOT/mount/Kookoo.app" "$ROOT/Kookoo.app"
+          hdiutil detach "$ROOT/mount" -quiet
+          APP="$ROOT/Kookoo.app"
+          codesign --verify --deep --strict "$APP"
+          open -n "$APP" --args -SUEnableAutomaticChecks NO
+          sleep 5
+          screencapture -x "$ROOT/evidence/launched.png"
+          # Use only existing permissions; never change TCC, SIP, or Gatekeeper.
+          set +e
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to keystroke "," using command down' >"$ROOT/evidence/open-settings.log" 2>&1
+          RC=$?
+          set -e
+          cat "$ROOT/evidence/open-settings.log"
+          echo "OPEN_SETTINGS_EXIT=$RC"
+          sleep 2
+          screencapture -x "$ROOT/evidence/settings.png"
+          if [ "$RC" != 0 ]; then
+            echo "GUI_BLOCKED_BY_EXISTING_RUNNER_PERMISSIONS; no permissions granted or bypassed."
+            exit 0
+          fi
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/settings-ax.txt" 2>&1 || true
+          cat "$ROOT/evidence/settings-ax.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: icon-settings-gui
+          path: ${{ env.ROOT }}/evidence
