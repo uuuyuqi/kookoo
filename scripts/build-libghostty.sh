@@ -45,7 +45,8 @@ export PATH="$TMP/zig:$PATH"
 export ZIG_GLOBAL_CACHE_DIR="$TMP/zig-cache"
 (
   cd "$TMP/source"
-  "$TMP/zig/zig" build test -Doptimize=ReleaseSafe -Dapp-runtime=none
+  "$TMP/zig/zig" build test --summary all -Doptimize=ReleaseSafe -Dapp-runtime=none \
+    -Demit-macos-app=false -Demit-xcframework=false
   "$TMP/zig/zig" build -Doptimize=ReleaseFast -Demit-xcframework=true \
     -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false
 )

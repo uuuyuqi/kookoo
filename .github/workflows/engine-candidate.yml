@@ -28,9 +28,6 @@ jobs:
           cd ../..
           mkdir -p Vendor
           tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
-          # build-app calls setup-libghostty; this test-only stamp prevents it
-          # replacing the candidate with the production prebuilt archive.
-          printf '%s\n' '88c3325dc9698d887da7e07ee0f9b79c53020be2-kooky53r1' > Vendor/.ghostty-sha
           swift test --build-system native
           bash scripts/build-app.sh
           codesign --verify --deep --strict dist/Kookoo.app
