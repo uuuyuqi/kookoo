@@ -31,7 +31,8 @@ jobs:
           codesign --verify --deep --strict "$APP"
           open -n "$APP" --args -SUEnableAutomaticChecks NO
           sleep 5
-          PID="$(pgrep -f "^$APP/Contents/MacOS/Kookoo$" | head -1)"
+          ps -axo pid,command
+          PID="$(pgrep -f '/Kookoo.app/Contents/MacOS/Kookoo' | head -1)"
           test -n "$PID"
           echo "LIVE_PID=$PID"
           cp "$ROOT/alternative.icns" "$APP/Contents/Resources/AppIcon.icns"
