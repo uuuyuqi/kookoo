@@ -1247,7 +1247,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         })
         let viewEntries: [MenuEntry] = [
             selfRow("Toggle Sidebar", #selector(handleToggleSidebar), "s", modifiers: [.command, .control]),
-            selfRow("Toggle Compact Sidebar", #selector(handleToggleCompactSidebar), "b"),
+            selfRow("Show/Hide Sidebar", #selector(handleToggleSidebarVisibility), "b"),
             .separator,
             selfRow("Increase Font Size", #selector(handleIncreaseFontSize), "="),
             selfRow("Decrease Font Size", #selector(handleDecreaseFontSize), "-"),
@@ -1808,7 +1808,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         if menuItemMatches(
             menuItem,
             #selector(handleToggleSidebar),
-            #selector(handleToggleCompactSidebar),
+            #selector(handleToggleSidebarVisibility),
             #selector(handleCloseWorkspace),
             #selector(handleRenameWorkspace)
         ) {
@@ -1857,10 +1857,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         activeStore?.active?.activeSession?.engine.performAction("jump_to_prompt:1")
     }
 
-    @objc private func handleToggleCompactSidebar() {
+    @objc private func handleToggleSidebarVisibility() {
         guard let store = activeStore else { return }
         withAnimation(Theme.chromeTransition) {
-            store.setSidebarMode(store.sidebarMode.toggledCompact)
+            store.setSidebarMode(store.sidebarMode.toggledVisibility)
         }
     }
 
