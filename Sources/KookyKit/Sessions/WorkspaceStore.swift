@@ -1692,6 +1692,7 @@ final class WorkspaceStore {
         let newSession = spawnSession(template: template, initialCwd: cwd, sshRemoteHost: workspace.sshRemoteHost)
         wireSessionCallbacks(engine: newSession.engine, session: newSession, workspace: workspace, codexRolloutId: newSession.resumedConversationId)
         let newPane = Pane(tabs: [newSession], activeTabId: newSession.id)
+        newPane.insertionAnimationPending = true
         let firstChild = PaneNode(pane: existing)
         let secondChild = PaneNode(pane: newPane)
         leafNode.content = .split(orientation: orientation, first: firstChild, second: secondChild, fraction: 0.5)

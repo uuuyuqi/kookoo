@@ -46,7 +46,7 @@ private struct PaneView: View {
     @Bindable var store: WorkspaceStore
     let isFocused: Bool
 
-    private static let inactivePaneOpacity: Double = 0.5
+    private static let inactivePaneOpacity: Double = 0.82
 
     /// "Work with this pane": promote it AND hand its terminal the keyboard.
     /// Shared by the pane-wide tap and focus-follows-mouse hover. If the
@@ -92,7 +92,9 @@ private struct PaneView: View {
                     .transaction { transaction in
                         transaction.animation = nil
                     }
-                    .padding(8)
+                    // Preserve the original terminal's horizontal inset: the
+                    // card's outer inset supplies the other three points.
+                    .padding(PaneCardStyle.terminalInset)
                     .overlay(RightClickCatcher { unit in
                         // Promote this pane to the workspace's active one —
                         // RightClickCatcher swallows rightMouseDown before
@@ -154,12 +156,14 @@ private struct PaneView: View {
                 // Always present now that it hosts the compose button — a
                 // stable bottom affordance, not gated on git / env / zoom data.
                 Rectangle().fill(Theme.chromeSeparator).frame(height: 1)
-                PaneStatusBar(session: active, paneId: pane.id, workspace: workspace, store: store)
+                PaneStatusBar(session: active, workspace: workspace, store: store)
             } else {
                 Color.clear
             }
         }
         .opacity(paneOpacity)
+        .modifier(PaneCardChrome(isFocused: isFocused))
+        .modifier(PaneInsertionPresentation(pane: pane))
         // Clicking ANY part of a pane — tab bar, status bar, the gaps —
         // means "work with this pane": promote it AND hand its terminal
         // the keyboard focus. `.simultaneousGesture` so tab switches,
@@ -416,10 +420,6 @@ private struct StatusBarIconButton: View {
 /// when no segment has data.
 private struct PaneStatusBar: View {
     @Bindable var session: Session
-    /// Which pane this status bar belongs to. The zoom button uses this so
-    /// clicking a non-active pane's button still zooms *that* pane (not
-    /// whatever has keyboard focus).
-    let paneId: UUID
     @Bindable var workspace: Workspace
     let store: WorkspaceStore
     /// `.shared` is the only producer — `@Observable` tracks per-property
@@ -429,23 +429,7 @@ private struct PaneStatusBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // Zoom + compose: bracket-pill icon buttons. Zoom shows only when
-            // meaningful; compose is always present — the reason the bar's
-            // visibility gate is gone (the bar is the stable host for it).
-            if workspace.canZoom {
-                let isZoomed = workspace.isZoomed(paneId)
-                StatusBarIconButton(
-                    systemName: isZoomed
-                        ? "arrow.down.right.and.arrow.up.left"
-                        : "arrow.up.left.and.arrow.down.right",
-                    isActive: isZoomed,
-                    help: isZoomed ? "Exit zoom (⌘⇧E)" : "Zoom pane (⌘⇧E)"
-                ) {
-                    withAnimation(Theme.chromeTransition) {
-                        store.toggleZoom(in: workspace, paneId: paneId)
-                    }
-                }
-            }
+            // Compose stays in the footer; pane zoom lives beside split controls.
             StatusBarIconButton(
                 systemName: "long.text.page.and.pencil",
                 isActive: session.composerActive,
@@ -455,7 +439,7 @@ private struct PaneStatusBar: View {
             }
             // Tool-call activity pill — Claude-only, shows the latest
             // tool call + click-to-popover for history. Sits on the left
-            // (after zoom) so the rotating-content piece doesn't compete
+            // (after compose) so the rotating-content piece doesn't compete
             // with the trailing-aligned static signals (git / env / etc.).
             if showToolCallActivityPill(for: session) {
                 ToolCallActivityPill(session: session)
@@ -1826,7 +1810,7 @@ private struct SplitContainer: View {
                                 .frame(width: firstSize)
                                 .offset(x: firstPushX, y: firstPushY)
                                 .clipped()
-                            Rectangle().fill(Theme.chromeHairline)
+                            Color.clear
                                 .frame(width: Self.dividerThickness)
                                 .opacity(chromeVisible)
                             PaneTreeView(node: second, workspace: workspace, store: store)
@@ -1852,7 +1836,7 @@ private struct SplitContainer: View {
                                 .frame(height: firstSize)
                                 .offset(x: firstPushX, y: firstPushY)
                                 .clipped()
-                            Rectangle().fill(Theme.chromeHairline)
+                            Color.clear
                                 .frame(height: Self.dividerThickness)
                                 .opacity(chromeVisible)
                             PaneTreeView(node: second, workspace: workspace, store: store)
@@ -1892,11 +1876,8 @@ private struct SplitContainer: View {
                         dividerSuspendedEngines = []
                     }
                 }
-                // Animation now driven by `withAnimation(Theme.chromeTransition)`
-                // at the toggle call sites — that propagates to the outer
-                // PaneStatusBar visibility too, so the chrome row that
-                // hosts the zoom button can animate in/out together with
-                // the split-tree morph.
+                // Zoom animation is driven at the toggle call sites;
+                // the header's zoom button stays with its owning pane.
             }
         )
     }

@@ -9,6 +9,7 @@ struct TabBarView: View {
     let store: WorkspaceStore
 
     @State private var isAddMenuOpen = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
@@ -28,17 +29,20 @@ struct TabBarView: View {
                 }
                 .padding(.horizontal, 10)
             }
+            // Window zoom belongs to the tab area, not the pane/split
+            // controls. A double-click on pane zoom must never zoom the window.
+            .background {
+                TabBarDoubleClickHandler {
+                    NSApplication.shared.keyWindow?.performZoom(nil)
+                }
+            }
 
             // Split controls pinned to the trailing edge — outside the
             // ScrollView so they stay put while the tabs scroll.
             splitButtons
         }
         .frame(height: Theme.contentHeaderHeight)
-        .background {
-            TabBarDoubleClickHandler {
-                NSApplication.shared.keyWindow?.performZoom(nil)
-            }
-        }
+
     }
 
     /// Split-right / split-down buttons. Mirror ⌘D / ⌘⇧D exactly: Split
@@ -47,6 +51,24 @@ struct TabBarView: View {
     /// `AppDelegate.handleSplitRight` / `handleSplitDown`.
     private var splitButtons: some View {
         HStack(spacing: Theme.chromeControlSpacing) {
+            if workspace.canZoom {
+                let isZoomed = workspace.isZoomed(pane.id)
+                HoverableIconButton(
+                    systemName: isZoomed
+                        ? "arrow.down.right.and.arrow.up.left"
+                        : "arrow.up.left.and.arrow.down.right",
+                    fontSize: 12,
+                    size: Theme.chromeToolbarButtonSize,
+                    help: isZoomed ? "Exit zoom (⌘⇧E)" : "Zoom pane (⌘⇧E)"
+                ) {
+                    withAnimation(reduceMotion ? nil : Theme.chromeTransition) {
+                        store.toggleZoom(in: workspace, paneId: pane.id)
+                    }
+                }
+                .background(isZoomed ? Theme.chromeActive : .clear,
+                            in: RoundedRectangle(cornerRadius: Theme.chromeButtonCornerRadius))
+                .accessibilityValue(isZoomed ? "Zoomed" : "Not zoomed")
+            }
             HoverableIconButton(
                 systemName: "square.split.2x1",
                 fontSize: 12,
