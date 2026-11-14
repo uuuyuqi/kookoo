@@ -14,7 +14,7 @@ import Foundation
 enum RemoteLoginMarker {
     /// `internal` so the ssh wrapper emit interpolates the same constant the
     /// parse reads — one source of truth for the wire prefix.
-    static let titlePrefix = "kooky-remote-login:"
+    static let titlePrefix = "kookoo-remote-login:"
 
     /// Emitted by the wrapper AFTER ssh returns — the wrapper waits for ssh
     /// (no exec) precisely so it can send this. `remoteHost` is cleared by
@@ -22,7 +22,7 @@ enum RemoteLoginMarker {
     /// but wasn't — a remote shell with its own shell integration emits
     /// 133;D through the connection on every remote command, which read as
     /// "ssh exited" after the first remote command finished.
-    static let logoutTitle = "kooky-remote-logout"
+    static let logoutTitle = "kookoo-remote-logout"
 
     static func isLogoutTitle(_ raw: String) -> Bool {
         normalizedTitle(raw) == logoutTitle

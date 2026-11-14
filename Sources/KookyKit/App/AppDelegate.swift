@@ -150,7 +150,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         UserDefaults.standard.register(defaults: ["NSInitialToolTipDelay": 600])
         // First-launch onboarding (blocking NSAlert if a ghostty config exists)
         // — must run before any window is created and before any libghostty
-        // surface is spawned, since `LibghosttyApp` reads `~/.kooky/settings.json`
+        // surface is spawned, since `LibghosttyApp` reads `~/.kookoo/settings.json`
         // at process init when the first surface is created.
         KookyOnboarding.runIfNeeded()
         let settings = KookySettingsModel.shared
@@ -198,7 +198,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         // (the second persistence flush would write the phantom tab).
         hookServer.onCLIRequest = { [weak self] request, isCallerWaiting, completion in
             guard let self, !self.isTerminating else {
-                completion(.failure("kooky is shutting down"))
+                completion(.failure("kookoo is shutting down"))
                 return
             }
             self.cliController.handle(
@@ -217,7 +217,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
             return nil
         }
         hookServer.start()
-        // Mirror kooky-cli into Application Support (same Gatekeeper story
+        // Mirror kookoo-cli into Application Support (same Gatekeeper story
         // as KookyHook: /Applications exec-assessment kills fresh-cdhash
         // adhoc binaries run from inside the bundle). Launch-time so the
         // stable path always carries the running build's CLI.
@@ -518,7 +518,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
 
     // MARK: - Deep links
 
-    /// `kooky://` URL entry point (registered via `CFBundleURLTypes` in the
+    /// `kookoo://` URL entry point (registered via `CFBundleURLTypes` in the
     /// generated Info.plist, so it only fires in the packaged .app — Launch
     /// Services never routes URLs to a bundle-less `swift run` binary).
     /// Unparseable URLs are dropped silently: the scheme is public surface,
@@ -557,7 +557,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
             case .failed(let reason):
                 self?.presentDeepLinkFailure(reason)
             case .dropped(let reason):
-                NSLog("kooky: resume request dropped — %@", reason)
+                NSLog("kookoo: resume request dropped — %@", reason)
             }
         }
     }
@@ -572,7 +572,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
     /// the record's dead cwd (`resolvedSpawnCwd` falls back to `$HOME`, the
     /// History row's behavior).
     ///
-    /// Shared core for BOTH front doors (kooky://resume, `kooky-cli
+    /// Shared core for BOTH front doors (kookoo://resume, `kookoo-cli
     /// resume`): every path lands in `completion` exactly once, and the
     /// wrapper decides the feedback channel — sheet for links, response
     /// line for the CLI. The `dropped` tiers were always silent for links;
@@ -665,7 +665,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
                 spawnCwd = ((await callerProbe.value) ?? nil) ?? record?.cwd
             }
             guard let self, !self.isTerminating else {
-                completion(.dropped("kooky is shutting down"))
+                completion(.dropped("kookoo is shutting down"))
                 return
             }
             // Before ANY side effect below — the reveal fronts a window, and
@@ -691,7 +691,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
                 if let cwd {
                     completion(.failed("directory does not exist: \(cwd)"))
                 } else {
-                    completion(.failed("conversation '\(conversationId)' is not among the newest sessions kooky scans for \(agentId) — pass a cwd (&cwd= / --cwd) to resume an older one"))
+                    completion(.failed("conversation '\(conversationId)' is not among the newest sessions kookoo scans for \(agentId) — pass a cwd (&cwd= / --cwd) to resume an older one"))
                 }
                 return
             }
@@ -707,7 +707,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
                 return
             }
             guard let landing = self.deepLinkController() else {
-                completion(.dropped("kooky is shutting down"))
+                completion(.dropped("kookoo is shutting down"))
                 return
             }
             let controller = landing.controller
@@ -736,7 +736,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
                 completion(.failed(refusal.message(agentId: agentId, conversationId: conversationId)))
                 return
             }
-            // Same shape as `kooky-cli open`: a link that arrived with zero
+            // Same shape as `kookoo-cli open`: a link that arrived with zero
             // terminal windows had one built for it, and that window's seed
             // tab is a byproduct of this resume, not a session of the user's.
             if landing.builtWindow {
@@ -767,7 +767,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
     }
 
     private func presentDeepLinkFailure(_ reason: String) {
-        NSLog("kooky: deep link rejected — %@", reason)
+        NSLog("kookoo: deep link rejected — %@", reason)
         // Defensive cap besides the parse-level limits: the sheet has no
         // scroll view, so an oversized reason must never reach layout.
         let display = reason.count > 500 ? String(reason.prefix(500)) + "…" : reason
@@ -795,7 +795,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
 
     // MARK: - CLI control channel
 
-    /// Verb executor for `kooky-cli` requests arriving over the hook socket.
+    /// Verb executor for `kookoo-cli` requests arriving over the hook socket.
     /// The window list, reveal, template lookup, and resume pipeline are
     /// closures so the controller's decisions stay unit-testable without an
     /// AppDelegate (DeepLinkTests' split: pure decisions pinned, AppKit
@@ -837,7 +837,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
             // the same synchronous tick, and resumeSession re-checks after
             // its async hop (the load-bearing one).
             guard let self else {
-                completion(.dropped("kooky is shutting down"))
+                completion(.dropped("kookoo is shutting down"))
                 return
             }
             self.resumeSession(
@@ -1010,7 +1010,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
     /// about to show UI in it (⌘T, ⌘O's sheet, ⌘P, the inbox, a deep link,
     /// menu-bar Open, Dock reopen) calls this first so it acts on a window
     /// the user can see. Pure queries — `activeController`, the CLI's
-    /// `windows()`, menu validation — never do, so `kooky-cli list` or a
+    /// `windows()`, menu validation — never do, so `kookoo-cli list` or a
     /// background `rename` can't pop the window. Returns whether one was shown.
     @discardableResult
     private func revealHiddenWindow() -> Bool {
@@ -1246,6 +1246,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         })
         let viewEntries: [MenuEntry] = [
             selfRow("Toggle Sidebar", #selector(handleToggleSidebar), "s", modifiers: [.command, .control]),
+            selfRow("Toggle Compact Sidebar", #selector(handleToggleCompactSidebar), "b"),
             .separator,
             selfRow("Increase Font Size", #selector(handleIncreaseFontSize), "="),
             selfRow("Decrease Font Size", #selector(handleDecreaseFontSize), "-"),
@@ -1806,6 +1807,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         if menuItemMatches(
             menuItem,
             #selector(handleToggleSidebar),
+            #selector(handleToggleCompactSidebar),
             #selector(handleCloseWorkspace),
             #selector(handleRenameWorkspace)
         ) {
@@ -1852,6 +1854,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
 
     @objc private func handleJumpToNextPrompt() {
         activeStore?.active?.activeSession?.engine.performAction("jump_to_prompt:1")
+    }
+
+    @objc private func handleToggleCompactSidebar() {
+        guard let store = activeStore else { return }
+        withAnimation(Theme.chromeTransition) {
+            store.setSidebarMode(store.sidebarMode.toggledCompact)
+        }
     }
 
     @objc private func handleToggleSidebar() {
@@ -1911,10 +1920,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
         let originalTitle = sender.title
         sender.title = String(localized: "Checking for Updates…", bundle: .kookyResources)
         sender.isEnabled = false
-        // KOOKY_FAKE_VERSION lets us preview the "newer release" prompt without
+        // KOOKOO_FAKE_VERSION lets us preview the "newer release" prompt without
         // mutating KookyApp.displayVersion. Launch via:
-        //   open --env KOOKY_FAKE_VERSION=0.11.0 /Applications/Kooky.app
-        let currentVersion = ProcessInfo.processInfo.environment["KOOKY_FAKE_VERSION"]
+        //   open --env KOOKOO_FAKE_VERSION=0.11.0 /Applications/Kooky.app
+        let currentVersion = ProcessInfo.processInfo.environment["KOOKOO_FAKE_VERSION"]
             ?? KookyApp.displayVersion
         Task { @MainActor in
             let outcome = await UpdateChecker.check(currentVersion: currentVersion)

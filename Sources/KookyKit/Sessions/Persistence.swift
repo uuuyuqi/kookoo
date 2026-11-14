@@ -294,7 +294,7 @@ final class AppPersistence {
     /// The real `state.json`. Tests inject a temp path via `init(fileURL:)`.
     static var defaultFileURL: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = support.appendingPathComponent("kooky", isDirectory: true)
+        let dir = support.appendingPathComponent("kookoo", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("state.json")
     }

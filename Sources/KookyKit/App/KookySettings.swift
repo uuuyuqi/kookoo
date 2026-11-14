@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import GhosttyKit
 
-/// Reads `~/.kooky/settings.json` and forwards its `terminal.*` section to
+/// Reads `~/.kookoo/settings.json` and forwards its `terminal.*` section to
 /// libghostty. JSONC-tolerant (line + block comments stripped before parse).
 ///
 /// The schema has two layers:
@@ -15,7 +15,7 @@ enum KookySettings {
     static let pairedThemeSchemaVersion = 2
 
     static let directory: URL = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent(".kooky", isDirectory: true)
+        .appendingPathComponent(".kookoo", isDirectory: true)
 
     static let url: URL = directory.appendingPathComponent("settings.json")
 
@@ -65,7 +65,7 @@ enum KookySettings {
     static func loadParsed() -> [String: Any]? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         guard let obj = try? JSONSerialization.jsonObject(with: data, options: [.json5Allowed]) else {
-            NSLog("kooky: settings.json parse failed")
+            NSLog("kookoo: settings.json parse failed")
             return nil
         }
         return obj as? [String: Any]
@@ -136,7 +136,7 @@ enum KookySettings {
             }
             // A ghostty-native numeric blur — leave opacity alone.
         }
-        loadGhosttyLines(lines, sourceName: "kooky-settings", into: config)
+        loadGhosttyLines(lines, sourceName: "kookoo-settings", into: config)
     }
 
     private static func loadGhosttyLines(
@@ -197,7 +197,7 @@ enum KookySettings {
 
     /// Builds the full libghostty configuration used at app start and for
     /// runtime reloads. Keep this as the single source for precedence:
-    /// ghostty defaults -> kooky baselines -> ~/.kooky/settings.json.
+    /// ghostty defaults -> kookoo baselines -> ~/.kookoo/settings.json.
     /// Ownership: the caller owns the returned config and must keep it
     /// alive until the NEXT config replaces it, then free it — see
     /// `LibghosttyApp.currentConfig` for why freeing sooner is unsafe.
@@ -216,7 +216,7 @@ enum KookySettings {
     /// Kooky's explicit ghostty overrides. Applied AFTER
     /// `ghostty_config_load_default_files` so they win over the user's own
     /// ghostty config, but BEFORE the settings.json `terminal.*` pass so each
-    /// key can still be overridden from ~/.kooky/settings.json.
+    /// key can still be overridden from ~/.kookoo/settings.json.
     /// - cursor-click-to-move: click anywhere on the current zsh / bash prompt
     ///   to jump the shell cursor there (the shell wrapper emits the OSC 133
     ///   `cl=line` markers libghostty needs).
@@ -254,9 +254,9 @@ enum KookySettings {
         let dir = KookyShellIntegration.kookyAppSupport("themes", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let stub = """
-        # kooky sentinel theme — intentionally empty. Its presence switches
+        # kookoo sentinel theme — intentionally empty. Its presence switches
         # ghostty's conditional-theme machinery on so color-scheme queries
-        # (CSI ?996n) and mode 2031 reports follow kooky's active theme.
+        # (CSI ?996n) and mode 2031 reports follow kookoo's active theme.
 
         """
         let sentinel: (String) -> String? = { name in
@@ -288,7 +288,7 @@ enum KookySettings {
             text += themeLine
         }
         text.withCString { cstr in
-            "kooky-baseline".withCString { source in
+            "kookoo-baseline".withCString { source in
                 ghostty_config_load_string(config, cstr, UInt(strlen(cstr)), source)
             }
         }
@@ -339,7 +339,7 @@ enum KookySettings {
         try? defaultTemplate.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    /// `mkdir -p ~/.kooky/`. Idempotent.
+    /// `mkdir -p ~/.kookoo/`. Idempotent.
     static func ensureDirectory() {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
@@ -357,7 +357,7 @@ enum KookySettings {
     }
 }
 
-/// First-launch onboarding: when `~/.kooky/` doesn't exist, ask the user
+/// First-launch onboarding: when `~/.kookoo/` doesn't exist, ask the user
 /// whether to import their existing `~/.config/ghostty/config` (if present)
 /// or start from a blank kooky template. Either way creates `settings.json`
 /// so subsequent launches skip this branch.
@@ -365,7 +365,7 @@ enum KookySettings {
 enum KookyOnboarding {
     static func runIfNeeded() {
         // Gate on the settings.json file existing rather than the directory —
-        // a previous run could have created `~/.kooky/` but failed to write
+        // a previous run could have created `~/.kookoo/` but failed to write
         // the file (disk full, perms), and skipping onboarding forever in
         // that state leaves the user with no settings at all.
         let fm = FileManager.default
@@ -383,8 +383,8 @@ enum KookyOnboarding {
 
     private static func promptGhosttyImport(from path: URL) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "Welcome to kooky", bundle: .kookyResources)
-        alert.informativeText = String(localized: "We found your existing ghostty configuration. Would you like to import it into kooky?\n\nYou can change settings any time via Help → Open Settings.", bundle: .kookyResources)
+        alert.messageText = String(localized: "Welcome to kookoo", bundle: .kookyResources)
+        alert.informativeText = String(localized: "We found your existing ghostty configuration. Would you like to import it into kookoo?\n\nYou can change settings any time via Help → Open Settings.", bundle: .kookyResources)
         alert.addButton(withTitle: String(localized: "Use ghostty settings", bundle: .kookyResources))
         alert.addButton(withTitle: String(localized: "Start fresh", bundle: .kookyResources))
 

@@ -1,0 +1,37 @@
+name: Kookoo checks
+on:
+  push:
+    branches: [main, 'fork/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-and-build:
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Prepare pinned engine
+        run: bash scripts/setup-libghostty.sh
+      - name: Run tests
+        run: swift test --build-system native
+      - name: Build app and DMG
+        run: |
+          bash scripts/build-app.sh
+          bash scripts/build-dmg.sh
+          codesign --verify --deep --strict dist/Kookoo.app
+          shasum -a 256 dist/Kookoo-*.dmg > dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kookoo-macOS
+          path: |
+            dist/Kookoo-*.dmg
+            dist/SHA256SUMS
+          if-no-files-found: error

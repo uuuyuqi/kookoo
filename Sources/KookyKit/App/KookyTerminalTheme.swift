@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 
 struct KookyTerminalTheme: Identifiable, Hashable {
-    static let bundledStoredValuePrefix = "kooky:"
+    static let bundledStoredValuePrefix = "kookoo:"
     static let defaultLightID = "one-light"
     static let defaultDarkID = "one-dark"
     static var defaultLightStoredValue: String { bundledStoredValue(for: defaultLightID) }

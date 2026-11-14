@@ -3,7 +3,7 @@ import XCTest
 @testable import KookyKit
 
 /// Opt-in performance benchmarks — run via `scripts/bench.sh` (or
-/// `KOOKY_BENCH=1 swift test -c release --filter PerformanceBenchmarks`).
+/// `KOOKOO_BENCH=1 swift test -c release --filter PerformanceBenchmarks`).
 /// Skipped in a normal `swift test` so the everyday suite stays fast.
 ///
 /// The synthetic fixture is FIXED-SIZE and deterministic, so its numbers are
@@ -15,11 +15,11 @@ final class PerformanceBenchmarks: XCTestCase {
 
     override func setUpWithError() throws {
         try XCTSkipUnless(
-            ProcessInfo.processInfo.environment["KOOKY_BENCH"] == "1",
+            ProcessInfo.processInfo.environment["KOOKOO_BENCH"] == "1",
             "benchmarks are opt-in — run scripts/bench.sh"
         )
         tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-bench-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-bench-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 

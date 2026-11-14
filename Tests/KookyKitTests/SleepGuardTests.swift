@@ -359,7 +359,7 @@ final class SleepGuardTests: XCTestCase {
     /// the privileged-helper install and pop an admin prompt. The model is a
     /// local instance and `scheduleSave` only holds it weakly, so the pending
     /// 300ms write finds a deallocated self and never touches the real
-    /// `~/.kooky/settings.json`.
+    /// `~/.kookoo/settings.json`.
     func testDialPulseBumpsOnlyOnRealChange() {
         let model = KookySettingsModel()
         model.awakeMode = .off

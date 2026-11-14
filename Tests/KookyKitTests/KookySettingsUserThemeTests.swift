@@ -140,7 +140,7 @@ final class KookySettingsUserThemeTests: XCTestCase {
 
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-user-theme-test-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-user-theme-test-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }

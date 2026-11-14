@@ -1,5 +1,24 @@
 import SwiftUI
 
+/// Single edit transaction: a duplicate request cannot erase a draft, and
+/// blur after Enter/Escape cannot submit the same edit a second time.
+struct InlineWorkspaceRenameState {
+    private(set) var isEditing = false
+    var text = ""
+
+    mutating func begin(title: String) {
+        guard !isEditing else { return }
+        text = title
+        isEditing = true
+    }
+
+    mutating func finish(commit: Bool) -> String? {
+        guard isEditing else { return nil }
+        isEditing = false
+        return commit ? text : nil
+    }
+}
+
 /// Finder-style tag strip for the workspace context menu — a clear slot then
 /// one swatch per colour. The active swatch also clears when clicked, so the
 /// strip toggles whichever way the user reaches for.
@@ -207,6 +226,7 @@ struct SidebarWorkspaceRow: View {
     let onDuplicate: () -> Void
     let onRename: (String) -> Void
     let onSetTag: (WorkspaceTag?) -> Void
+    var onRequestRename: (() -> Void)? = nil
     var disclosure: WorktreeDisclosure? = nil
     /// Non-nil for source (top-level, non-worktree) workspaces — the
     /// right-click menu surfaces a "Create Worktree…" entry that the
@@ -221,8 +241,8 @@ struct SidebarWorkspaceRow: View {
 
     @State private var isHovered = false
     @State private var isContextMenuOpen = false
-    @State private var isRenameOpen = false
-    @State private var pendingRename = ""
+    @State private var rename = InlineWorkspaceRenameState()
+    @FocusState private var renameFocused: Bool
     @State private var tagEditorSeed: PopoverPresentation<WorkspaceTag?>?
 
     var body: some View {
@@ -238,7 +258,7 @@ struct SidebarWorkspaceRow: View {
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous))
         .contentShape(Rectangle())
-        .onTapGesture(perform: onActivate)
+        .onTapGesture { if !rename.isEditing { onActivate() } }
         .onHover { isHovered = $0 }
         .overlay(RightClickCatcher { _ in isContextMenuOpen = true })
         .popover(isPresented: $isContextMenuOpen, arrowEdge: .trailing) {
@@ -257,7 +277,11 @@ struct SidebarWorkspaceRow: View {
                 KookyMenuDivider()
                 KookyMenuRow(title: "Rename Workspace…", shortcut: "⌘⇧R") {
                     isContextMenuOpen = false
-                    beginRename(deferred: true)
+                    // Let the menu dismiss before the row takes keyboard focus.
+                    DispatchQueue.main.async {
+                        if let onRequestRename { onRequestRename() }
+                        else { beginRename() }
+                    }
                 }
                 KookyMenuRow(title: "Duplicate Workspace") {
                     isContextMenuOpen = false
@@ -305,15 +329,23 @@ struct SidebarWorkspaceRow: View {
                 onSetTag(tag)
             }
         }
-        .popover(isPresented: $isRenameOpen, arrowEdge: .trailing) {
-            KookyRenameField(placeholder: "Workspace title", text: $pendingRename) {
-                onRename(pendingRename)
-                isRenameOpen = false
-            }
-        }
         .help(workspace.sidebarTooltip(agents: readout.agents))
         .onChange(of: workspace.renameRequested) { _, requested in
             if requested { consumeRenameRequest() }
+        }
+        .onChange(of: renameFocused) { _, focused in
+            if !focused { finishRename(commit: true) }
+        }
+        .onChange(of: isActive) { wasActive, active in
+            if wasActive && !active { finishRename(commit: true) }
+        }
+        .onChange(of: isCompact) { _, compact in
+            if compact { finishRename(commit: true) }
+        }
+        .onDisappear {
+            // A removed/virtualized row must not retain an editor or later
+            // submit into a workspace that no longer exists.
+            finishRename(commit: false)
         }
         .onAppear {
             // ⌘⇧R may reveal a hidden sidebar; this row then mounts with the
@@ -323,26 +355,43 @@ struct SidebarWorkspaceRow: View {
         }
     }
 
-    /// Consume the `Workspace.renameRequested` flag (the ⌘⇧R menu command) and
-    /// open the rename popover — shared by onChange (row already mounted) and
-    /// onAppear (row just mounted after a hidden sidebar was revealed).
+    /// Both the menu command and row context menu arrive through this flag.
     private func consumeRenameRequest() {
         workspace.renameRequested = false
-        beginRename(deferred: false)
+        beginRename()
     }
 
-    /// Seed the edit field from the current title and open the rename popover.
-    /// `deferred` waits one runloop tick — needed from the context menu, where
-    /// that popover is mid-dismiss and back-to-back popovers off the same
-    /// anchor glitch; the ⌘⇧R path opens synchronously. Skips when already
-    /// open so a re-trigger mid-edit can't wipe what the user is typing.
-    private func beginRename(deferred: Bool) {
-        guard !isRenameOpen else { return }
-        pendingRename = workspace.customTitle ?? workspace.title
-        if deferred {
-            DispatchQueue.main.async { isRenameOpen = true }
+    private func beginRename() {
+        rename.begin(title: workspace.customTitle ?? workspace.title)
+        // The field only exists after the state update is rendered.
+        DispatchQueue.main.async {
+            guard rename.isEditing else { return }
+            renameFocused = true
+        }
+    }
+
+    private func finishRename(commit: Bool) {
+        let value = rename.finish(commit: commit)
+        renameFocused = false
+        if let value { onRename(value) }
+    }
+
+    @ViewBuilder
+    private var workspaceTitle: some View {
+        if rename.isEditing {
+            TextField("Workspace title", text: $rename.text)
+                .textFieldStyle(.plain)
+                .font(Theme.display(13, weight: isActive ? .medium : .regular))
+                .foregroundStyle(Theme.chromeForeground)
+                .focused($renameFocused)
+                .onSubmit { finishRename(commit: true) }
+                .onExitCommand { finishRename(commit: false) }
+                .accessibilityLabel("Workspace title")
         } else {
-            isRenameOpen = true
+            Text(workspace.title)
+                .font(Theme.display(13, weight: isActive ? .medium : .regular))
+                .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.78))
+                .lineLimit(1)
         }
     }
 
@@ -351,10 +400,7 @@ struct SidebarWorkspaceRow: View {
             agentIcons(agents: agents)
                 .padding(.trailing, 3)
             VStack(alignment: .leading, spacing: 2) {
-                Text(workspace.title)
-                    .font(Theme.display(13, weight: isActive ? .medium : .regular))
-                    .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.78))
-                    .lineLimit(1)
+                workspaceTitle
                 subtitleRow
             }
             Spacer(minLength: 0)

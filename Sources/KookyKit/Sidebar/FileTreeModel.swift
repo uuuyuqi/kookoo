@@ -238,7 +238,7 @@ final class FileTreeModel {
     /// burst of watcher events / expands from stacking N concurrent large-
     /// directory walks on the cooperative pool; the version mirror above
     /// drops superseded queued work before it starts.
-    private static let listingQueue = DispatchQueue(label: "kooky.file-tree-listing", qos: .userInitiated)
+    private static let listingQueue = DispatchQueue(label: "kookoo.file-tree-listing", qos: .userInitiated)
 
     /// How listings execute. Production uses `listingQueue`; tests inject a
     /// synchronous runner so model assertions stay deterministic.

@@ -19,7 +19,7 @@ final class HookServerCLITests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        socketPath = NSTemporaryDirectory() + "kooky-cli-test-\(UUID().uuidString.prefix(8)).sock"
+        socketPath = NSTemporaryDirectory() + "kookoo-cli-test-\(UUID().uuidString.prefix(8)).sock"
     }
 
     override func tearDown() {
@@ -81,7 +81,7 @@ final class HookServerCLITests: XCTestCase {
         let engine = TestEngine()
         engine.foregroundPid = 123
         let session = Session(engine: engine, currentDirectory: URL(fileURLWithPath: "/tmp"), agent: .terminal)
-        session.consumeShellControlTitle("kooky-shell-control:available:123")
+        session.consumeShellControlTitle("kookoo-shell-control:available:123")
         startServer(onCLIRequest: nil)
         server?.onShellCommandRequest = { request in
             guard request.surface == session.id else { return nil }
@@ -141,7 +141,7 @@ final class HookServerCLITests: XCTestCase {
         let line = Data("{\"kind\":\"cli\",\"protocolVersion\":99,\"verb\":42}\n".utf8)
         let response = try decodeReply(roundTrip(line))
         XCTAssertFalse(response.ok)
-        XCTAssertTrue(response.error?.contains("update kooky") == true)
+        XCTAssertTrue(response.error?.contains("update kookoo") == true)
         XCTAssertTrue(response.error?.contains("99") == true)
     }
 
@@ -149,7 +149,7 @@ final class HookServerCLITests: XCTestCase {
         // Bypasses the CLI's own pre-check on purpose (a raw client): the
         // server truncates at the request cap and must still answer with
         // the real reason, not hang up (which the CLI would misreport as
-        // "kooky may be older than this kooky-cli").
+        // "kookoo may be older than this kookoo-cli").
         startServer(onCLIRequest: { _, _, completion in completion(KookyCLIResponse(ok: true)) })
         var padded = Data("{\"kind\":\"cli\",\"pad\":\"".utf8)
         padded.append(Data(repeating: 0x61, count: KookyCLIProtocol.maxRequestLineBytes))

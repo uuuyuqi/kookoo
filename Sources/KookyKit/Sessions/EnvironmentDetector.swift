@@ -120,7 +120,7 @@ enum EnvironmentDetector {
     /// directory's name is the version. mise / asdf don't surface a
     /// per-version env var — fall through to dotfile content.
     private static func detectNodeVersion(shellEnv: [String: String], cwd: URL, allowProjectFallback: Bool) -> String? {
-        if let live = normalizedVersion(shellEnv["KOOKY_NODE_VERSION"]) {
+        if let live = normalizedVersion(shellEnv["KOOKOO_NODE_VERSION"]) {
             return live
         }
         if let bin = shellEnv["NVM_BIN"], !bin.isEmpty,

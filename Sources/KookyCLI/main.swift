@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 import KookyHookKit
 
-// kooky-cli: the local control channel for a running kooky. External tools
+// kookoo-cli: the local control channel for a running kookoo. External tools
 // (Wake, Raycast, plain scripts) drive kooky through it: open a tab and run
 // a command, resume an agent conversation, list / focus / close tabs. Talks
 // the request/response branch of the hook socket (`kind: "cli"`); parsing,
@@ -19,12 +19,12 @@ import KookyHookKit
 // then waits (up to 10s) for the socket to come up.
 
 func fail(_ message: String) -> Never {
-    FileHandle.standardError.write(Data("kooky-cli: \(KookyHookKit.plain(message))\n".utf8))
+    FileHandle.standardError.write(Data("kookoo-cli: \(KookyHookKit.plain(message))\n".utf8))
     exit(1)
 }
 
 func warn(_ message: String) {
-    FileHandle.standardError.write(Data("kooky-cli: warning: \(KookyHookKit.plain(message))\n".utf8))
+    FileHandle.standardError.write(Data("kookoo-cli: warning: \(KookyHookKit.plain(message))\n".utf8))
 }
 
 /// Launch the app this CLI shipped with. Walking up from the (symlink-
@@ -44,7 +44,7 @@ func launchKooky(background: Bool) -> Bool {
         .deletingLastPathComponent()  // Kooky.app
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    var arguments = bundle.pathExtension == "app" ? [bundle.path] : ["-a", "Kooky"]
+    var arguments = bundle.pathExtension == "app" ? [bundle.path] : ["-a", "Kookoo"]
     if background { arguments.insert("-g", at: 0) }
     process.arguments = arguments
     // `open` writes its own diagnostics (app missing, LaunchServices errors)
@@ -77,7 +77,7 @@ func printSuccess(_ response: KookyCLIResponse, for command: KookyCLICommand) {
         } else {
             let version = response.appVersion ?? "unknown version"
             let proto = response.protocolVersion.map(String.init) ?? "?"
-            print("kooky \(KookyHookKit.plain(version)) is running (protocol \(proto))")
+            print("kookoo \(KookyHookKit.plain(version)) is running (protocol \(proto))")
         }
     case .open:
         // One line either way; the id stays the third word for scripts.
@@ -157,7 +157,7 @@ if case .failure(.connectFailed) = result {
         if json {
             print(KookyHookKit.renderCLIStatusJSON(running: false, appVersion: nil, serverProtocol: nil))
         } else {
-            print("kooky is not running")
+            print("kookoo is not running")
         }
         exit(1)
     }
@@ -166,7 +166,7 @@ if case .failure(.connectFailed) = result {
         return false
     }()
     guard launchKooky(background: backgroundLaunch) else {
-        fail("kooky is not running and couldn't be launched")
+        fail("kookoo is not running and couldn't be launched")
     }
     let deadline = DispatchTime.now() + launchTimeout
     while true {
@@ -181,16 +181,16 @@ if case .failure(.connectFailed) = result {
 
 switch result {
 case .failure(.connectFailed):
-    fail("kooky did not start listening within \(Int(launchTimeout))s")
+    fail("kookoo did not start listening within \(Int(launchTimeout))s")
 case .failure(.timedOut), .failure(.closedWithoutReply):
-    fail("kooky is running but didn't answer — it may be older than this kooky-cli (no CLI support). Update kooky, or use the kooky-cli bundled with the running version.")
+    fail("kookoo is running but didn't answer — it may be older than this kookoo-cli (no CLI support). Update kookoo, or use the kookoo-cli bundled with the running version.")
 case .failure(.writeFailed):
-    fail("couldn't send the request to kooky")
+    fail("couldn't send the request to kookoo")
 case .failure(.replyTooLarge):
-    fail("kooky sent an oversized reply")
+    fail("kookoo sent an oversized reply")
 case .success(let data):
     guard let response = KookyCLIResponse.decode(from: data) else {
-        fail("couldn't decode kooky's reply")
+        fail("couldn't decode kookoo's reply")
     }
     // Failures print exactly ONE line (the CLI's stated contract), so the
     // mismatch note waits until we know this is a success. A refusal caused
@@ -199,7 +199,7 @@ case .success(let data):
         fail(response.error ?? "request refused")
     }
     if let serverProtocol = response.protocolVersion, serverProtocol != KookyCLIProtocol.version {
-        warn("protocol mismatch (cli \(KookyCLIProtocol.version), app \(serverProtocol)) — update kooky or use its bundled kooky-cli")
+        warn("protocol mismatch (cli \(KookyCLIProtocol.version), app \(serverProtocol)) — update kookoo or use its bundled kookoo-cli")
     }
     printSuccess(response, for: command)
     exit(0)

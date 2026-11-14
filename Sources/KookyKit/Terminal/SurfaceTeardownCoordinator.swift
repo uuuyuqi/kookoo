@@ -44,7 +44,7 @@ final class SurfaceTeardownCoordinator: @unchecked Sendable {
         releaseHost: @escaping HostRelease = { _ in }
     ) {
         let queue = OperationQueue()
-        queue.name = "kooky.surface-teardown"
+        queue.name = "kookoo.surface-teardown"
         queue.qualityOfService = .utility
         queue.maxConcurrentOperationCount = max(1, maxConcurrentFrees)
         freeQueue = queue

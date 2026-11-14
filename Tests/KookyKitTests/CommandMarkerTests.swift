@@ -11,7 +11,7 @@ final class CommandMarkerTests: XCTestCase {
 
     func testIgnoresTitlesThatArentMarkers() {
         XCTAssertNil(CommandMarker.parseTitle("~/Github/kookycode"))
-        XCTAssertNil(CommandMarker.parseTitle("kooky-remote-login:build-box"))
+        XCTAssertNil(CommandMarker.parseTitle("kookoo-remote-login:build-box"))
         XCTAssertNil(CommandMarker.parseTitle(""))
     }
 

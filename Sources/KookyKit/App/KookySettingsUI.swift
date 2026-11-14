@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// App-specific macOS language preference. This only reads/writes the
 /// `AppleLanguages` preference consumed by Foundation at the next launch;
 /// string lookup remains entirely native (`String(localized:)` /
-/// `LocalizedStringKey`) with no Kooky localization layer.
+/// `LocalizedStringKey`) with no Kookoo localization layer.
 enum KookyAppLanguage: String, CaseIterable, Identifiable, Sendable {
     case system
     case english = "en"
@@ -107,7 +107,7 @@ enum KookyAppLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// `@Observable` mirror of the typed slice of `~/.kooky/settings.json` we
+/// `@Observable` mirror of the typed slice of `~/.kookoo/settings.json` we
 /// expose in the Settings UI. Loads on init, debounces writes back to disk
 /// so rapid `Stepper` taps don't thrash the file. Only knows about keys that
 /// have working bindings in libghostty today — kooky-specific keys
@@ -182,7 +182,7 @@ final class KookySettingsModel {
     var agentOrder: [String] = []
     var hiddenAgents: Set<String> = []
     /// Per-agent CLI options appended after the binary name when launching.
-    /// E.g. `agentOptions["claude-code"] = "--model opus"` → KOOKY_AGENT
+    /// E.g. `agentOptions["claude-code"] = "--model opus"` → KOOKOO_AGENT
     /// becomes `claude --model opus`. The wrapper rc's `eval` splits on
     /// whitespace, so users handle their own quoting for spaces.
     var agentOptions: [String: String] = [:]
@@ -261,7 +261,7 @@ final class KookySettingsModel {
     /// `KookySettings.baselineConfig`). Persisted under
     /// `terminal.copy-on-select` (only when off).
     var copyOnSelect: Bool = true
-    /// Shows Kooky in the system menu bar, including the live agent count and
+    /// Shows Kookoo in the system menu bar, including the live agent count and
     /// quick app actions. Persisted under `general.showInMenuBar`, only when
     /// non-default. The old `appearance.showAgentMenuBarItem` key is read once
     /// for migration.
@@ -1342,11 +1342,11 @@ struct KookySettingsView: View {
     private var generalDetail: some View {
         let previewBundle = model.appLanguage.previewBundle
         let restartCaption = String(
-            localized: "Changes take effect after restarting Kooky.",
+            localized: "Changes take effect after restarting Kookoo.",
             bundle: previewBundle
         )
         let restartTitle = String(
-            localized: "Restart Kooky",
+            localized: "Restart Kookoo",
             bundle: previewBundle
         )
         let systemDefaultTitle = String(
@@ -1509,7 +1509,7 @@ struct KookySettingsView: View {
 
     private var advancedDetail: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SettingsRow(label: "~/.kooky/settings.json") {
+            SettingsRow(label: "~/.kookoo/settings.json") {
                 BracketButton("open in new tab", action: onOpenInTab)
             }
             Text(String(localized: "Edit the raw JSON for any key not exposed above. Comments (`//`, `/* */`) are accepted.", bundle: .kookyResources))
@@ -1526,7 +1526,7 @@ struct KookySettingsView: View {
                 .font(Theme.mono(11.5))
                 .foregroundStyle(Theme.chromeMuted)
             Spacer()
-            BracketButton("restart kooky", action: restartApp)
+            BracketButton("restart kookoo", action: restartApp)
         }
         .padding(.horizontal, 28)
         .padding(.top, 22)
@@ -1535,7 +1535,7 @@ struct KookySettingsView: View {
     private func restartApp() {
         // Naively `openApplication` + `terminate` races: the new instance
         // boots while the old one still holds `~/Library/Application
-        // Support/kooky/socket` and the persisted workspace file. The new
+        // Support/kookoo/socket` and the persisted workspace file. The new
         // instance reads stale state and binds to the socket that the old
         // `applicationWillTerminate` is about to delete, leaving KookyHook
         // unable to reach anyone.
@@ -2266,7 +2266,7 @@ final class KookySettingsWindowController: NSWindowController {
         }
     }
 
-    /// Opens `~/.kooky/settings.json` in a new kooky tab via `$EDITOR`
+    /// Opens `~/.kookoo/settings.json` in a new kookoo tab via `$EDITOR`
     /// (defaulting to `vi`). Falls back to the system default editor (via
     /// NSWorkspace) when no active workspace exists.
     private func openSettingsInNewTab() {
@@ -2278,10 +2278,10 @@ final class KookySettingsWindowController: NSWindowController {
             NSWorkspace.shared.open(KookySettings.url)
             return
         }
-        // KOOKY_AGENT is auto-evaluated by the wrapper rcfile; shell expands
+        // KOOKOO_AGENT is auto-evaluated by the wrapper rcfile; shell expands
         // `${EDITOR:-vi}` at runtime, so the user's chosen editor wins.
         let template = AgentTemplate(
-            id: "kooky-settings-editor",
+            id: "kookoo-settings-editor",
             title: "settings.json",
             symbol: "doc.text",
             iconAsset: nil,

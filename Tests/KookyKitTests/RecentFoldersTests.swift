@@ -8,7 +8,7 @@ final class RecentFoldersTests: XCTestCase {
     override func setUp() {
         super.setUp()
         fileURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-recent-test-\(UUID().uuidString).json")
+            .appendingPathComponent("kookoo-recent-test-\(UUID().uuidString).json")
     }
 
     override func tearDown() {
@@ -70,14 +70,14 @@ final class RecentFoldersTests: XCTestCase {
 
     func testExistingFiltersDeadAndNonDirectoryPaths() throws {
         let fm = FileManager.default
-        let liveDir = fm.temporaryDirectory.appendingPathComponent("kooky-recent-live-\(UUID().uuidString)")
+        let liveDir = fm.temporaryDirectory.appendingPathComponent("kookoo-recent-live-\(UUID().uuidString)")
         try fm.createDirectory(at: liveDir, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: liveDir) }
         let file = liveDir.appendingPathComponent("not-a-dir.txt")
         try Data().write(to: file)
 
         let recent = makeRecent()
-        recent.note(URL(fileURLWithPath: "/tmp/kooky-definitely-gone-\(UUID().uuidString)"))
+        recent.note(URL(fileURLWithPath: "/tmp/kookoo-definitely-gone-\(UUID().uuidString)"))
         recent.note(file)
         recent.note(liveDir)
 

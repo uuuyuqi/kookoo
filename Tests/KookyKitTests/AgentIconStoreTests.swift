@@ -9,7 +9,7 @@ final class AgentIconStoreTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-icon-tests-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-icon-tests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         AgentIconStore.directoryOverride = tempDir
         // `AgentIcon.cache` is process-wide and keyed on filename alone, so
@@ -315,7 +315,7 @@ final class AgentIconStoreTests: XCTestCase {
     /// temp source is covered — two callers write through this directly.
     private func tempSource(ext: String) -> URL {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-icon-src-\(UUID().uuidString).\(ext)")
+            .appendingPathComponent("kookoo-icon-src-\(UUID().uuidString).\(ext)")
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         return url
     }

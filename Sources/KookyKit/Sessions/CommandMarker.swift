@@ -21,7 +21,7 @@ import Foundation
 enum CommandMarker {
     /// `internal` so the shell hooks interpolate the same constant the parse
     /// reads — one source of truth for the wire prefix.
-    static let titlePrefix = "kooky-command:"
+    static let titlePrefix = "kookoo-command:"
 
     /// Interpolated into the shell hooks as their truncation length, so both
     /// ends of the wire agree. Every consumer truncates by CHARACTER while

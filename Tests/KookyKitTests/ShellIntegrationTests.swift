@@ -28,7 +28,7 @@ final class ShellIntegrationTests: XCTestCase {
             XCTAssertEqual(inner["type"] as? String, "command")
             XCTAssertEqual(
                 inner["command"] as? String,
-                "KOOKY_MANAGED_HOOK=1 '\(Self.stubHook)' gemini \(state) --hook-stdin"
+                "KOOKOO_MANAGED_HOOK=1 '\(Self.stubHook)' gemini \(state) --hook-stdin"
             )
         }
     }
@@ -47,7 +47,7 @@ final class ShellIntegrationTests: XCTestCase {
             let inner = try XCTUnwrap((entries.first?["hooks"] as? [[String: Any]])?.first)
             XCTAssertEqual(
                 inner["command"] as? String,
-                "KOOKY_MANAGED_HOOK=1 '\(Self.stubHook)' claude \(state) --hook-stdin"
+                "KOOKOO_MANAGED_HOOK=1 '\(Self.stubHook)' claude \(state) --hook-stdin"
             )
         }
     }
@@ -55,11 +55,11 @@ final class ShellIntegrationTests: XCTestCase {
     func testClaudeWrapperScopesNoSessionPersistenceToActualInvocation() {
         let script = KookyShellIntegration.claudeWrapperScript
         let scan = #"if [[ "$_kooky_arg" == "--no-session-persistence" ]]; then"#
-        let marker = "export KOOKY_CLAUDE_NO_SESSION_PERSISTENCE=1"
-        let launch = #""$real" --settings "$KOOKY_HOOKS_PATH" "$@""#
+        let marker = "export KOOKOO_CLAUDE_NO_SESSION_PERSISTENCE=1"
+        let launch = #""$real" --settings "$KOOKOO_HOOKS_PATH" "$@""#
 
         XCTAssertTrue(script.contains(scan))
-        XCTAssertTrue(script.contains("unset KOOKY_CLAUDE_NO_SESSION_PERSISTENCE"))
+        XCTAssertTrue(script.contains("unset KOOKOO_CLAUDE_NO_SESSION_PERSISTENCE"))
         XCTAssertTrue(script.contains(#"[[ "$_kooky_arg" == "--" ]] && break"#))
         XCTAssertTrue(script.contains(marker))
         XCTAssertLessThan(
@@ -85,7 +85,7 @@ final class ShellIntegrationTests: XCTestCase {
             // argv[2] = raw Claude event name (not a HookEvent rawValue)
             XCTAssertEqual(
                 inner["command"] as? String,
-                "KOOKY_MANAGED_HOOK=1 '\(Self.stubHook)' claude \(event) --hook-stdin"
+                "KOOKOO_MANAGED_HOOK=1 '\(Self.stubHook)' claude \(event) --hook-stdin"
             )
         }
     }
@@ -100,18 +100,34 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertNil(hooks["PostToolUse"])
     }
 
+    func testQoderWrappersResolveTheirOwnBinaryWithoutInstallOrRegionFallback() {
+        for slug in ["qoder", "qodercn", "qodercli"] {
+            let script = KookyShellIntegration.bracketWrapperScript(slug: slug)
+            XCTAssertTrue(script.contains("$dir/\(slug)"))
+            XCTAssertTrue(script.contains("is not installed."))
+            XCTAssertTrue(script.contains("exit 127"))
+            XCTAssertTrue(script.contains("kookoo-agent:\(slug):running"))
+            XCTAssertTrue(script.contains("kookoo-agent:\(slug):ended"))
+            XCTAssertTrue(script.contains("exec \"$real\" \"$@\""))
+            XCTAssertFalse(script.contains("curl "))
+            XCTAssertFalse(script.contains("npm install"))
+            XCTAssertFalse(script.contains(".qoder/settings.json"))
+            XCTAssertFalse(script.contains("--yolo"))
+        }
+    }
+
     func testBracketWrapperPassesThroughWhenSurfaceIdMissing() {
         let script = KookyShellIntegration.bracketWrapperScript(slug: "amp")
 
         XCTAssertTrue(script.contains("self_dir"), "must skip own dir on PATH walk")
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" amp running"))
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" amp ended"))
-        XCTAssertTrue(script.contains("kooky-agent:amp:running"))
-        XCTAssertTrue(script.contains("kooky-agent:amp:ended"))
-        XCTAssertTrue(script.contains("KOOKY_AGENT_MARKERS"))
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" amp running"))
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" amp ended"))
+        XCTAssertTrue(script.contains("kookoo-agent:amp:running"))
+        XCTAssertTrue(script.contains("kookoo-agent:amp:ended"))
+        XCTAssertTrue(script.contains("KOOKOO_AGENT_MARKERS"))
         XCTAssertTrue(script.contains("2>/dev/null > /dev/tty"), "OSC marker targets the tty (not a redirected agent's stdout), stderr silenced before the open so a missing tty can't leak")
-        XCTAssertTrue(script.contains("[[ -n \"$KOOKY_AGENT_MARKERS\" ]] && printf"), "marker gated on KOOKY_AGENT_MARKERS so local sessions stay socket-only")
-        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKY_SURFACE_ID is unset")
+        XCTAssertTrue(script.contains("[[ -n \"$KOOKOO_AGENT_MARKERS\" ]] && printf"), "marker gated on KOOKOO_AGENT_MARKERS so local sessions stay socket-only")
+        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKOO_SURFACE_ID is unset")
     }
 
     func testWrapperPassesThroughForBackgroundPipedCaller() {
@@ -134,7 +150,7 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertTrue(script.contains(guardLine), "codex wrapper must pass through a pipe-driven background call")
 
         let guardIdx = script.range(of: guardLine)!.lowerBound
-        let pingIdx = script.range(of: "\"$KOOKY_HOOK_BIN\" codex running")!.lowerBound
+        let pingIdx = script.range(of: "\"$KOOKOO_HOOK_BIN\" codex running")!.lowerBound
         let notifyIdx = script.range(of: "notify=")!.lowerBound
         XCTAssertLessThan(guardIdx, pingIdx, "tty guard must precede the KookyHook running ping")
         XCTAssertLessThan(guardIdx, notifyIdx, "tty guard must precede the -c notify injection")
@@ -153,11 +169,11 @@ final class ShellIntegrationTests: XCTestCase {
 
     @MainActor
     func testAgentStatusMarkerParsesKnownAgentTitle() throws {
-        let parsed = try XCTUnwrap(AgentStatusMarker.parseTitle("kooky-agent:codex:attention"))
+        let parsed = try XCTUnwrap(AgentStatusMarker.parseTitle("kookoo-agent:codex:attention"))
 
         XCTAssertEqual(parsed.agent.id, AgentTemplate.codex.id)
         XCTAssertEqual(parsed.event, .attention)
-        XCTAssertNil(AgentStatusMarker.parseTitle("kooky-agent:not-real:running"))
+        XCTAssertNil(AgentStatusMarker.parseTitle("kookoo-agent:not-real:running"))
         XCTAssertNil(AgentStatusMarker.parseTitle("corey@web-prod: ~/srv"))
     }
 
@@ -166,9 +182,9 @@ final class ShellIntegrationTests: XCTestCase {
         // TOML lifecycle hooks.
         let script = KookyShellIntegration.bracketWrapperScript(slug: "kimi")
 
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" kimi running"))
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" kimi ended"))
-        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKY_SURFACE_ID is unset")
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" kimi running"))
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" kimi ended"))
+        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKOO_SURFACE_ID is unset")
     }
 
     func testGeminiWrapperBracketsRunningAndEnded() {
@@ -177,15 +193,15 @@ final class ShellIntegrationTests: XCTestCase {
         // pings deduplicate.
         let script = KookyShellIntegration.bracketWrapperScript(slug: "gemini")
 
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" gemini running"))
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" gemini ended"))
-        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKY_SURFACE_ID is unset")
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" gemini running"))
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" gemini ended"))
+        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKOO_SURFACE_ID is unset")
     }
 
     func testSshWrapperInjectsRemoteBootstrapForPlainInteractiveLogin() {
         let script = KookyShellIntegration.sshWrapperScript
 
-        XCTAssertTrue(script.contains("KOOKY_DISABLE_SSH_AGENT_MARKERS"))
+        XCTAssertTrue(script.contains("KOOKOO_DISABLE_SSH_AGENT_MARKERS"))
         XCTAssertTrue(script.contains("! -t 0 || ! -t 1"), "must skip non-interactive ssh transport")
         XCTAssertTrue(script.contains("remote_command="), "must append exactly one remote shell command")
         XCTAssertTrue(script.contains("sh -lc"), "remote command should run through POSIX sh")
@@ -207,11 +223,11 @@ final class ShellIntegrationTests: XCTestCase {
         // The `--` remote-agent protocol must be locked to the kooky-ssh
         // filename. The public `ssh` shim shares this script; a manually
         // typed `ssh host -- cmd` must keep plain ssh semantics.
-        XCTAssertTrue(script.contains(#""${0##*/}" == "kooky-ssh" && "$arg" == "--""#))
+        XCTAssertTrue(script.contains(#""${0##*/}" == "kookoo-ssh" && "$arg" == "--""#))
         // Agent argv is re-quoted and handed to the bootstrap via an `env`
         // prefix — a command, not `VAR=val cmd` shell syntax, so a csh /
         // old-fish remote login shell can still parse the remote command.
-        XCTAssertTrue(script.contains("env KOOKY_REMOTE_AGENT="))
+        XCTAssertTrue(script.contains("env KOOKOO_REMOTE_AGENT="))
         XCTAssertTrue(script.contains(#"printf -v _kooky_remote_agent '%q '"#))
     }
 
@@ -224,10 +240,10 @@ final class ShellIntegrationTests: XCTestCase {
         // (password / passphrase auth workspaces can't paste otherwise).
         let muxLine = "_kooky_mux_opts=(\(KookyShellIntegration.sshMultiplexOptions.joined(separator: " ")))"
         XCTAssertTrue(script.contains(muxLine))
-        XCTAssertTrue(KookyShellIntegration.sshMultiplexOptions.contains("ControlPath=/tmp/kooky-ssh-%C"))
+        XCTAssertTrue(KookyShellIntegration.sshMultiplexOptions.contains("ControlPath=/tmp/kookoo-ssh-%C"))
         // Gated on the kooky-ssh filename — the public `ssh` shim must not
         // silently switch manual ssh onto shared connections.
-        XCTAssertTrue(script.contains("if [[ \"${0##*/}\" == \"kooky-ssh\" ]]; then"))
+        XCTAssertTrue(script.contains("if [[ \"${0##*/}\" == \"kookoo-ssh\" ]]; then"))
     }
 
     func testSshWrapperPassesThroughRemoteCommandsAndTransportModes() {
@@ -271,7 +287,7 @@ final class ShellIntegrationTests: XCTestCase {
                 }
                 XCTAssertEqual(
                     try fixture.run(shim, interpreter, ["chat"], path: path),
-                    ["kooky bin/omp", fixture.relative(path)],
+                    ["kookoo bin/omp", fixture.relative(path)],
                     "\(name) on \(fixture.relative(path)): other calls keep PATH"
                 )
             }
@@ -295,7 +311,7 @@ final class ShellIntegrationTests: XCTestCase {
     func testRemoteAgentBootstrapWritesMarkerWrappers() {
         let script = KookyShellIntegration.remoteAgentBootstrapScript
 
-        XCTAssertTrue(script.contains(#"_kooky_root="${TMPDIR:-/tmp}/kooky-agent-markers-"#))
+        XCTAssertTrue(script.contains(#"_kooky_root="${TMPDIR:-/tmp}/kookoo-agent-markers-"#))
         XCTAssertTrue(script.contains("for _kooky_slug in 'claude' 'codex'"))
         // Every builtin agent's binary must flow into the bootstrap (the slug
         // list derives from `builtin`), so a remote launch of any agent —
@@ -305,14 +321,14 @@ final class ShellIntegrationTests: XCTestCase {
             XCTAssertTrue(script.contains("'\(binary)'"),
                           "remote bootstrap must include a marker shim for '\(binary)'")
         }
-        XCTAssertTrue(script.contains(#"printf '\033]2;kooky-agent:%s:running\a'"#))
-        XCTAssertTrue(script.contains(#"printf '\033]2;kooky-agent:%s:ended\a'"#))
-        XCTAssertTrue(script.contains("export KOOKY_AGENT_MARKERS=1"))
+        XCTAssertTrue(script.contains(#"printf '\033]2;kookoo-agent:%s:running\a'"#))
+        XCTAssertTrue(script.contains(#"printf '\033]2;kookoo-agent:%s:ended\a'"#))
+        XCTAssertTrue(script.contains("export KOOKOO_AGENT_MARKERS=1"))
         XCTAssertTrue(script.contains(#"export PATH="$_kooky_bin:$PATH""#))
         XCTAssertTrue(script.contains("> /dev/tty"), "remote markers must target the tty, not the agent's redirected stdout")
         XCTAssertTrue(script.contains("export HISTFILE="), "remote zsh must reset HISTFILE off the ephemeral ZDOTDIR (else remote history is rm -rf'd on logout)")
         XCTAssertTrue(
-            script.contains("<<'KOOKY_AGENT_WRAPPER'\n\(KookyShellIntegration.remoteAgentShimScript)\nKOOKY_AGENT_WRAPPER\n"),
+            script.contains("<<'KOOKOO_AGENT_WRAPPER'\n\(KookyShellIntegration.remoteAgentShimScript)\nKOOKOO_AGENT_WRAPPER\n"),
             "the shim must land verbatim at column 0, or its heredoc never terminates"
         )
     }
@@ -324,12 +340,12 @@ final class ShellIntegrationTests: XCTestCase {
         // the agent must start AFTER the user's rc replay so PATH managers
         // like nvm are loaded — the whole reason agent launch rides the
         // bootstrap instead of a bare ssh remote command.
-        let evalSites = script.components(separatedBy: "KOOKY_REMOTE_AGENT").count - 1
+        let evalSites = script.components(separatedBy: "KOOKOO_REMOTE_AGENT").count - 1
         XCTAssertGreaterThanOrEqual(evalSites, 6, "expected the launch block in all three shell branches")
         XCTAssertTrue(script.contains(#"eval "\$_kooky_remote_agent""#), "zsh/bash rc branches eval the agent command")
         XCTAssertTrue(script.contains(#"eval "$_kooky_remote_agent""#), "POSIX fallback branch evals the agent command")
         // Consumed exactly once — nested shells must not relaunch the agent.
-        XCTAssertTrue(script.contains("unset KOOKY_REMOTE_AGENT"))
+        XCTAssertTrue(script.contains("unset KOOKOO_REMOTE_AGENT"))
     }
 
     func testAntigravityWrapperGuardsAgainstIDEShim() {
@@ -342,15 +358,15 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertTrue(script.contains("readlink \"$real\""), "must resolve symlink one hop")
         XCTAssertTrue(script.contains("*/Antigravity.app/*"), "must match IDE launcher resolved path")
         XCTAssertTrue(script.contains("antigravity.google/cli/install.sh"), "must surface CLI install command")
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" agy ended"), "must revert tab icon on shim-detection bail")
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" agy ended"), "must revert tab icon on shim-detection bail")
         XCTAssertTrue(script.contains("exit 127"), "must mirror preamble's not-installed exit code")
     }
 
     func testAntigravityWrapperBracketsRunningAndEndedForRealCLI() {
         let script = KookyShellIntegration.antigravityWrapperScript
 
-        XCTAssertTrue(script.contains("\"$KOOKY_HOOK_BIN\" agy running"))
-        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKY_SURFACE_ID is unset")
+        XCTAssertTrue(script.contains("\"$KOOKOO_HOOK_BIN\" agy running"))
+        XCTAssertTrue(script.contains("exec \"$real\" \"$@\""), "must passthrough when KOOKOO_SURFACE_ID is unset")
     }
 
     func testCursorHooksMergePreservesUserEntriesAndAddsResumeIdCapture() throws {
@@ -372,7 +388,7 @@ final class ShellIntegrationTests: XCTestCase {
             ($0["command"] as? String)?.contains("cursor-agent attention --hook-stdin") == true
         })
         let start = try XCTUnwrap((hooks["sessionStart"] as? [[String: Any]])?.last)
-        XCTAssertTrue((start["command"] as? String)?.contains("KOOKY_MANAGED_HOOK=1") == true)
+        XCTAssertTrue((start["command"] as? String)?.contains("KOOKOO_MANAGED_HOOK=1") == true)
     }
 
     func testDroidHooksMergePreservesUserGroups() throws {
@@ -419,7 +435,7 @@ final class ShellIntegrationTests: XCTestCase {
 
         let hooks = try XCTUnwrap(object["hooks"] as? [String: Any])
         let stop = try XCTUnwrap(hooks["Stop"] as? [[String: Any]])
-        XCTAssertEqual(stop.count, 2, "kooky's entry must be added alongside the user's, not replace it")
+        XCTAssertEqual(stop.count, 2, "kookoo's entry must be added alongside the user's, not replace it")
         XCTAssertTrue(String(describing: stop).contains("user-hook"))
         XCTAssertTrue(String(describing: stop).contains("reasonix attention"))
     }
@@ -479,7 +495,7 @@ final class ShellIntegrationTests: XCTestCase {
             hookCmd: Self.stubHook
         )
         XCTAssertNotNil(object["user-hook"])
-        let managed = try XCTUnwrap(object["kooky-managed-do-not-edit"] as? [String: Any])
+        let managed = try XCTUnwrap(object["kookoo-managed-do-not-edit"] as? [String: Any])
         XCTAssertTrue(String(describing: managed["PreInvocation"]).contains("agy running --hook-stdin"))
         XCTAssertTrue(String(describing: managed["Stop"]).contains("agy attention --hook-stdin"))
     }
@@ -499,7 +515,7 @@ final class ShellIntegrationTests: XCTestCase {
             KookyShellIntegration.kimiConfigWithManagedHooks(existing: once, hookCmd: Self.stubHook)
         )
         XCTAssertEqual(once, twice)
-        XCTAssertTrue(once.hasPrefix(existing), "bytes outside kooky's managed block must stay untouched")
+        XCTAssertTrue(once.hasPrefix(existing), "bytes outside kookoo's managed block must stay untouched")
         XCTAssertTrue(twice.contains("user-notify"))
         XCTAssertEqual(twice.components(separatedBy: "hooks begin").count - 1, 1)
         XCTAssertTrue(twice.contains("kimi running --hook-stdin"))
@@ -509,7 +525,7 @@ final class ShellIntegrationTests: XCTestCase {
     func testKimiManagedTomlRejectsHalfMarker() {
         XCTAssertNil(
             KookyShellIntegration.kimiConfigWithManagedHooks(
-                existing: "# kooky-managed-do-not-edit hooks begin\n",
+                existing: "# kookoo-managed-do-not-edit hooks begin\n",
                 hookCmd: Self.stubHook
             )
         )
@@ -521,7 +537,7 @@ final class ShellIntegrationTests: XCTestCase {
         let start = try XCTUnwrap((hooks["sessionStart"] as? [[String: Any]])?.first)
         let command = try XCTUnwrap(start["bash"] as? String)
         XCTAssertTrue(command.contains("copilot running --hook-stdin"))
-        XCTAssertTrue(command.contains("KOOKY_MANAGED_HOOK=1"))
+        XCTAssertTrue(command.contains("KOOKOO_MANAGED_HOOK=1"))
     }
 
     func testOpencodePluginShellsOutToHookBinForBothEvents() {
@@ -539,8 +555,8 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertTrue(body.contains("reportRootSession(event?.properties?.sessionID)"))
         XCTAssertFalse(body.contains("reportSession(sessionID)"), "subagent ids must never bypass the root-session check")
         XCTAssertTrue(body.contains("!info?.parentID"), "subagent ids must not replace the root session id")
-        XCTAssertTrue(body.contains("KOOKY_SURFACE_ID"))
-        XCTAssertTrue(body.contains("kooky-managed-do-not-edit"), "plugin must carry the upgrade-safety marker")
+        XCTAssertTrue(body.contains("KOOKOO_SURFACE_ID"))
+        XCTAssertTrue(body.contains("kookoo-managed-do-not-edit"), "plugin must carry the upgrade-safety marker")
     }
 
     func testAmpPluginReportsThreadIdAndPerTurnLifecycle() {
@@ -550,15 +566,15 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertTrue(body.contains(#"["amp", "conversation", id]"#))
         XCTAssertTrue(body.contains(#"amp.on("agent.start""#))
         XCTAssertTrue(body.contains(#"amp.on("agent.end""#))
-        XCTAssertTrue(body.contains("kooky-managed-do-not-edit"))
+        XCTAssertTrue(body.contains("kookoo-managed-do-not-edit"))
     }
 
     func testKiroWrapperScopesACPRecordingToKookyInvocation() {
         let body = KookyShellIntegration.kiroWrapperScript
-        XCTAssertTrue(body.contains("KOOKY_KIRO_ACP_RECORD_PATH"))
-        XCTAssertTrue(body.contains(#"KIRO_ACP_RECORD_PATH="$KOOKY_KIRO_ACP_RECORD_PATH" "$real" "$@""#))
-        XCTAssertTrue(body.contains("\"$KOOKY_HOOK_BIN\" kiro-cli running"))
-        XCTAssertTrue(body.contains("exec \"$real\" \"$@\""), "outside kooky it must stay transparent")
+        XCTAssertTrue(body.contains("KOOKOO_KIRO_ACP_RECORD_PATH"))
+        XCTAssertTrue(body.contains(#"KIRO_ACP_RECORD_PATH="$KOOKOO_KIRO_ACP_RECORD_PATH" "$real" "$@""#))
+        XCTAssertTrue(body.contains("\"$KOOKOO_HOOK_BIN\" kiro-cli running"))
+        XCTAssertTrue(body.contains("exec \"$real\" \"$@\""), "outside kookoo it must stay transparent")
     }
 
     func testPiExtensionSubscribesLifecycleEventsAndPingsHook() {
@@ -585,9 +601,9 @@ final class ShellIntegrationTests: XCTestCase {
             "must not derive the id from pi's timestamp-prefixed filename"
         )
         XCTAssertTrue(body.contains(#"["pi", "conversation", id]"#), "must report the session id for resume")
-        XCTAssertTrue(body.contains("KOOKY_SURFACE_ID"))
-        XCTAssertTrue(body.contains("KOOKY_HOOK_BIN"))
-        XCTAssertTrue(body.contains("kooky-managed-do-not-edit"), "must carry the upgrade-safety marker")
+        XCTAssertTrue(body.contains("KOOKOO_SURFACE_ID"))
+        XCTAssertTrue(body.contains("KOOKOO_HOOK_BIN"))
+        XCTAssertTrue(body.contains("kookoo-managed-do-not-edit"), "must carry the upgrade-safety marker")
     }
 
     func testPiExtensionReportsToolCallsForActivityPill() {
@@ -658,7 +674,7 @@ final class ShellIntegrationTests: XCTestCase {
         // wrapper so its own `ended` ping never fires.
         XCTAssertTrue(block.contains("eval \"$_kooky_cmd\""))
         XCTAssertTrue(block.contains(#"_kooky_agent_bin="${_kooky_cmd%% *}""#), "must derive the agent binary for the revert ping")
-        XCTAssertTrue(block.contains(#""$KOOKY_HOOK_BIN" "$_kooky_agent_bin" ended"#), "must ping ended after the agent returns")
+        XCTAssertTrue(block.contains(#""$KOOKOO_HOOK_BIN" "$_kooky_agent_bin" ended"#), "must ping ended after the agent returns")
         // The revert ping must not clobber the agent's exit code — capture it
         // before, restore it after, so the first prompt's `$?` is the agent's.
         XCTAssertTrue(block.contains("_kooky_status=$?"), "must capture the agent exit status before the revert ping")
@@ -668,14 +684,14 @@ final class ShellIntegrationTests: XCTestCase {
     func testEnvStatusBlockReportsLiveShellEnvironment() {
         let body = KookyShellIntegration.envStatusBlock
 
-        XCTAssertTrue(body.contains("\"$KOOKY_HOOK_BIN\" env"))
+        XCTAssertTrue(body.contains("\"$KOOKOO_HOOK_BIN\" env"))
         XCTAssertTrue(body.contains(#""${VIRTUAL_ENV:-}""#))
         XCTAssertTrue(body.contains(#""${CONDA_DEFAULT_ENV:-}""#))
         XCTAssertTrue(body.contains(#""${NVM_BIN:-}""#))
         XCTAssertTrue(body.contains(#""${NVM_DIR:-}""#))
         XCTAssertTrue(body.contains("--version"), "must invoke node --version")
-        XCTAssertTrue(body.contains("_KOOKY_NODE_KEY_LAST"), "must memoize node version against path+NVM_BIN")
-        XCTAssertTrue(body.contains("_KOOKY_ENV_LAST"), "must skip the kooky-hook IPC when env unchanged")
+        XCTAssertTrue(body.contains("_KOOKOO_NODE_KEY_LAST"), "must memoize node version against path+NVM_BIN")
+        XCTAssertTrue(body.contains("_KOOKOO_ENV_LAST"), "must skip the kookoo-hook IPC when env unchanged")
     }
 
     func testFishInitScriptPrependsWrapperPathAndTracksCwd() {
@@ -684,8 +700,8 @@ final class ShellIntegrationTests: XCTestCase {
         // so a manually-typed `claude` resolves to our shim (lights the dot) —
         // even when config.fish / fish_add_path left it mid-PATH behind
         // ~/.local/bin. Must dedupe + prepend, not a `contains`-guarded skip.
-        XCTAssertTrue(s.contains(#"set -gx PATH "$KOOKY_BIN_DIR" (string match -v -- "$KOOKY_BIN_DIR" $PATH)"#), "must move the wrapper dir to the front, dropping any mid-PATH copy")
-        XCTAssertTrue(s.contains(#"test "$PATH[1]" = "$KOOKY_BIN_DIR"; and return"#), "must skip when already first (no per-prompt PATH churn)")
+        XCTAssertTrue(s.contains(#"set -gx PATH "$KOOKOO_BIN_DIR" (string match -v -- "$KOOKOO_BIN_DIR" $PATH)"#), "must move the wrapper dir to the front, dropping any mid-PATH copy")
+        XCTAssertTrue(s.contains(#"test "$PATH[1]" = "$KOOKOO_BIN_DIR"; and return"#), "must skip when already first (no per-prompt PATH churn)")
         // PATH prepend lives in a fish_prompt hook so it runs AFTER config.fish.
         XCTAssertTrue(s.contains("function __kooky_prompt --on-event fish_prompt"), "PATH/cwd work must defer to a prompt hook (runs after config.fish)")
         // fish never emits OSC 7, so cwd tracking is always ours.
@@ -737,7 +753,7 @@ final class ShellIntegrationTests: XCTestCase {
         )
         XCTAssertTrue(s.contains(":0:\(CommandMarker.maxLength)}"))
         XCTAssertFalse(
-            s.contains(#""$KOOKY_HOOK_BIN" command"#),
+            s.contains(#""$KOOKOO_HOOK_BIN" command"#),
             "reporting rides the byte stream — no fork on the pre-command path"
         )
     }
@@ -747,7 +763,7 @@ final class ShellIntegrationTests: XCTestCase {
     /// to feed a row that can never render.
     func testBashDoesNotPayForCommandReportingItCannotDisplay() throws {
         _ = try XCTUnwrap(KookyShellIntegration.bashLauncherPath)
-        let rcfile = NSTemporaryDirectory().appending("kooky-bashrc-\(getpid())")
+        let rcfile = NSTemporaryDirectory().appending("kookoo-bashrc-\(getpid())")
         let s = try String(contentsOfFile: rcfile, encoding: .utf8)
         XCTAssertFalse(s.contains(CommandMarker.titlePrefix))
         XCTAssertTrue(s.contains(#"PROMPT_COMMAND="_kooky_title_pwd;"#))
@@ -759,18 +775,18 @@ final class ShellIntegrationTests: XCTestCase {
         // itself so it can't re-fire.
         XCTAssertTrue(s.contains("function __kooky_agent_launch --on-event fish_prompt"), "agent launch must be a prompt hook (runs after config.fish set up PATH/env)")
         XCTAssertTrue(s.contains("functions -e __kooky_agent_launch"), "must self-remove to stay one-shot")
-        XCTAssertTrue(s.contains("eval $_kooky_cmd"), "must launch KOOKY_AGENT via eval for multi-word commands")
-        XCTAssertTrue(s.contains("KOOKY_AGENT_LAUNCHED"), "must guard against subshell re-entry")
-        XCTAssertTrue(s.contains(#""$KOOKY_HOOK_BIN" $_kooky_bin ended"#), "must ping ended after the agent returns")
+        XCTAssertTrue(s.contains("eval $_kooky_cmd"), "must launch KOOKOO_AGENT via eval for multi-word commands")
+        XCTAssertTrue(s.contains("KOOKOO_AGENT_LAUNCHED"), "must guard against subshell re-entry")
+        XCTAssertTrue(s.contains(#""$KOOKOO_HOOK_BIN" $_kooky_bin ended"#), "must ping ended after the agent returns")
     }
 
     func testCleanupRemovesOnlyCurrentPidTempFiles() throws {
         let fm = FileManager.default
         let dir = NSTemporaryDirectory()
         let pid = getpid()
-        let mine = ["kooky-zsh-\(pid)", "kooky-bash-launch-\(pid).sh", "kooky-fish-init-\(pid).fish"]
+        let mine = ["kookoo-zsh-\(pid)", "kookoo-bash-launch-\(pid).sh", "kookoo-fish-init-\(pid).fish"]
         // Decoys: another process's file, and a non-kooky file — both must survive.
-        let others = ["kooky-zsh-9999999", "notkooky-\(pid).txt"]
+        let others = ["kookoo-zsh-9999999", "notkooky-\(pid).txt"]
         for name in mine + others { fm.createFile(atPath: dir.appending(name), contents: Data()) }
         defer { for name in others { try? fm.removeItem(atPath: dir.appending(name)) } }
 
@@ -792,9 +808,9 @@ final class ShellIntegrationTests: XCTestCase {
         let config = TerminalSessionConfig.fishShell()
         XCTAssertTrue(config.arguments.isEmpty, "must NOT rely on .arguments — libghostty drops it")
         let xdg = try XCTUnwrap(config.environment["XDG_DATA_DIRS"])
-        XCTAssertTrue(xdg.hasPrefix("\(KookyShellIntegration.fishVendorDataRoot):"), "kooky data root must be prepended, preserving existing dirs")
+        XCTAssertTrue(xdg.hasPrefix("\(KookyShellIntegration.fishVendorDataRoot):"), "kookoo data root must be prepended, preserving existing dirs")
         // The vendor conf must live where fish discovers it.
-        XCTAssertTrue(KookyShellIntegration.fishVendorConfPath.hasSuffix("/fish/vendor_conf.d/kooky.fish"))
+        XCTAssertTrue(KookyShellIntegration.fishVendorConfPath.hasSuffix("/fish/vendor_conf.d/kookoo.fish"))
         XCTAssertTrue(KookyShellIntegration.fishVendorConfPath.hasPrefix(KookyShellIntegration.fishVendorDataRoot))
     }
 
@@ -832,7 +848,7 @@ final class ShellIntegrationTests: XCTestCase {
             "CONDA_DEFAULT_ENV": "",
             "NVM_BIN": "/Users/corey/.nvm/versions/node/v20.1.0/bin",
             "NVM_DIR": "/Users/corey/.nvm",
-            "KOOKY_NODE_VERSION": "v20.1.0",
+            "KOOKOO_NODE_VERSION": "v20.1.0",
         ])
 
         guard case .shellEnvironment(let env, let sessionId) = HookServer.parseMessage(data) else {
@@ -842,7 +858,7 @@ final class ShellIntegrationTests: XCTestCase {
         XCTAssertEqual(env["VIRTUAL_ENV"], "/tmp/app/.venv")
         XCTAssertEqual(env["NVM_BIN"], "/Users/corey/.nvm/versions/node/v20.1.0/bin")
         XCTAssertEqual(env["NVM_DIR"], "/Users/corey/.nvm")
-        XCTAssertEqual(env["KOOKY_NODE_VERSION"], "v20.1.0")
+        XCTAssertEqual(env["KOOKOO_NODE_VERSION"], "v20.1.0")
     }
 
     func testBackslashEscapeLeavesPlainPathUntouched() {
@@ -878,7 +894,7 @@ final class ShellIntegrationTests: XCTestCase {
         let inner = try XCTUnwrap((entries.first?["hooks"] as? [[String: Any]])?.first)
         XCTAssertEqual(
             inner["command"] as? String,
-            "KOOKY_MANAGED_HOOK=1 '\(Self.stubHook)' claude running --hook-stdin"
+            "KOOKOO_MANAGED_HOOK=1 '\(Self.stubHook)' claude running --hook-stdin"
         )
     }
 
@@ -898,7 +914,7 @@ final class ShellIntegrationTests: XCTestCase {
     /// each other. `NSPasteboard(name:)` with a unique name returns a
     /// process-private board that AppKit cleans up on exit.
     private func makeIsolatedPasteboard() -> NSPasteboard {
-        let unique = "kooky-test-\(UUID().uuidString)"
+        let unique = "kookoo-test-\(UUID().uuidString)"
         return NSPasteboard(name: NSPasteboard.Name(unique))
     }
 
@@ -948,7 +964,7 @@ final class ShellIntegrationTests: XCTestCase {
         // Cmd+Ctrl+Shift+4 screenshots show up as raw PNG bytes with no
         // fileURL representation. Without spill-to-disk the agent has no
         // way to read the image — we cache it under
-        // ~/Library/Caches/kooky/pastes/screenshot-*.png and paste the
+        // ~/Library/Caches/kookoo/pastes/screenshot-*.png and paste the
         // escaped file path.
         let pb = makeIsolatedPasteboard()
         pb.declareTypes([.png], owner: nil)
@@ -960,7 +976,7 @@ final class ShellIntegrationTests: XCTestCase {
             FileManager.default.fileExists(atPath: rawPath),
             "Expected pasted path to point at a real file on disk: \(rawPath)"
         )
-        XCTAssertTrue(rawPath.contains("/kooky/pastes/screenshot-"))
+        XCTAssertTrue(rawPath.contains("/kookoo/pastes/screenshot-"))
         XCTAssertTrue(rawPath.hasSuffix(".png"))
         try? FileManager.default.removeItem(atPath: rawPath)
     }
@@ -1051,28 +1067,28 @@ final class ShellIntegrationTests: XCTestCase {
 
         // Remote path, sanitized filename (non-ASCII → `_`, then leading
         // `._-` trimmed), no trace of the local dir.
-        XCTAssertTrue(pasted.hasPrefix("/tmp/kooky-pastes-"), pasted)
+        XCTAssertTrue(pasted.hasPrefix("/tmp/kookoo-pastes-"), pasted)
         XCTAssertTrue(pasted.hasSuffix("/one.png"), pasted)
         XCTAssertFalse(pasted.contains("some"))
 
         XCTAssertEqual(recorder.commands.count, 2)
         XCTAssertEqual(recorder.commands[0].0, "/usr/bin/ssh")
         XCTAssertTrue(recorder.commands[0].1.contains("deploy@example.com"))
-        XCTAssertTrue(recorder.commands[0].1.last?.contains("mkdir -p -- '/tmp/kooky-pastes-") == true)
+        XCTAssertTrue(recorder.commands[0].1.last?.contains("mkdir -p -- '/tmp/kookoo-pastes-") == true)
         // The mkdir ride-along sweep: expired paste dirs from earlier
         // sessions get removed without an extra connection.
-        XCTAssertTrue(recorder.commands[0].1.last?.contains("-name 'kooky-pastes-*'") == true)
+        XCTAssertTrue(recorder.commands[0].1.last?.contains("-name 'kookoo-pastes-*'") == true)
         XCTAssertTrue(recorder.commands[0].1.last?.contains("-mmin +60") == true)
         XCTAssertEqual(recorder.commands[1].0, "/usr/bin/scp")
         XCTAssertTrue(recorder.commands[1].1.contains("/tmp/some folder/图 one.png"))
-        XCTAssertTrue(recorder.commands[1].1.last?.hasPrefix("deploy@example.com:/tmp/kooky-pastes-") == true)
+        XCTAssertTrue(recorder.commands[1].1.last?.hasPrefix("deploy@example.com:/tmp/kookoo-pastes-") == true)
         // BatchMode so a passwordless-auth miss fails fast instead of
         // hanging the upload on an invisible prompt (the multiplex master —
         // shared with the workspace's own connection — is what carries
         // interactive-auth setups past this).
         XCTAssertTrue(recorder.commands[0].1.contains("BatchMode=yes"))
         XCTAssertTrue(recorder.commands[0].1.contains("ControlMaster=auto"))
-        XCTAssertTrue(recorder.commands[1].1.contains("ControlPath=/tmp/kooky-ssh-%C"))
+        XCTAssertTrue(recorder.commands[1].1.contains("ControlPath=/tmp/kookoo-ssh-%C"))
     }
 
     func testRemotePasteUploadFailsClosedWhenTransferFails() async throws {
@@ -1157,7 +1173,7 @@ final class ShellIntegrationTests: XCTestCase {
         // Pins the kooky-bashrc-<pid> naming alongside the launcher's: both
         // are what `cleanup()`'s glob sweeps and what the issue-#45 repro
         // command targets — a rename should trip this line.
-        let rcfile = NSTemporaryDirectory().appending("kooky-bashrc-\(getpid())")
+        let rcfile = NSTemporaryDirectory().appending("kookoo-bashrc-\(getpid())")
         XCTAssertTrue(fm.fileExists(atPath: launcher))
         XCTAssertTrue(fm.fileExists(atPath: rcfile))
         let originalLauncher = try String(contentsOfFile: launcher, encoding: .utf8)
@@ -1174,7 +1190,7 @@ final class ShellIntegrationTests: XCTestCase {
 
     /// Private named pasteboard — never touches the user's real clipboard.
     private func makeTextPasteboard(_ text: String) -> NSPasteboard {
-        let pb = NSPasteboard(name: .init("kooky-test-\(UUID().uuidString)"))
+        let pb = NSPasteboard(name: .init("kookoo-test-\(UUID().uuidString)"))
         pb.declareTypes([.string], owner: nil)
         pb.setString(text, forType: .string)
         return pb
@@ -1228,15 +1244,15 @@ final class ShellIntegrationTests: XCTestCase {
 /// `root`.
 private struct ShimFixture {
     let root = FileManager.default.temporaryDirectory
-        .appendingPathComponent("kooky-shim-\(UUID().uuidString)").path
-    var shimDir: String { root + "/kooky bin" }
+        .appendingPathComponent("kookoo-shim-\(UUID().uuidString)").path
+    var shimDir: String { root + "/kookoo bin" }
     var realDir: String { root + "/real" }
     var out: String { root + "/out" }
 
     init() throws {
         try FileManager.default.createDirectory(atPath: shimDir, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(atPath: realDir, withIntermediateDirectories: true)
-        try Self.install("#!/bin/sh\n{ command -v omp; printf '%s\\n' \"$PATH\"; } > \"$KOOKY_TEST_OUT\"\n", at: realDir + "/omp")
+        try Self.install("#!/bin/sh\n{ command -v omp; printf '%s\\n' \"$PATH\"; } > \"$KOOKOO_TEST_OUT\"\n", at: realDir + "/omp")
     }
 
     func remove() { try? FileManager.default.removeItem(atPath: root) }
@@ -1261,7 +1277,7 @@ private struct ShimFixture {
         }
         posix_spawn_file_actions_addchdir_np(&actions, root)
         let argv = ([interpreter, shimDir + "/omp"] + args).map { (value: String) in strdup(value) } + [nil]
-        let envp = ["PATH=\(path)", "KOOKY_TEST_OUT=\(out)"]
+        let envp = ["PATH=\(path)", "KOOKOO_TEST_OUT=\(out)"]
             .map { (value: String) in strdup(value) } + [nil]
         defer { for value in argv + envp { free(value) } }
         var pid: pid_t = 0

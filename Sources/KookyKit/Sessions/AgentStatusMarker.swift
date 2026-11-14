@@ -12,7 +12,7 @@ import Foundation
 /// title. Keep the format shell-friendly: remote wrapper snippets should be
 /// able to emit it with plain `printf`.
 enum AgentStatusMarker {
-    private static let prefix = "kooky-agent:"
+    private static let prefix = "kookoo-agent:"
 
     static func title(slug: String, event: HookEvent) -> String {
         "\(prefix)\(slug):\(event.rawValue)"

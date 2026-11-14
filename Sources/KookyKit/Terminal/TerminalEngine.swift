@@ -11,7 +11,7 @@ struct TerminalSessionConfig {
         return TerminalSessionConfig(command: shell, arguments: ["--login"], workingDirectory: nil, environment: [:])
     }
 
-    /// Pinned zsh — pairs with the ZDOTDIR wrapper for KOOKY_AGENT + OSC 7.
+    /// Pinned zsh — pairs with the ZDOTDIR wrapper for KOOKOO_AGENT + OSC 7.
     static func zshShell() -> TerminalSessionConfig {
         TerminalSessionConfig(command: KookyShellIntegration.zshPath, arguments: ["--login"], workingDirectory: nil, environment: [:])
     }

@@ -45,7 +45,7 @@ final class KookySecureInput {
         if err == noErr {
             enabled = desired
         } else {
-            NSLog("kooky: secure input \(desired ? "enable" : "disable") failed (\(err))")
+            NSLog("kookoo: secure input \(desired ? "enable" : "disable") failed (\(err))")
         }
     }
 }

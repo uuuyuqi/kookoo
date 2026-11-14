@@ -8,13 +8,13 @@ import KookyHookKit
 /// record the AppKit-facing seams.
 @MainActor
 final class CLIControllerTests: XCTestCase {
-    private let dirA = "/tmp/kooky-cli-test-a"
-    private let dirB = "/tmp/kooky-cli-test-b"
+    private let dirA = "/tmp/kookoo-cli-test-a"
+    private let dirB = "/tmp/kookoo-cli-test-b"
     /// A REAL symlink to `dirB`. `/tmp` itself can't serve as one: Foundation
     /// special-cases /tmp, /var and /etc, so `resolvingSymlinksInPath()`
     /// leaves `/tmp/...` alone and a fixture built on it silently tests
     /// nothing (the same trap the file tree hit in M5.pppp).
-    private let dirBLink = "/tmp/kooky-cli-test-b-link"
+    private let dirBLink = "/tmp/kookoo-cli-test-b-link"
 
     private var revealed: [(session: UUID, workspace: UUID)] = []
     private var activations = 0
@@ -147,7 +147,7 @@ final class CLIControllerTests: XCTestCase {
         let session = try XCTUnwrap(store.active?.activeSession)
         XCTAssertEqual(response.tabId, session.id.uuidString)
         XCTAssertEqual(engine(session).startedConfigs.first?.workingDirectory, dirA)
-        XCTAssertNil(engine(session).startedConfigs.first?.environment["KOOKY_AGENT"])
+        XCTAssertNil(engine(session).startedConfigs.first?.environment["KOOKOO_AGENT"])
         XCTAssertEqual(revealed.last?.session, session.id)
         XCTAssertEqual(activations, 1)
     }
@@ -159,7 +159,7 @@ final class CLIControllerTests: XCTestCase {
         let response = await respond(controller, KookyCLIRequest(verb: .open, cwd: dirA, command: command))
         XCTAssertTrue(response.ok)
         let session = try XCTUnwrap(store.active?.activeSession)
-        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKY_AGENT"], command)
+        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKOO_AGENT"], command)
         XCTAssertEqual(engine(session).startedConfigs.first?.workingDirectory, dirA)
         XCTAssertTrue(session.agent.isShell, "a raw command tab stays a shell tab — wrappers promote the icon if it's an agent")
     }
@@ -171,7 +171,7 @@ final class CLIControllerTests: XCTestCase {
         XCTAssertTrue(response.ok)
         let session = try XCTUnwrap(store.active?.activeSession)
         XCTAssertEqual(session.agent.id, "claude-code")
-        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKY_AGENT"], "claude")
+        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKOO_AGENT"], "claude")
         XCTAssertEqual(engine(session).startedConfigs.first?.workingDirectory, dirA)
     }
 
@@ -188,7 +188,7 @@ final class CLIControllerTests: XCTestCase {
     func testOpenRefusesBadCwd() async {
         let store = makeStore()
         let controller = makeController(stores: [store])
-        let missing = await respond(controller, KookyCLIRequest(verb: .open, cwd: "/tmp/kooky-cli-test-definitely-missing"))
+        let missing = await respond(controller, KookyCLIRequest(verb: .open, cwd: "/tmp/kookoo-cli-test-definitely-missing"))
         XCTAssertFalse(missing.ok)
         XCTAssertTrue(missing.error?.contains("does not exist") == true)
         let relative = await respond(controller, KookyCLIRequest(verb: .open, cwd: "relative/path"))
@@ -232,7 +232,7 @@ final class CLIControllerTests: XCTestCase {
         XCTAssertEqual(tabs.count, 1, "one `open` must produce one tab, not a blank shell plus the real one")
         XCTAssertEqual(response.tabId, tabs.first?.id.uuidString)
         // The surviving tab is the REQUESTED launch, not a default shell.
-        XCTAssertEqual(engine(try XCTUnwrap(tabs.first)).startedConfigs.first?.environment["KOOKY_AGENT"], "make test")
+        XCTAssertEqual(engine(try XCTUnwrap(tabs.first)).startedConfigs.first?.environment["KOOKOO_AGENT"], "make test")
     }
 
     /// A pending confirm sheet belongs to ONE tab — its decision closure
@@ -292,7 +292,7 @@ final class CLIControllerTests: XCTestCase {
         XCTAssertEqual(tabs.count, 1, "the window's seed tab must not outlive the call that built it")
         let survivor = try XCTUnwrap(tabs.first)
         XCTAssertEqual(response.tabId, survivor.id.uuidString, "and the survivor is the tab the caller was told about")
-        XCTAssertEqual(engine(survivor).startedConfigs.first?.environment["KOOKY_AGENT"], "make test")
+        XCTAssertEqual(engine(survivor).startedConfigs.first?.environment["KOOKOO_AGENT"], "make test")
     }
 
     /// The mirror of the above, and the more important half: when kooky
@@ -428,7 +428,7 @@ final class CLIControllerTests: XCTestCase {
         XCTAssertFalse(relative.ok)
         XCTAssertTrue(relative.error?.contains("absolute") == true)
 
-        let missing = await respond(controller, KookyCLIRequest(verb: .open, cwd: "/tmp/kooky-cli-test-definitely-missing"))
+        let missing = await respond(controller, KookyCLIRequest(verb: .open, cwd: "/tmp/kookoo-cli-test-definitely-missing"))
         XCTAssertFalse(missing.ok)
         XCTAssertTrue(missing.error?.contains("does not exist") == true)
     }
@@ -548,7 +548,7 @@ final class CLIControllerTests: XCTestCase {
         XCTAssertNil(local.sshRemoteHost)
         XCTAssertEqual(revealed.last?.workspace, local.id, "an SSH-active window must land the tab in a local workspace")
         let session = try XCTUnwrap(local.root.allPanes.flatMap(\.tabs).last)
-        XCTAssertNil(engine(session).startedConfigs.first?.environment["KOOKY_AGENT"], "local open must not be wrapped in kooky-ssh")
+        XCTAssertNil(engine(session).startedConfigs.first?.environment["KOOKOO_AGENT"], "local open must not be wrapped in kookoo-ssh")
     }
 
     func testOpenCreatesLocalWorkspaceWhenEveryWorkspaceIsSSH() async throws {

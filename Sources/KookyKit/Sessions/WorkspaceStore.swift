@@ -86,6 +86,9 @@ enum SidebarMode: String, Codable, Equatable, Sendable {
     case compact
     case hidden
 
+    /// Command-B narrows the sidebar without hiding it.
+    var toggledCompact: SidebarMode { self == .full ? .compact : .full }
+
     var next: SidebarMode {
         switch self {
         case .full: return .compact
@@ -334,19 +337,19 @@ final class WorkspaceStore {
         active?.activeSession?.renameRequested = true
     }
 
-    /// Open the rename popover on the active workspace's sidebar row (⌘⇧R).
-    /// Parks the request for `SidebarView` to handle — the active row may be
-    /// unmounted (collapsed worktree parent, or scrolled out of the
-    /// `LazyVStack`), so the sidebar expands/scrolls it into view before
-    /// handing off to the row via `Workspace.renameRequested`. Reveal a hidden
-    /// sidebar first so `SidebarView` exists to observe the parked request.
+    /// Park an inline title edit request. The sidebar expands/scrolls the
+    /// target row into view before handing the request to it.
     func requestRenameActiveWorkspace() {
-        if sidebarMode == .hidden { setSidebarMode(.full) }
-        // The rename popover anchors to a workspace row — flip the sidebar
-        // back to the list, or the parked request sits unconsumed in files
-        // mode and fires stale on the next toggle.
+        guard let active else { return }
+        requestRenameWorkspace(active)
+    }
+
+    func requestRenameWorkspace(_ workspace: Workspace) {
+        guard workspaces.contains(where: { $0.id == workspace.id }) else { return }
+        // An icon-only sidebar has no title field to edit.
+        if sidebarMode != .full { setSidebarMode(.full) }
         if sidebarContent == .files { setSidebarContent(.workspaces) }
-        pendingRenameWorkspace = active
+        pendingRenameWorkspace = workspace
     }
 
     /// Diff pill popover's "Show in File Tree": switch the sidebar to files
@@ -370,7 +373,7 @@ final class WorkspaceStore {
     /// Resolves per-agent launch options at spawn time. Production wires this
     /// to `KookySettingsModel.shared.agentOptions[id]`; tests pass a closure
     /// that returns nil so unit tests stay independent of the developer's
-    /// real `~/.kooky/settings.json`.
+    /// real `~/.kookoo/settings.json`.
     private let optionsProvider: @MainActor (String) -> String?
     /// Reads `KookySettingsModel.shared.resumeConversations` at spawn time;
     /// tests inject a static value (typically `true`) for the same reason
@@ -711,7 +714,7 @@ final class WorkspaceStore {
     /// workspace's row may be unmounted — nested under a collapsed worktree
     /// parent, or scrolled out of the sidebar's `LazyVStack` — so the sidebar
     /// (not the store) has to expand/scroll it into view before the row's
-    /// rename popover can anchor. Identity-keyed; cleared by the sidebar once
+    /// inline title editor can appear. Identity-keyed; cleared by the sidebar once
     /// handled.
     var pendingRenameWorkspace: Workspace?
 
@@ -932,6 +935,8 @@ final class WorkspaceStore {
         }
         guard let idx = workspaces.firstIndex(where: { $0.id == workspace.id }) else { return }
         workspaces.remove(at: idx)
+        if pendingRenameWorkspace?.id == workspace.id { pendingRenameWorkspace = nil }
+        workspace.renameRequested = false
         if workspaces.isEmpty {
             activeWorkspaceId = nil
         } else if activeWorkspaceId == workspace.id {
@@ -957,6 +962,7 @@ final class WorkspaceStore {
     /// Set or clear a user-provided workspace title. Empty / whitespace input
     /// clears the override so the sidebar label resumes tracking the cwd.
     func renameWorkspace(_ workspace: Workspace, to newTitle: String) {
+        guard workspaces.contains(where: { $0.id == workspace.id }) else { return }
         let next = normalizedTitle(newTitle)
         guard workspace.customTitle != next else { return }
         workspace.customTitle = next
@@ -1060,7 +1066,7 @@ final class WorkspaceStore {
 
     // MARK: - Tabs
 
-    /// `rawLaunchCommand` (the CLI's `open -e`) rides KOOKY_AGENT verbatim —
+    /// `rawLaunchCommand` (the CLI's `open -e`) rides KOOKOO_AGENT verbatim —
     /// see `makeSessionConfig(rawLaunchCommand:)`. Only meaningful with the
     /// plain `.terminal` template; the CLI controller is its one caller.
     /// `activate` and `spawnInBackground` travel as an inverse PAIR from the
@@ -1228,7 +1234,7 @@ final class WorkspaceStore {
     /// is a directory — off the main actor, ideally. It matters twice over:
     /// the probe it skips is a main-actor `stat` that a dead network volume
     /// freezes the whole UI on, and its `$HOME` fallback SILENTLY relocates
-    /// the launch. For `kooky-cli open -e` that means running the caller's
+    /// the launch. For `kookoo-cli open -e` that means running the caller's
     /// command somewhere it never asked for — in the home directory rather
     /// than the project — and still answering "ok". A caller that has
     /// verified the path wants a failure there, not a different directory.
@@ -1238,7 +1244,7 @@ final class WorkspaceStore {
     /// A nil `cwd` means "wherever the landing workspace already is" — the
     /// caller named no directory, so `addTab`/`addWorkspace` fall back to the
     /// workspace's own working directory rather than to some guess made here.
-    /// That is what `kooky-cli open` without `--cwd` asks for.
+    /// That is what `kookoo-cli open` without `--cwd` asks for.
     func localSpawn(
         template: AgentTemplate,
         cwd: URL?,
@@ -1486,7 +1492,7 @@ final class WorkspaceStore {
 
     /// Drops the tab this store was born with, once the caller that caused
     /// the WINDOW to exist has landed the tab it actually wanted. A window
-    /// built to serve one request (`kooky-cli open`, a `kooky://resume`
+    /// built to serve one request (`kookoo-cli open`, a `kookoo://resume`
     /// arriving with zero terminal windows open) comes up with a seed tab of
     /// its own; leaving it behind means one request produced two tabs and
     /// two PTYs, and the caller — which is told about exactly one id — can
@@ -2154,7 +2160,7 @@ final class WorkspaceStore {
         // A Claude-Code-based custom agent with an env block hands `claude`
         // its endpoint / key via a per-agent Claude settings file (written by
         // `refreshClaudeCustomSettings`); `kookyEnvironment` routes this
-        // session's KOOKY_HOOKS_PATH there.
+        // session's KOOKOO_HOOKS_PATH there.
         let claudeCustomId = template.baseAgentId == AgentTemplate.claudeCodeID && !template.extraEnv.isEmpty
             ? template.id : nil
         config.environment.merge(

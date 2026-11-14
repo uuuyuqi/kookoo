@@ -128,7 +128,7 @@ struct SessionInfoView: View {
                 }
 
                 // No Identifiers section: `session.id` is only ever
-                // `KOOKY_SURFACE_ID` for hook routing — nothing in kooky
+                // `KOOKOO_SURFACE_ID` for hook routing — nothing in kookoo
                 // accepts one, nothing logs one, and the shell already exposes
                 // it. `conversationId`'s one real use (reaching the transcript
                 // file, or resuming outside kooky) wants an action, not a UUID

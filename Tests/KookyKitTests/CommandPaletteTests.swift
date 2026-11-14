@@ -29,7 +29,7 @@ final class FuzzyMatcherTests: XCTestCase {
         // "p" matches "project-x" (start) and "kooky-project" (after `-`).
         // Both should score; the boundary-after-hyphen one still beats a
         // mid-word match.
-        let boundary = FuzzyMatcher.score(query: "p", against: "kooky-project")
+        let boundary = FuzzyMatcher.score(query: "p", against: "kookoo-project")
         let midWord = FuzzyMatcher.score(query: "p", against: "deepworld")
         XCTAssertNotNil(boundary)
         XCTAssertNotNil(midWord)
@@ -70,7 +70,7 @@ final class PaletteIndexMatchTests: XCTestCase {
         PaletteItem(id: "1", title: "project-x", subtitle: "workspace",
                     kind: .workspace(workspaceId: UUID(), windowId: UUID()),
                     symbol: "folder", iconAsset: nil),
-        PaletteItem(id: "2", title: "kooky-project", subtitle: "workspace",
+        PaletteItem(id: "2", title: "kookoo-project", subtitle: "workspace",
                     kind: .workspace(workspaceId: UUID(), windowId: UUID()),
                     symbol: "folder", iconAsset: nil),
         PaletteItem(id: "3", title: "Open Claude Code", subtitle: "agent",

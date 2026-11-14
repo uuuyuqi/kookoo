@@ -146,7 +146,7 @@ final class Session: Identifiable {
     /// Last resumable conversation id this tab's agent reported. Persisted
     /// via `PersistedTab.conversationId` so the next kooky launch can resume
     /// where the user left off. Per-Session because each tab owns its own
-    /// conversation and `KOOKY_SURFACE_ID` routes hook payloads precisely.
+    /// conversation and `KOOKOO_SURFACE_ID` routes hook payloads precisely.
     var conversationId: String?
     /// The conversation id this spawn ACTUALLY resumed with, nil for a fresh
     /// launch. Distinct from `conversationId` (which persists even while the

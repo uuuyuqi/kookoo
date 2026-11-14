@@ -1,6 +1,6 @@
 /* Language */
-"Changes take effect after restarting Kooky." = "更改将在重启 Kooky 后生效。";
-"Restart Kooky" = "重启 Kooky";
+"Changes take effect after restarting Kookoo." = "更改将在重启 Kookoo 后生效。";
+"Restart Kookoo" = "重启 Kookoo";
 
 /* Settings navigation */
 "SETTINGS" = "设置";
@@ -69,7 +69,7 @@
 "Window translucency — takes effect with liquid-glass or a numeric background-blur; opaque otherwise." = "窗口透明度仅在启用液态玻璃或设置数值型背景模糊时生效；否则保持不透明。";
 "Auto: stay awake while agents or SSH work even lid closed.\nAlways: always stay awake." = "自动：智能体或 SSH 工作时保持唤醒，合盖也不休眠。\n始终：始终保持唤醒。";
 "Theme reloads existing panes. Font and cursor changes may need restart." = "主题会在现有窗格中立即更新；字体和光标变更可能需要重启。";
-"restart kooky" = "重启 kooky";
+"restart kookoo" = "重启 kookoo";
 "open in new tab" = "在新标签页中打开";
 "Edit the raw JSON for any key not exposed above. Comments (`//`, `/* */`) are accepted." = "可直接编辑原始 JSON 来配置上方未提供的选项；支持注释（`//`、`/* */`）。";
 "+ add custom agent" = "+ 添加自定义智能体";
@@ -94,17 +94,17 @@
 "Unavailable (%@)" = "不可用（%@）";
 
 /* Native application menus */
-"About Kooky" = "关于 Kooky";
-"About kooky" = "关于 kooky";
+"About Kookoo" = "关于 Kookoo";
+"About kookoo" = "关于 kookoo";
 "Check for Updates…" = "检查更新…";
 "Settings…" = "设置…";
 "Settings" = "设置";
-"Hide Kooky" = "隐藏 Kooky";
-"Hide kooky" = "隐藏 kooky";
+"Hide Kookoo" = "隐藏 Kookoo";
+"Hide kookoo" = "隐藏 kookoo";
 "Hide Others" = "隐藏其他应用";
 "Show All" = "全部显示";
-"Quit Kooky" = "退出 Kooky";
-"Quit kooky" = "退出 kooky";
+"Quit Kookoo" = "退出 Kookoo";
+"Quit kookoo" = "退出 kookoo";
 "File" = "文件";
 "New Tab" = "新建标签页";
 "New Workspace" = "新建工作区";
@@ -168,15 +168,15 @@
 "Checking for Updates…" = "正在检查更新…";
 "Open Folder" = "打开文件夹";
 "Choose a folder to open as a workspace." = "选择要作为工作区打开的文件夹。";
-"Welcome to kooky" = "欢迎使用 kooky";
-"We found your existing ghostty configuration. Would you like to import it into kooky?\n\nYou can change settings any time via Help → Open Settings." = "检测到现有的 ghostty 配置。要将它导入 kooky 吗？\n\n之后可随时通过“帮助”→“打开设置”修改。";
+"Welcome to kookoo" = "欢迎使用 kookoo";
+"We found your existing ghostty configuration. Would you like to import it into kookoo?\n\nYou can change settings any time via Help → Open Settings." = "检测到现有的 ghostty 配置。要将它导入 kookoo 吗？\n\n之后可随时通过“帮助”→“打开设置”修改。";
 "Use ghostty settings" = "使用 ghostty 设置";
 "Start fresh" = "全新开始";
 
 /* Menu bar agent overview */
 "No agents running" = "没有正在运行的智能体";
 "Recent Agents" = "最近的智能体";
-"Open Kooky" = "打开 Kooky";
+"Open Kookoo" = "打开 Kookoo";
 "Keep Awake" = "保持唤醒";
 "%d agent active" = "%d 个智能体正在运行";
 "%d agents active" = "%d 个智能体正在运行";
@@ -432,3 +432,5 @@
 "DEEP-LINK" = "深层链接";
 "Can't open this link" = "无法打开这个链接";
 "ok" = "好";
+
+"Toggle Compact Sidebar" = "收窄/展开侧边栏";

@@ -93,7 +93,7 @@ final class SleepGuard {
         let status = IOPMAssertionCreateWithName(
             kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
             IOPMAssertionLevel(kIOPMAssertionLevelOn),
-            "kooky: agent or SSH session active" as CFString,
+            "kookoo: agent or SSH session active" as CFString,
             &id
         )
         return status == kIOReturnSuccess ? id : nil
@@ -198,7 +198,7 @@ final class SleepGuard {
         lidSleepDisabled = systemDisabled
         lidReleaseBlocked = false
         if systemDisabled {
-            markOwnership()   // kooky manages it from here
+            markOwnership()   // kookoo manages it from here
             if awakeMode() != .always { setMode(.always) }
         } else {
             clearOwnership()
@@ -419,7 +419,7 @@ private struct KeepAwakeStatusLight: NSViewRepresentable {
 @MainActor
 private final class KeepAwakeStatusLightView: NSView {
     private static let dotSize: CGFloat = 7
-    private static let pulseAnimationKey = "kooky.keep-awake.pulse"
+    private static let pulseAnimationKey = "kookoo.keep-awake.pulse"
     /// One breath takes two legs of this; the pulse plays two breaths. Same
     /// per-leg pace the old continuous animation used, so the motion reads
     /// identically — it just stops.

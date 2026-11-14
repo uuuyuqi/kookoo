@@ -10,7 +10,7 @@ import KookyHookKit
 /// Claude Code spawns them per Stop / UserPromptSubmit / Notification). They
 /// connect, write one line, close — we accept and read in a single pass.
 ///
-/// The same socket also carries the `kooky-cli` control channel: a line whose
+/// The same socket also carries the `kookoo-cli` control channel: a line whose
 /// `kind` is `"cli"` is a request that gets exactly one JSON response line
 /// written back before the connection closes (see `onCLIRequest`). Hook
 /// events stay fire-and-forget — the two shapes coexist per connection kind,
@@ -122,7 +122,7 @@ final class HookServer {
 
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else {
-            NSLog("kooky: HookServer socket() failed")
+            NSLog("kookoo: HookServer socket() failed")
             return
         }
 
@@ -130,11 +130,11 @@ final class HookServer {
             bind(fd, addr, len)
         }) else {
             close(fd)
-            NSLog("kooky: HookServer socket path too long")
+            NSLog("kookoo: HookServer socket path too long")
             return
         }
         guard bound == 0 else {
-            NSLog("kooky: HookServer bind() failed errno=\(errno)")
+            NSLog("kookoo: HookServer bind() failed errno=\(errno)")
             close(fd)
             return
         }
@@ -143,7 +143,7 @@ final class HookServer {
         // umask default 0755 even though the parent dir is already 0700.
         chmod(path, 0o600)
         guard listen(fd, 8) == 0 else {
-            NSLog("kooky: HookServer listen() failed errno=\(errno)")
+            NSLog("kookoo: HookServer listen() failed errno=\(errno)")
             close(fd)
             return
         }
@@ -215,7 +215,7 @@ final class HookServer {
         // stalls must not hang the UI. SO_RCVTIMEO/SNDTIMEO bound one
         // syscall; the wall-clock deadlines on the loops below bound the
         // whole exchange — without them a byte-dripping client would reset
-        // the 1s each iteration. Real clients (KookyHook, kooky-cli) write
+        // the 1s each iteration. Real clients (KookyHook, kookoo-cli) write
         // immediately and read immediately.
         var tv = timeval(tv_sec: 1, tv_usec: 0)
         setsockopt(clientFd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
@@ -251,7 +251,7 @@ final class HookServer {
             // No bytes within SO_RCVTIMEO. For a hook sender this is a
             // dropped event — its write raced the timeout, it exited 0 and
             // won't retry — so leave a trace instead of failing silently.
-            NSLog("kooky: HookServer connection produced no data; dropped")
+            NSLog("kookoo: HookServer connection produced no data; dropped")
             return
         }
 
@@ -310,7 +310,7 @@ final class HookServer {
             return
         }
         guard let onCLIRequest else {
-            Self.writeCLIResponseAndClose(.failure("kooky's CLI handler is not ready"), fd: fd)
+            Self.writeCLIResponseAndClose(.failure("kookoo's CLI handler is not ready"), fd: fd)
             return
         }
         // A CLI request is a REQUEST, not a fire-and-forget event: if the
@@ -324,7 +324,7 @@ final class HookServer {
         // controller finally sees it. Asking the kernel whether the peer
         // hung up covers the whole span before that point.
         guard !Self.peerHasHungUp(fd) else {
-            NSLog("kooky: CLI client hung up before dispatch; request dropped")
+            NSLog("kookoo: CLI client hung up before dispatch; request dropped")
             close(fd)
             return
         }
@@ -342,7 +342,7 @@ final class HookServer {
         }
         onCLIRequest(request, isCallerWaiting) { response in
             guard !completed else {
-                NSLog("kooky: CLI handler completed twice; extra response dropped")
+                NSLog("kookoo: CLI handler completed twice; extra response dropped")
                 return
             }
             completed = true
@@ -386,7 +386,7 @@ final class HookServer {
 
     private static let envKeys = [
         "VIRTUAL_ENV", "CONDA_DEFAULT_ENV",
-        "NVM_BIN", "NVM_DIR", "KOOKY_NODE_VERSION",
+        "NVM_BIN", "NVM_DIR", "KOOKOO_NODE_VERSION",
         "https_proxy", "http_proxy", "all_proxy",
     ]
 

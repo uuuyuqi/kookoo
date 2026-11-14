@@ -7,7 +7,7 @@ final class FileTreeListerTests: XCTestCase {
 
     override func setUpWithError() throws {
         tempRoot = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-filetree-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-filetree-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
     }
 
@@ -146,7 +146,7 @@ final class FileTreeModelTests: XCTestCase {
     /// Teardown cancels the model's watchers and removes the tree.
     private func makeFixture() throws -> (root: URL, src: URL, model: FileTreeModel) {
         let root = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-filetreemodel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-filetreemodel-\(UUID().uuidString)", isDirectory: true)
         let src = root.appendingPathComponent("src", isDirectory: true)
         try FileManager.default.createDirectory(at: src, withIntermediateDirectories: true)
         FileManager.default.createFile(atPath: src.appendingPathComponent("main.swift").path, contents: Data())

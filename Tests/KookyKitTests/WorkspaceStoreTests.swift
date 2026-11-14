@@ -4,6 +4,13 @@ import XCTest
 
 @MainActor
 final class WorkspaceStoreTests: XCTestCase {
+    func testCompactSidebarShortcutToggle() {
+        XCTAssertEqual(SidebarMode.full.toggledCompact, .compact)
+        XCTAssertEqual(SidebarMode.compact.toggledCompact, .full)
+        XCTAssertEqual(SidebarMode.hidden.toggledCompact, .full)
+        XCTAssertEqual(SidebarMode.full.toggledCompact.toggledCompact, .full)
+    }
+
     private let projectA = URL(fileURLWithPath: "/tmp/projectA")
     private let projectB = URL(fileURLWithPath: "/tmp/projectB")
     private let projectC = URL(fileURLWithPath: "/tmp/projectC")
@@ -370,7 +377,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let store = makeStore()
         let source = store.addWorkspace(workingDirectory: projectA)
         let fakePath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-fake-wt-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-fake-wt-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: fakePath, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: fakePath) }
         let wt = store.addWorkspace(
@@ -396,7 +403,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let store = makeStore()
         let source = store.addWorkspace(workingDirectory: projectA)
         let fakePath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-fake-wt-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-fake-wt-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: fakePath, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: fakePath) }
         let wt = store.addWorkspace(
@@ -484,7 +491,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let kept = store.workspaces[0]
         let other = store.addWorkspace(workingDirectory: projectA)
         let fakePath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-fake-wt-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-fake-wt-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: fakePath, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: fakePath) }
         let wt = store.addWorkspace(
@@ -554,7 +561,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let store = makeStore()
         let source = store.workspaces[0]
         let wt = store.addWorkspace(
-            workingDirectory: URL(fileURLWithPath: "/tmp/kooky-missing-worktree-\(UUID().uuidString)"),
+            workingDirectory: URL(fileURLWithPath: "/tmp/kookoo-missing-worktree-\(UUID().uuidString)"),
             worktreeParent: source,
             worktreeBranch: "gone"
         )
@@ -663,7 +670,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let ws = store.addWorkspace(workingDirectory: projectA)
         let session = firstPane(ws).tabs[0]
 
-        engine(session).emitTitle("kooky-agent:not-real:running")
+        engine(session).emitTitle("kookoo-agent:not-real:running")
 
         XCTAssertNil(session.terminalTitle)
         XCTAssertEqual(session.displayAgent.id, AgentTemplate.terminal.id)
@@ -813,7 +820,7 @@ final class WorkspaceStoreTests: XCTestCase {
             "CONDA_DEFAULT_ENV": "",
             "NVM_BIN": "/Users/corey/.nvm/versions/node/v22.3.0/bin",
             "NVM_DIR": "/Users/corey/.nvm",
-            "KOOKY_NODE_VERSION": "v22.3.0",
+            "KOOKOO_NODE_VERSION": "v22.3.0",
         ], sessionId: session.id)
 
         XCTAssertEqual(session.environment.pythonVenv, ".venv")
@@ -935,7 +942,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let ws = store.workspaces[0]
         let session = store.addTab(in: ws, template: .claudeCode)
         XCTAssertEqual(session.agent.id, "claude-code")
-        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKY_AGENT"], "claude")
+        XCTAssertEqual(engine(session).startedConfigs.first?.environment["KOOKOO_AGENT"], "claude")
     }
 
     func testReopenLastClosedTabRestoresAgentAndCwd() {
@@ -1475,7 +1482,7 @@ final class WorkspaceStoreTests: XCTestCase {
     func testApplyConversationIdWritesToCorrectSessionOnly() {
         // Two Claude tabs running in parallel — each gets its own conversation
         // id via separate `applyConversationId` calls, neither stomps the
-        // other. Same isolation we get in prod via KOOKY_SURFACE_ID routing.
+        // other. Same isolation we get in prod via KOOKOO_SURFACE_ID routing.
         let store = makeStore()
         let ws = store.addWorkspace(workingDirectory: projectA)
         let pane = firstPane(ws)
@@ -1664,7 +1671,7 @@ final class WorkspaceStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            engine(tab).startedConfigs.last?.environment["KOOKY_AGENT"],
+            engine(tab).startedConfigs.last?.environment["KOOKOO_AGENT"],
             "claude --print --no-session-persistence"
         )
         XCTAssertNil(tab.conversationId)
@@ -1685,7 +1692,7 @@ final class WorkspaceStoreTests: XCTestCase {
 
         XCTAssertEqual(tab.conversationId, canonical)
         XCTAssertEqual(
-            engine(tab).startedConfigs.last?.environment["KOOKY_AGENT"],
+            engine(tab).startedConfigs.last?.environment["KOOKOO_AGENT"],
             "pi --session \(canonical)"
         )
     }
@@ -1698,7 +1705,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let id = try XCTUnwrap(tab.conversationId)
         XCTAssertNotNil(UUID(uuidString: id))
         XCTAssertEqual(
-            engine(tab).startedConfigs.last?.environment["KOOKY_AGENT"],
+            engine(tab).startedConfigs.last?.environment["KOOKOO_AGENT"],
             "grok --session-id \(id)"
         )
     }
@@ -1710,7 +1717,7 @@ final class WorkspaceStoreTests: XCTestCase {
 
         XCTAssertEqual(tab.conversationId, "grok-existing")
         XCTAssertEqual(
-            engine(tab).startedConfigs.last?.environment["KOOKY_AGENT"],
+            engine(tab).startedConfigs.last?.environment["KOOKOO_AGENT"],
             "grok --resume grok-existing"
         )
     }
@@ -1729,7 +1736,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertNotEqual(id, "old-id")
         XCTAssertNotNil(UUID(uuidString: id))
         XCTAssertEqual(
-            engine(tab).startedConfigs.last?.environment["KOOKY_AGENT"],
+            engine(tab).startedConfigs.last?.environment["KOOKOO_AGENT"],
             "grok --session-id \(id)"
         )
     }
@@ -1750,7 +1757,7 @@ final class WorkspaceStoreTests: XCTestCase {
         let ws = store.addWorkspace(workingDirectory: projectA)
         let tab = store.addTab(in: ws, template: .claudeCode, initialPrompt: "explain this")
         let cfg = engine(tab).startedConfigs.last
-        XCTAssertEqual(cfg?.environment["KOOKY_AGENT"], "claude -- 'explain this'")
+        XCTAssertEqual(cfg?.environment["KOOKOO_AGENT"], "claude -- 'explain this'")
     }
 
     // MARK: - Multi-window teardown
@@ -2125,8 +2132,8 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(session.sshWorkspaceHost, "deploy@example.com")
         XCTAssertEqual(engine(session).isRemoteSessionProvider?(), true)
         XCTAssertEqual(
-            engine(session).startedConfigs.last?.environment["KOOKY_AGENT"],
-            "kooky-ssh 'deploy@example.com'"
+            engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"],
+            "kookoo-ssh 'deploy@example.com'"
         )
         XCTAssertEqual(session.activityState, .idle, "a plain shell over ssh is not agent activity")
     }
@@ -2139,7 +2146,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertNil(ws.sshRemoteHost)
         guard let session = ws.activeSession else { return XCTFail("expected initial session") }
         XCTAssertNil(session.sshWorkspaceHost)
-        XCTAssertNil(engine(session).startedConfigs.last?.environment["KOOKY_AGENT"])
+        XCTAssertNil(engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"])
     }
 
     func testSSHWorkspaceAgentTabLaunchesAgentBehindDoubleDash() {
@@ -2149,8 +2156,8 @@ final class WorkspaceStoreTests: XCTestCase {
         let session = store.addTab(in: ws, template: .claudeCode)
 
         XCTAssertEqual(
-            engine(session).startedConfigs.last?.environment["KOOKY_AGENT"],
-            "kooky-ssh 'deploy@example.com' -- claude"
+            engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"],
+            "kookoo-ssh 'deploy@example.com' -- claude"
         )
         XCTAssertEqual(session.sshWorkspaceHost, "deploy@example.com")
         XCTAssertEqual(session.agent.id, AgentTemplate.claudeCodeID)
@@ -2165,7 +2172,7 @@ final class WorkspaceStoreTests: XCTestCase {
         // id would become `--resume <id>`. The remote has no such session.
         let session = store.addTab(in: ws, template: .claudeCode, conversationId: "abc-123")
 
-        let launch = engine(session).startedConfigs.last?.environment["KOOKY_AGENT"] ?? ""
+        let launch = engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"] ?? ""
         XCTAssertFalse(launch.contains("--resume"), "local conversation ids must not ride to the remote: \(launch)")
         XCTAssertFalse(launch.contains("abc-123"))
     }
@@ -2180,8 +2187,8 @@ final class WorkspaceStoreTests: XCTestCase {
         else { return XCTFail("expected split pane") }
 
         XCTAssertEqual(
-            engine(session).startedConfigs.last?.environment["KOOKY_AGENT"],
-            "kooky-ssh 'deploy@example.com'"
+            engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"],
+            "kookoo-ssh 'deploy@example.com'"
         )
         XCTAssertEqual(session.sshWorkspaceHost, "deploy@example.com")
     }
@@ -2218,8 +2225,8 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(ws.sshRemoteHost, "deploy@example.com")
         XCTAssertEqual(session.sshWorkspaceHost, "deploy@example.com")
         XCTAssertEqual(
-            engine(session).startedConfigs.last?.environment["KOOKY_AGENT"],
-            "kooky-ssh 'deploy@example.com'"
+            engine(session).startedConfigs.last?.environment["KOOKOO_AGENT"],
+            "kookoo-ssh 'deploy@example.com'"
         )
     }
 
@@ -2283,7 +2290,7 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(engine(session).isRemoteSessionProvider?(), true,
                        "manual SSH still owns remote file paths even though paste routing stays local")
         let next = store.addTab(in: ws, template: .terminal)
-        XCTAssertNil(engine(next).startedConfigs.last?.environment["KOOKY_AGENT"])
+        XCTAssertNil(engine(next).startedConfigs.last?.environment["KOOKOO_AGENT"])
     }
 
     func testRemoteHostSurvivesRemoteCommandsAndClearsOnLogoutMarker() {
@@ -2747,7 +2754,7 @@ extension WorkspaceStoreTests {
     /// plain directory can't exercise subscribe/unsubscribe at all.
     private func makeGitRepo() throws -> URL {
         let repo = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-hub-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-hub-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
         try XCTSkipUnless(
             GitStatusFetcher.runGit(["-C", repo.path, "init", "-q"], timeout: 10) != nil,
@@ -2863,7 +2870,7 @@ extension WorkspaceStoreTests {
 
     // MARK: seed tab of a window built to serve one request
 
-    /// A window created for a single `kooky-cli open` / `kooky://resume` is
+    /// A window created for a single `kookoo-cli open` / `kookoo://resume` is
     /// born with a tab; the request then lands its own beside it. The seed
     /// is a byproduct the caller never hears about, so it goes.
     func testDiscardSeedTabDropsTheBornWithTabAndKeepsTheRequestedOne() throws {
@@ -2938,14 +2945,14 @@ extension WorkspaceStoreTests {
     }
 
     /// A caller that already verified the directory must get THAT directory
-    /// — never a silent substitution. `kooky-cli open -e "make"` relocated
+    /// — never a silent substitution. `kookoo-cli open -e "make"` relocated
     /// to $HOME would run the build in the wrong place and still report
     /// success, which is worse than any failure.
     func testConfirmedCwdIsNotSecondGuessedIntoHome() {
         let store = makeStore()
         // A path that no longer exists: the unconfirmed path would swap in
         // $HOME here, which is exactly what a verified caller must not get.
-        let vanished = URL(fileURLWithPath: "/tmp/kooky-vanished-\(UUID().uuidString)")
+        let vanished = URL(fileURLWithPath: "/tmp/kookoo-vanished-\(UUID().uuidString)")
 
         let confirmed = store.localSpawn(template: .terminal, cwd: vanished, cwdIsConfirmed: true)
         XCTAssertEqual(

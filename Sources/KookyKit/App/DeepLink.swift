@@ -1,14 +1,14 @@
 import AppKit
 import SwiftUI
 
-/// A parsed `kooky://` deep link. Parsing is structure + character-set
+/// A parsed `kookoo://` deep link. Parsing is structure + character-set
 /// validation only — whether the agent is on the roster, the conversation
 /// exists, or the directory is real is the handler's concern
 /// (`AppDelegate.handleDeepLink`), so the grammar tests need no stores.
 ///
 /// v1 grammar (query form, so `URLComponents` owns all percent-encoding):
 ///
-///     kooky://resume?agent=<agent-id>&id=<conversation-id>[&cwd=<abs-path>]
+///     kookoo://resume?agent=<agent-id>&id=<conversation-id>[&cwd=<abs-path>]
 ///
 /// `agent` speaks the AgentTemplate/scanner roster ids — the caller contract
 /// (external session managers send `claude-code` / `codex` / `copilot` /
@@ -29,10 +29,10 @@ enum KookyDeepLink: Equatable {
     case resumeSession(agentId: String, conversationId: String, cwd: String?)
     case invalid(reason: String)
 
-    static let scheme = "kooky"
+    static let scheme = "kookoo"
 
     /// Conversation ids may reach a shell command line (`claude --resume
-    /// <id>` via the KOOKY_AGENT eval), so an id from an UNTRUSTED URL must
+    /// <id>` via the KOOKOO_AGENT eval), so an id from an UNTRUSTED URL must
     /// be shell-inert by construction: alphanumeric head (a leading `-`
     /// would parse as a flag), then `[A-Za-z0-9._-]`. Every real id shape
     /// across the 7 caller agents fits (UUIDs; opencode `ses_1da2…` — `_`
@@ -57,7 +57,7 @@ enum KookyDeepLink: Equatable {
         guard url.scheme?.lowercased() == scheme,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else { return nil }
-        // `kooky:///resume` (the natural file:///-habit typo) parses with an
+        // `kookoo:///resume` (the natural file:///-habit typo) parses with an
         // EMPTY host and the action in the path — accept it, or the most
         // common hand-written mistake lands in the silent tier.
         var action = components.host?.lowercased()
@@ -87,7 +87,7 @@ enum KookyDeepLink: Equatable {
         guard agent.count <= 64 else { return .invalid(reason: "agent id is too long") }
         guard let id = rawId.flatMap(normalizedTitle) else { return .invalid(reason: "missing 'id' parameter") }
         guard isValidConversationId(id) else {
-            return .invalid(reason: "conversation id contains characters kooky refuses")
+            return .invalid(reason: "conversation id contains characters kookoo refuses")
         }
         let cwd = rawCwd.flatMap(normalizedTitle)
         if let cwd {

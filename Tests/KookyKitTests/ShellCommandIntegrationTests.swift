@@ -7,17 +7,17 @@ final class ShellCommandIntegrationTests: XCTestCase {
         let engine = TestEngine()
         engine.foregroundPid = 123
         let session = Session(engine: engine, currentDirectory: URL(fileURLWithPath: "/tmp"), agent: .terminal)
-        session.consumeShellControlTitle("kooky-shell-control:available:123")
+        session.consumeShellControlTitle("kookoo-shell-control:available:123")
         return (session, engine)
     }
 
     func testCommandIsFetchedOnceWithoutSendingItsTextToTheTerminal() {
         let (session, engine) = fixture()
         XCTAssertTrue(session.runShellCommand("nvm use v22\r"))
-        session.consumeShellControlTitle("kooky-shell-control:available:123")
+        session.consumeShellControlTitle("kookoo-shell-control:available:123")
         XCTAssertEqual(session.takeShellCommand(shellPID: 123), "nvm use v22")
         XCTAssertNil(session.takeShellCommand(shellPID: 123))
-        session.consumeShellControlTitle("kooky-shell-control:finished:123")
+        session.consumeShellControlTitle("kookoo-shell-control:finished:123")
         XCTAssertNil(session.takeShellCommand(shellPID: 123))
         XCTAssertEqual(engine.sentInputs, [ShellCommandIntegration.keySequence])
     }
@@ -28,7 +28,7 @@ final class ShellCommandIntegrationTests: XCTestCase {
         XCTAssertFalse(session.runShellCommand("nvm use v20"))
         XCTAssertEqual(session.takeShellCommand(shellPID: 123), "nvm use v22")
         XCTAssertFalse(session.runShellCommand("nvm use v20"))
-        session.consumeShellControlTitle("kooky-shell-control:finished:123")
+        session.consumeShellControlTitle("kookoo-shell-control:finished:123")
         XCTAssertTrue(session.runShellCommand("nvm use v20"))
     }
 
@@ -76,7 +76,7 @@ final class ShellCommandIntegrationTests: XCTestCase {
         let (session, engine) = fixture()
         XCTAssertTrue(session.runShellCommand("nvm use v22"))
         XCTAssertNil(session.takeShellCommand(shellPID: 456))
-        session.consumeShellControlTitle("kooky-shell-control:available:456")
+        session.consumeShellControlTitle("kookoo-shell-control:available:456")
         engine.foregroundPid = 456
         XCTAssertNil(session.takeShellCommand(shellPID: 456))
     }
@@ -84,16 +84,16 @@ final class ShellCommandIntegrationTests: XCTestCase {
     func testFailedFetchCompletionDiscardsThePendingCommand() {
         let (session, _) = fixture()
         XCTAssertTrue(session.runShellCommand("nvm use v22"))
-        session.consumeShellControlTitle("kooky-shell-control:finished:123")
+        session.consumeShellControlTitle("kookoo-shell-control:finished:123")
         XCTAssertNil(session.takeShellCommand(shellPID: 123))
         XCTAssertTrue(session.runShellCommand("nvm use v20"))
     }
 
     func testMarkersRequireKnownEventAndPositivePid() {
-        for title in ["ordinary title", "kooky-shell-control:finished:0", "kooky-shell-control:finished:-1", "kooky-shell-control:ready:123", "kooky-shell-control:available:123:extra", "kooky-shell-control:available::123"] {
+        for title in ["ordinary title", "kookoo-shell-control:finished:0", "kookoo-shell-control:finished:-1", "kookoo-shell-control:ready:123", "kookoo-shell-control:available:123:extra", "kookoo-shell-control:available::123"] {
             XCTAssertNil(ShellCommandIntegration.parseTitle(title))
         }
-        XCTAssertEqual(ShellCommandIntegration.parseTitle("kooky-shell-control:available:123")?.pid, 123)
+        XCTAssertEqual(ShellCommandIntegration.parseTitle("kookoo-shell-control:available:123")?.pid, 123)
     }
 
     func testStoreRoutesFetchAndControlMarkersWithoutChangingTabTitle() throws {
@@ -102,11 +102,11 @@ final class ShellCommandIntegrationTests: XCTestCase {
         let session = try XCTUnwrap(store.active?.activeSession)
         let engine = try XCTUnwrap(session.engine as? TestEngine)
         engine.foregroundPid = 123
-        engine.emitTitle("kooky-shell-control:available:123")
+        engine.emitTitle("kookoo-shell-control:available:123")
         XCTAssertTrue(session.runShellCommand("nvm use v22"))
         XCTAssertNil(store.takeShellCommand(sessionId: UUID(), shellPID: 123))
         XCTAssertEqual(store.takeShellCommand(sessionId: session.id, shellPID: 123), "nvm use v22")
-        engine.emitTitle("kooky-shell-control:finished:123")
+        engine.emitTitle("kookoo-shell-control:finished:123")
         XCTAssertEqual(engine.sentInputs, [ShellCommandIntegration.keySequence])
         XCTAssertTrue(session.canRunShellCommand)
         XCTAssertNil(session.terminalTitle)

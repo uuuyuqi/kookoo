@@ -19,7 +19,7 @@ let package = Package(
             path: "Sources/Kooky"
         ),
         // Tiny stand-alone CLI invoked from Claude Code / Codex hooks. Reads
-        // $KOOKY_SURFACE_ID from env, opens the unix socket the running app
+        // $KOOKOO_SURFACE_ID from env, opens the unix socket the running app
         // owns, writes one JSON line, exits. Doesn't link KookyKit on purpose
         // — keeps the binary fast and dependency-free.
         .executableTarget(
@@ -27,18 +27,18 @@ let package = Package(
             dependencies: ["KookyHookKit"],
             path: "Sources/KookyHook"
         ),
-        // User-facing control CLI (`kooky-cli`): open tabs / run commands /
+        // User-facing control CLI (`kookoo-cli`): open tabs / run commands /
         // resume conversations / list / focus / close / status over the same
         // unix socket, but request-response instead of fire-and-forget.
         // Separate from KookyHook on purpose — hook argv is positional
-        // (`kooky-hook <agent> <event>`) and a custom agent id could collide
+        // (`kookoo-hook <agent> <event>`) and a custom agent id could collide
         // with a verb. Doesn't link KookyKit for the same reason KookyHook
         // doesn't: the binary must stay small and AppKit-free. The target
         // IS the shipped binary name so one name holds across dev builds,
         // the bundle, and the Application Support mirror (nobody imports an
         // executable, so the mangled module name never surfaces).
         .executableTarget(
-            name: "kooky-cli",
+            name: "kookoo-cli",
             dependencies: ["KookyHookKit"],
             path: "Sources/KookyCLI"
         ),

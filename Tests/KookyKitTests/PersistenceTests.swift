@@ -5,7 +5,7 @@ import XCTest
 final class PersistenceTests: XCTestCase {
     private func tempURL() -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-test-\(UUID().uuidString).json")
+            .appendingPathComponent("kookoo-test-\(UUID().uuidString).json")
     }
 
     /// Minimal valid `PersistedState` — one workspace, one pane, one tab.
@@ -199,7 +199,7 @@ final class PersistenceTests: XCTestCase {
         let data = try JSONEncoder().encode(makeState())
         XCTAssertFalse(
             String(decoding: data, as: UTF8.self).contains("rightSidebarContent"),
-            "nil must encode as an absent key, or old kooky versions choke on the file"
+            "nil must encode as an absent key, or old kookoo versions choke on the file"
         )
         let decoded = try JSONDecoder().decode(PersistedState.self, from: data)
         XCTAssertNil(decoded.rightSidebarContent)
@@ -212,7 +212,7 @@ final class PersistenceTests: XCTestCase {
         let data = try JSONEncoder().encode(legacy)
         XCTAssertFalse(
             String(decoding: data, as: UTF8.self).contains("sidebarContent"),
-            "nil must encode as an absent key, or old kooky versions choke on the file"
+            "nil must encode as an absent key, or old kookoo versions choke on the file"
         )
         let decoded = try JSONDecoder().decode(PersistedState.self, from: data)
         XCTAssertNil(decoded.sidebarContent)
@@ -232,7 +232,7 @@ final class PersistenceTests: XCTestCase {
         let data = try JSONEncoder().encode(makeState())
         XCTAssertFalse(
             String(decoding: data, as: UTF8.self).contains("collapsedInfoSections"),
-            "nil must encode as an absent key, or old kooky versions choke on the file"
+            "nil must encode as an absent key, or old kookoo versions choke on the file"
         )
         let decoded = try JSONDecoder().decode(PersistedState.self, from: data)
         XCTAssertNil(decoded.collapsedInfoSections)

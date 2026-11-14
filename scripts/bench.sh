@@ -6,11 +6,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "Running benchmarks (KOOKY_BENCH=1)…"
+echo "Running benchmarks (KOOKOO_BENCH=1)…"
 # Release build: debug (-Onone) inflates exactly the Swift-side loops the
 # scanner optimizations target, distorting before/after ratios.
 set +e
-raw=$(KOOKY_BENCH=1 swift test -c release --filter PerformanceBenchmarks 2>&1)
+raw=$(KOOKOO_BENCH=1 swift test -c release --filter PerformanceBenchmarks 2>&1)
 status=$?
 set -e
 out=$(grep "^BENCH" <<< "$raw" || true)
@@ -23,7 +23,7 @@ if [ $status -ne 0 ]; then
 fi
 if [ -z "$out" ]; then
   echo "No BENCH output — re-run verbosely:"
-  echo "  KOOKY_BENCH=1 swift test -c release --filter PerformanceBenchmarks"
+  echo "  KOOKOO_BENCH=1 swift test -c release --filter PerformanceBenchmarks"
   exit 1
 fi
 

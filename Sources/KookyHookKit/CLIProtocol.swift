@@ -1,6 +1,6 @@
 import Foundation
 
-// Wire types for the kooky CLI control channel (`kooky-cli` ⇄ `HookServer`).
+// Wire types for the kookoo CLI control channel (`kookoo-cli` ⇄ `HookServer`).
 //
 // The CLI shares the hook socket (`KookyHookKit.socketPath`) but not its
 // fire-and-forget shape: a CLI connection is strictly one request line up,
@@ -9,7 +9,7 @@ import Foundation
 // event parser — hook payloads either carry a different `kind` or none at
 // all, and never this one.
 //
-// These types live in KookyHookKit so the `kooky-cli` binary and the app
+// These types live in KookyHookKit so the `kookoo-cli` binary and the app
 // compile the SAME request/response structs — the wire shape can't drift
 // between the two ends the way a comment-synced dict contract could.
 
@@ -56,7 +56,7 @@ public enum KookyCLIProtocol {
     /// keeps a deliberate second gate for direct callers, and sharing the
     /// message keeps the two from drifting.
     public static func tooNewRequestMessage(requested: Int) -> String {
-        "this kooky speaks CLI protocol \(version) but the request is protocol \(requested) — update kooky"
+        "this kookoo speaks CLI protocol \(version) but the request is protocol \(requested) — update kookoo"
     }
 }
 
@@ -80,7 +80,7 @@ public struct KookyCLIRequest: Codable, Equatable, Sendable {
     /// `open` / `resume`: absolute directory path.
     public var cwd: String?
     /// `open -e`: a shell command line, evaluated verbatim by the spawned
-    /// shell's KOOKY_AGENT hook. Local-process trust boundary — never
+    /// shell's KOOKOO_AGENT hook. Local-process trust boundary — never
     /// reachable from URLs (deep links stay command-free by design).
     public var command: String?
     /// `open --agent`: an AgentTemplate id. `resume --agent`: a roster id.

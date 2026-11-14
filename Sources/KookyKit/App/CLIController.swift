@@ -86,7 +86,7 @@ enum ResumeRequestOutcome: Equatable {
     case dropped(String)
 }
 
-/// App-side executor for `kooky-cli` verbs. `HookServer` owns the transport
+/// App-side executor for `kookoo-cli` verbs. `HookServer` owns the transport
 /// (one request line in, one response line out); this owns the decisions.
 /// Everything that touches AppKit windows or the deep-link pipeline is
 /// injected, so verb logic is unit-testable against `TestEngine` stores —
@@ -204,7 +204,7 @@ final class KookyCLIController {
             return refuse("focus needs --tab <session-uuid>")
         }
         guard let hit = locate(id) else {
-            return refuse("no tab with id \(id.uuidString) — run `kooky-cli list`")
+            return refuse("no tab with id \(id.uuidString) — run `kookoo-cli list`")
         }
         activateApp()
         hit.context.reveal(hit.session, hit.workspace)
@@ -216,7 +216,7 @@ final class KookyCLIController {
             return refuse("close needs --tab <session-uuid>")
         }
         guard let hit = locate(id) else {
-            return refuse("no tab with id \(id.uuidString) — run `kooky-cli list`")
+            return refuse("no tab with id \(id.uuidString) — run `kookoo-cli list`")
         }
         // The last tab of a worktree workspace cascades into "remove the
         // worktree directory" with its own sidebar-hosted confirmation —
@@ -251,7 +251,7 @@ final class KookyCLIController {
         case .closed:
             return ok(note: "closed")
         case .confirming:
-            return ok(note: "confirmation shown in kooky")
+            return ok(note: "confirmation shown in kookoo")
         case .windowBusy:
             // The sheet already on that window belongs to another tab and
             // will never decide this one — reporting "confirmation shown"
@@ -275,7 +275,7 @@ final class KookyCLIController {
             return refuse("rename needs --title <title>")
         }
         guard let hit = locate(id) else {
-            return refuse("no tab with id \(id.uuidString) — run `kooky-cli list`")
+            return refuse("no tab with id \(id.uuidString) — run `kookoo-cli list`")
         }
         hit.context.store.renameTab(hit.session, to: title)
         return ok(note: "renamed")
@@ -391,7 +391,7 @@ final class KookyCLIController {
             // the controller is an AppDelegate property that outlives the
             // ⌘Q drain.
             guard let self, !self.isShuttingDown() else {
-                completion(.failure("kooky is shutting down"))
+                completion(.failure("kookoo is shutting down"))
                 return
             }
             guard let (exists, canonical) = resolution else {
@@ -403,7 +403,7 @@ final class KookyCLIController {
             // gave up. Opening a tab now would run `-e` for someone who was
             // already told the request failed.
             guard !deadline.hasExpired else {
-                completion(.failure("kooky took too long to answer; nothing was opened"))
+                completion(.failure("kookoo took too long to answer; nothing was opened"))
                 return
             }
             // The scan above can outlast the caller — a ^C or its own
@@ -498,12 +498,12 @@ final class KookyCLIController {
                 // presenting a "background" tab in a brand-new key window
                 // (the close verb's windowBusy precedent: refuse loudly
                 // over silently doing something else).
-                return refuse("no terminal window to land a background tab in — drop --no-focus or open a kooky window first")
+                return refuse("no terminal window to land a background tab in — drop --no-focus or open a kookoo window first")
             } else if let fallback = fallbackWindow() {
                 host = fallback.context
                 builtWindow = fallback.builtWindow
             } else {
-                return refuse("kooky is shutting down")
+                return refuse("kookoo is shutting down")
             }
             // One call, one tab: when this has to create the WORKSPACE,
             // `localSpawn` makes its seed tab the launch instead of leaving
@@ -565,9 +565,9 @@ final class KookyCLIController {
         isCallerWaiting: @escaping @MainActor () -> Bool,
         completion: @escaping @MainActor (KookyCLIResponse) -> Void
     ) {
-        // Byte-identical grammar with kooky://resume — validateResume is the
+        // Byte-identical grammar with kookoo://resume — validateResume is the
         // deep link's own field gate, so the CLI can't accept an id the URL
-        // form would refuse (both end up inside KOOKY_AGENT).
+        // form would refuse (both end up inside KOOKOO_AGENT).
         switch KookyDeepLink.validateResume(
             agentId: request.agent,
             conversationId: request.conversationId,
@@ -586,7 +586,7 @@ final class KookyCLIController {
             }
             resume(agentId, conversationId, cwd, isCallerWaiting) { [weak self] outcome in
                 guard let self else {
-                    completion(.failure("kooky is shutting down"))
+                    completion(.failure("kookoo is shutting down"))
                     return
                 }
                 switch outcome {

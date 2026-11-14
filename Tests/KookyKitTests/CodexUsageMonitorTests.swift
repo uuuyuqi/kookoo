@@ -91,7 +91,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testSessionMetaCwdReadsFirstLine() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-test-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-test-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("rollout-test.jsonl")
@@ -105,7 +105,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testSessionMetaConversationIdPrefersCanonicalId() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-id-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-id-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("rollout-id.jsonl")
@@ -120,7 +120,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testSessionMetaConversationIdFallsBackToSessionId() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-fallback-id-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-fallback-id-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("rollout-id.jsonl")
@@ -135,7 +135,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testResolveRolloutMatchesCwd() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-resolve-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-resolve-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let dayDir = CodexUsageMonitor.recentDayDirectories(under: root, days: 1).first!
         try FileManager.default.createDirectory(at: dayDir, withIntermediateDirectories: true)
@@ -161,7 +161,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testResolveRolloutExcludesPreexistingFiles() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-exclude-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-exclude-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let dayDir = CodexUsageMonitor.recentDayDirectories(under: root, days: 1).first!
         try FileManager.default.createDirectory(at: dayDir, withIntermediateDirectories: true)
@@ -187,7 +187,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testResolveResumedRolloutMatchesPreexistingConversationId() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-resume-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-resume-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         // Resuming is not restricted to the fresh-launch three-day scan: Codex
         // can reopen an old rollout and append to it in place.
@@ -228,7 +228,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testRecentRolloutPathsListsRolloutFiles() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-paths-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-paths-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let dayDir = CodexUsageMonitor.recentDayDirectories(under: root, days: 1).first!
         try FileManager.default.createDirectory(at: dayDir, withIntermediateDirectories: true)
@@ -261,7 +261,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testSessionMetaCwdReadsLineBeyond64KB() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-bigmeta-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-bigmeta-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("rollout-big.jsonl")
@@ -275,7 +275,7 @@ final class CodexUsageMonitorTests: XCTestCase {
 
     func testLatestUsageAtPathReadsTail() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-codex-test-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-codex-test-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("rollout-test.jsonl")

@@ -63,7 +63,7 @@ final class KiroConversationMonitorTests: XCTestCase {
 
     func testStopRemovesRecordWhenSessionEnds() throws {
         let file = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-kiro-record-\(UUID().uuidString).jsonl")
+            .appendingPathComponent("kookoo-kiro-record-\(UUID().uuidString).jsonl")
         try Data().write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
 
@@ -77,7 +77,7 @@ final class KiroConversationMonitorTests: XCTestCase {
 
     func testStopPreservesRecordForCrossWindowHandoff() throws {
         let file = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-kiro-handoff-\(UUID().uuidString).jsonl")
+            .appendingPathComponent("kookoo-kiro-handoff-\(UUID().uuidString).jsonl")
         try Data().write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
 

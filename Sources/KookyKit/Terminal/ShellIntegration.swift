@@ -75,7 +75,7 @@ enum KookyShellIntegration {
     ///    Warp / iTerm2 both do this; matches user expectation.
     /// 2. **Raw image data** (`Cmd+Ctrl+Shift+4` screenshot to
     ///    clipboard, Preview "Edit → Copy" on an open image) →
-    ///    spilled to `~/Library/Caches/kooky/pastes/screenshot-<ts>.png`,
+    ///    spilled to `~/Library/Caches/kookoo/pastes/screenshot-<ts>.png`,
     ///    then `backslashEscape(file.path)`. Agents (Claude / Cursor /
     ///    Codex) take a file path as input; storing the bytes inline
     ///    would dump base64 garbage into the prompt.
@@ -144,7 +144,7 @@ enum KookyShellIntegration {
     /// of tens-of-MB screenshot TIFFs never run concurrently. (The captured
     /// raw `Data` snapshots DO coexist while queued — the serialization
     /// bounds working-set peaks, not the queued inputs.)
-    private static let pasteTranscodeQueue = DispatchQueue(label: "kooky.paste-transcode", qos: .userInitiated)
+    private static let pasteTranscodeQueue = DispatchQueue(label: "kookoo.paste-transcode", qos: .userInitiated)
 
     /// THE paste entry for every site (surface ⌘V, right-click Paste,
     /// composer): owns all three tiers AND each tier's sync/async decision,
@@ -246,7 +246,7 @@ enum KookyShellIntegration {
     /// into a fresh `/tmp/kooky-pastes-*` dir, resolving to the space-joined
     /// escaped remote paths (nil on any failure).
     static func remotePasteUpload(from pb: NSPasteboard, host: String) -> (@Sendable () async -> String?)? {
-        let remoteDir = "/tmp/kooky-pastes-\(pasteFilenameTimestamp.string(from: Date()))-\(UUID().uuidString.prefix(8))"
+        let remoteDir = "/tmp/kookoo-pastes-\(pasteFilenameTimestamp.string(from: Date()))-\(UUID().uuidString.prefix(8))"
         let work: @Sendable () -> String?
         if let urls = pasteboardFileURLs(pb) {
             let files = remotePasteDestinations(for: urls, remoteDir: remoteDir)
@@ -288,7 +288,7 @@ enum KookyShellIntegration {
     /// %C hashes host+port+user.
     static let sshMultiplexOptions = [
         "-o", "ControlMaster=auto",
-        "-o", "ControlPath=/tmp/kooky-ssh-%C",
+        "-o", "ControlPath=/tmp/kookoo-ssh-%C",
         "-o", "ControlPersist=30",
     ]
 
@@ -302,7 +302,7 @@ enum KookyShellIntegration {
     /// agent to consume the pasted path). `;` — not `&&` — so a sweep
     /// failure (another user's dir, say) can't fail the mkdir; errors muted.
     private static func remotePasteMkdirCommand(_ remoteDir: String) -> String {
-        "find /tmp -maxdepth 1 -name 'kooky-pastes-*' -type d -mmin +60 -exec rm -rf {} + 2>/dev/null; mkdir -p -- \(quote(remoteDir))"
+        "find /tmp -maxdepth 1 -name 'kookoo-pastes-*' -type d -mmin +60 -exec rm -rf {} + 2>/dev/null; mkdir -p -- \(quote(remoteDir))"
     }
 
     private static func performRemotePasteUpload(_ files: [(local: URL, remotePath: String)], to host: String, remoteDir: String) -> String? {
@@ -339,7 +339,7 @@ enum KookyShellIntegration {
         do {
             try process.run()
         } catch {
-            NSLog("kooky: remote paste could not launch %@: %@", executable, error.localizedDescription)
+            NSLog("kookoo: remote paste could not launch %@: %@", executable, error.localizedDescription)
             return false
         }
         let watchdog = DispatchWorkItem { [weak process] in process?.terminate() }
@@ -347,7 +347,7 @@ enum KookyShellIntegration {
         process.waitUntilExit()
         watchdog.cancel()
         guard process.terminationStatus == 0 else {
-            NSLog("kooky: remote paste %@ exited %d", executable, process.terminationStatus)
+            NSLog("kookoo: remote paste %@ exited %d", executable, process.terminationStatus)
             return false
         }
         return true
@@ -465,13 +465,13 @@ enum KookyShellIntegration {
         return fmt
     }()
 
-    /// Lazy-created `~/Library/Caches/kooky/pastes/`. Mirrors the
+    /// Lazy-created `~/Library/Caches/kookoo/pastes/`. Mirrors the
     /// `kookyBinDirectory` / `hooksDirectory` pattern: one
     /// `createDirectory` at first access, all subsequent paste-spills
     /// skip the FS check.
     private static let pastesCacheDirectory: URL = {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let dir = caches.appendingPathComponent("kooky/pastes", isDirectory: true)
+        let dir = caches.appendingPathComponent("kookoo/pastes", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
@@ -505,15 +505,15 @@ enum KookyShellIntegration {
     static let fishPath = "/opt/homebrew/bin/fish"
     static let zdotdirKey = "ZDOTDIR"
 
-    /// `~/Library/Application Support/kooky/<subpath>` — single source for the
+    /// `~/Library/Application Support/kookoo/<subpath>` — single source for the
     /// app's private support locations. Path-only; callers create the directory
     /// when they need it (some of these are roots, not leaf dirs).
-    /// Single source for paths under `~/Library/Application Support/kooky/`
+    /// Single source for paths under `~/Library/Application Support/kookoo/`
     /// — internal (not private) so other subsystems (e.g. `RecentFolders`)
     /// don't grow their own spelling of the root.
     static func kookyAppSupport(_ subpath: String, isDirectory: Bool) -> URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("kooky/\(subpath)", isDirectory: isDirectory)
+            .appendingPathComponent("kookoo/\(subpath)", isDirectory: isDirectory)
     }
 
     /// Directory we prepend to spawned-shell `PATH` so wrapper scripts (e.g.
@@ -525,7 +525,7 @@ enum KookyShellIntegration {
     }()
 
     /// Path to the generated Claude Code hooks JSON. Passed to `claude` via
-    /// `--settings <path>` by the wrapper script when `KOOKY_SURFACE_ID` is set.
+    /// `--settings <path>` by the wrapper script when `KOOKOO_SURFACE_ID` is set.
     static let claudeHooksPath: String = {
         hooksDirectory.appendingPathComponent("claude.json").path
     }()
@@ -541,7 +541,7 @@ enum KookyShellIntegration {
 
     /// Path to the kooky-managed Copilot hooks file. Copilot CLI auto-loads
     /// every `~/.copilot/hooks/*.json` and merges events across files, so a
-    /// dedicated `kooky.json` co-exists with anything the user has dropped
+    /// dedicated `kookoo.json` co-exists with anything the user has dropped
     /// in there. Pure path computation — the directory is materialised
     /// (and the file written) only when `~/.copilot/` already exists, so
     /// non-Copilot users don't get an empty kooky-owned vendor dir in their
@@ -550,7 +550,7 @@ enum KookyShellIntegration {
     /// users who customise `COPILOT_HOME` would drop the file themselves.
     static let copilotHooksPath: String = {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".copilot/hooks/kooky.json").path
+            .appendingPathComponent(".copilot/hooks/kookoo.json").path
     }()
 
     static let cursorHooksPath: String = {
@@ -584,7 +584,7 @@ enum KookyShellIntegration {
 
     static let ampPluginPath: String = {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/amp/plugins/kooky.ts").path
+            .appendingPathComponent(".config/amp/plugins/kookoo.ts").path
     }()
 
     /// XDG plugin directory OpenCode auto-loads at startup. Honors
@@ -600,7 +600,7 @@ enum KookyShellIntegration {
         }
         let dir = base.appendingPathComponent("opencode/plugin", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("kooky.ts").path
+        return dir.appendingPathComponent("kookoo.ts").path
     }()
 
     private static let hooksDirectory: URL = {
@@ -636,14 +636,14 @@ enum KookyShellIntegration {
     static let kookyHookBinaryPath: String = mirroredHelperBinaryPath(name: "KookyHook")
 
     /// Same Gatekeeper escape for the control CLI: external tools exec this
-    /// path (`~/Library/Application Support/kooky/bin/kooky-cli`), which
+    /// path (`~/Library/Application Support/kookoo/bin/kookoo-cli`), which
     /// stays valid across app updates AND dodges the /Applications
     /// exec-assessment kill the in-bundle path is subject to. AppDelegate
     /// touches this at launch so the mirror refreshes with every build —
     /// the returned VALUE currently has no reader; the refresh side effect
     /// is the contract (the path is documented in the README for external
     /// tools, and a future Settings page may render it).
-    static let kookyCLIBinaryPath: String = mirroredHelperBinaryPath(name: "kooky-cli")
+    static let kookyCLIBinaryPath: String = mirroredHelperBinaryPath(name: "kookoo-cli")
 
     /// One name per helper, everywhere: the SPM target names ARE the shipped
     /// binary names, so dev builds and the packaged app resolve identically.
@@ -656,7 +656,7 @@ enum KookyShellIntegration {
         // running the test suite can't clobber the helper a live kooky
         // depends on.
         guard fm.fileExists(atPath: bundled) else { return bundled }
-        // `kookyBinDirectory` is the App Support `kooky/bin` dir (already created).
+        // `kookyBinDirectory` is the App Support `kookoo/bin` dir (already created).
         let dest = (kookyBinDirectory as NSString).appendingPathComponent(name)
         // Stat gate on the pre-first-frame path: `copyItem` preserves the
         // source's mtime, so equal size+mtime means the installed copy IS
@@ -686,7 +686,7 @@ enum KookyShellIntegration {
     /// Per-session env vars our wrappers + hook helper read. Caller supplies
     /// the surface UUID; everything else is process-wide. PATH prepends
     /// `kookyBinDirectory` so wrapper shims resolve before the real binaries.
-    /// `claudeCustomSettingsAgentId`, when set, routes `KOOKY_HOOKS_PATH` to
+    /// `claudeCustomSettingsAgentId`, when set, routes `KOOKOO_HOOKS_PATH` to
     /// that custom agent's per-agent Claude settings file (endpoint / key)
     /// instead of the shared `claude.json`.
     static func kookyEnvironment(
@@ -701,12 +701,12 @@ enum KookyShellIntegration {
         // stale conversation id before the new/resumed session records itself.
         try? FileManager.default.removeItem(atPath: kiroRecordPath)
         var env: [String: String] = [
-            "KOOKY_SURFACE_ID": sessionId.uuidString,
-            "KOOKY_HOOKS_PATH": hooksPath,
-            "KOOKY_BIN_DIR": kookyBinDirectory,
-            "KOOKY_HOOK_BIN": kookyHookBinaryPath,
-            "KOOKY_KIRO_ACP_RECORD_PATH": kiroRecordPath,
-            // KOOKY_AGENT_MARKERS is deliberately NOT set locally: the
+            "KOOKOO_SURFACE_ID": sessionId.uuidString,
+            "KOOKOO_HOOKS_PATH": hooksPath,
+            "KOOKOO_BIN_DIR": kookyBinDirectory,
+            "KOOKOO_HOOK_BIN": kookyHookBinaryPath,
+            "KOOKOO_KIRO_ACP_RECORD_PATH": kiroRecordPath,
+            // KOOKOO_AGENT_MARKERS is deliberately NOT set locally: the
             // KookyHook socket is the local status channel. OSC-title markers
             // are the ssh-remote fallback (the remote bootstrap exports the
             // var there), so emitting them locally would double-report and
@@ -728,7 +728,7 @@ enum KookyShellIntegration {
         // value (or no ZDOTDIR at all) and write PATH exports to ~/.zshrc
         // instead of our ephemeral wrapper rc.
         if let original = ProcessInfo.processInfo.environment["ZDOTDIR"], !original.isEmpty {
-            env["KOOKY_ORIGINAL_ZDOTDIR"] = original
+            env["KOOKOO_ORIGINAL_ZDOTDIR"] = original
         }
         return env
     }
@@ -758,11 +758,17 @@ enum KookyShellIntegration {
         writeWrapper(name: "reasonix", script: bracketWrapperScript(slug: "reasonix"))
         writeWrapper(name: "kiro-cli", script: kiroWrapperScript)
         writeWrapper(name: "droid", script: bracketWrapperScript(slug: "droid"))
+        // Separate executable identities: never switch account regions silently.
+        // Generic wrappers detect the real executable on PATH, report missing
+        // installs without installing anything, and emit only process lifecycle.
+        for slug in ["qoder", "qodercn", "qodercli"] {
+            writeWrapper(name: slug, script: bracketWrapperScript(slug: slug))
+        }
         // Private ssh entry point for SSH workspaces — always installed,
         // unlike the public `ssh` shim below (user-setting gated because it
         // changes manually typed ssh). Same script; the filename is what
         // unlocks the `--` remote-agent protocol.
-        writeWrapper(name: "kooky-ssh", script: sshWrapperScript)
+        writeWrapper(name: "kookoo-ssh", script: sshWrapperScript)
         refreshSshRemoteAgentDetection(enabled: sshRemoteAgentDetection)
 
         let hookCmd = kookyHookBinaryPath
@@ -800,7 +806,7 @@ enum KookyShellIntegration {
         } else {
             removeManagedWrapper(
                 name: "ssh",
-                markers: ["KOOKY_DISABLE_SSH_AGENT_MARKERS", "kooky-agent-markers"]
+                markers: ["KOOKOO_DISABLE_SSH_AGENT_MARKERS", "kookoo-agent-markers"]
             )
         }
     }
@@ -821,7 +827,7 @@ enum KookyShellIntegration {
     }
 
     private static let hookStdinMarker = "--hook-stdin"
-    private static let managedHookEnvironmentMarker = "KOOKY_MANAGED_HOOK=1"
+    private static let managedHookEnvironmentMarker = "KOOKOO_MANAGED_HOOK=1"
 
     private static func hookCommand(hookCmd: String, slug: String, state: HookEvent) -> String {
         hookCommand(hookCmd: hookCmd, slug: slug, token: state.rawValue)
@@ -992,7 +998,7 @@ enum KookyShellIntegration {
                 "timeout": 5,
             ]
         }
-        object["kooky-managed-do-not-edit"] = [
+        object["kookoo-managed-do-not-edit"] = [
             "PreInvocation": [handler(.running)],
             "PostInvocation": [handler(.attention)],
             "Stop": [handler(.attention)],
@@ -1071,8 +1077,8 @@ enum KookyShellIntegration {
     /// outside that block are preserved verbatim; malformed half-markers make
     /// us skip the write rather than guessing where their config ends.
     static func kimiConfigWithManagedHooks(existing: String, hookCmd: String) -> String? {
-        let begin = "# kooky-managed-do-not-edit hooks begin"
-        let end = "# kooky-managed-do-not-edit hooks end"
+        let begin = "# kookoo-managed-do-not-edit hooks begin"
+        let end = "# kookoo-managed-do-not-edit hooks end"
         let hasBegin = existing.contains(begin)
         let hasEnd = existing.contains(end)
         guard hasBegin == hasEnd else { return nil }
@@ -1165,7 +1171,7 @@ enum KookyShellIntegration {
             let dir = root.appendingPathComponent("agent/extensions", isDirectory: true)
             try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
             writeManagedFile(
-                at: dir.appendingPathComponent("kooky.ts").path,
+                at: dir.appendingPathComponent("kookoo.ts").path,
                 contents: piStyleExtensionScript(slug: slug)
             )
         }
@@ -1176,7 +1182,7 @@ enum KookyShellIntegration {
     /// events and pings KookyHook so the sidebar dot tracks per-session
     /// activity — running while a turn executes, attention when the turn ends
     /// and the agent waits on the user. Mirrors the OpenCode plugin: gated on
-    /// `KOOKY_SURFACE_ID`, reads `KOOKY_HOOK_BIN` from the env kooky injects,
+    /// `KOOKOO_SURFACE_ID`, reads `KOOKOO_HOOK_BIN` from the env kookoo injects,
     /// and carries the managed marker so a user edit isn't clobbered.
     ///
     /// Shared verbatim by Pi and Oh My Pi — omp is a fork of pi, so the
@@ -1193,8 +1199,8 @@ enum KookyShellIntegration {
     // resume the conversation after a restart. Safe to delete; it is
     // regenerated next time kooky launches.
     export default function (pi) {
-      const surface = process.env.KOOKY_SURFACE_ID
-      const hookBin = process.env.KOOKY_HOOK_BIN
+      const surface = process.env.KOOKOO_SURFACE_ID
+      const hookBin = process.env.KOOKOO_HOOK_BIN
       if (!surface || !hookBin) return
 
       const ping = async (state) => {
@@ -1293,7 +1299,7 @@ enum KookyShellIntegration {
     /// `claudeHooksPath`; named `claude-<agentId>.json` (id sanitised so a
     /// hand-edited settings.json can't escape the directory). Written by
     /// `refreshClaudeCustomSettings` and passed to `claude` via `--settings`
-    /// for that agent's sessions, overriding `KOOKY_HOOKS_PATH`.
+    /// for that agent's sessions, overriding `KOOKOO_HOOKS_PATH`.
     static func claudeCustomSettingsPath(agentId: String) -> String {
         let safe = String(agentId.map {
             ($0.isASCII && ($0.isLetter || $0.isNumber)) || $0 == "-" || $0 == "_" ? $0 : "_"
@@ -1440,7 +1446,7 @@ enum KookyShellIntegration {
     /// (currently the OpenCode plugin). `writeManagedFile` reads existing
     /// files and refuses to overwrite anything that doesn't carry this tag —
     /// so a user's same-named plugin stays untouched on upgrade.
-    private static let managedFileMarker = "kooky-managed-do-not-edit"
+    private static let managedFileMarker = "kookoo-managed-do-not-edit"
 
     private static func writeJSON(at path: String, object: [String: Any]) {
         guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
@@ -1466,7 +1472,7 @@ enum KookyShellIntegration {
     }
 
     /// JSON variant of `writeManagedFile` — preserves a user-authored
-    /// `kooky.json` that happens to live at the same path by looking for the
+    /// `kookoo.json` that happens to live at the same path by looking for the
     /// `_kookyManaged` sentinel field. The Copilot hooks dir is user-owned
     /// (`~/.copilot/hooks/`), so a same-named user file is plausible enough
     /// to guard against. A corrupt-or-non-JSON file at the same path is
@@ -1496,7 +1502,7 @@ enum KookyShellIntegration {
     }
 
     /// OSC-2 status marker, gated and tty-targeted. Fires only when
-    /// `KOOKY_AGENT_MARKERS` is set — ssh remotes export it, local sessions
+    /// `KOOKOO_AGENT_MARKERS` is set — ssh remotes export it, local sessions
     /// don't (they report through the KookyHook socket), so the local bracket
     /// wrappers stay silent and never double-report. Writes to `/dev/tty`, not
     /// stdout: a redirected agent (`claude -p … > out`) must not get OSC bytes
@@ -1505,7 +1511,7 @@ enum KookyShellIntegration {
     /// missing controlling tty (`/dev/tty` won't open) has its redirection error
     /// already silenced instead of leaking onto the caller's stderr.
     private static func agentMarkerCommand(slug: String, event: HookEvent) -> String {
-        "[[ -n \"$KOOKY_AGENT_MARKERS\" ]] && printf '\\033]2;\(AgentStatusMarker.title(slug: slug, event: event))\\a' 2>/dev/null > /dev/tty"
+        "[[ -n \"$KOOKOO_AGENT_MARKERS\" ]] && printf '\\033]2;\(AgentStatusMarker.title(slug: slug, event: event))\\a' 2>/dev/null > /dev/tty"
     }
 
     /// Binary slugs the SSH remote bootstrap installs marker-emitting shims for.
@@ -1541,11 +1547,11 @@ enum KookyShellIntegration {
             # The new-tab path eagerly sets session.agent based on the template,
             # expecting bracket wrapper to ping `running` next. We never got
             # there — revert the icon so it doesn't lie about what's running.
-            if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+            if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
                 \(agentMarkerCommand(slug: binary, event: .ended))
             fi
-            if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-                "$KOOKY_HOOK_BIN" \(binary) ended 2>/dev/null
+            if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+                "$KOOKOO_HOOK_BIN" \(binary) ended 2>/dev/null
             fi
             exit 127
         fi
@@ -1585,9 +1591,9 @@ enum KookyShellIntegration {
     /// first so a non-tty `update` is covered too.
     private static let agentEntryGuards = selfUpdatePathGuard + "\n\n" + ttyPassthroughGuard
 
-    /// Inside a kooky session ($KOOKY_SURFACE_ID set), injects --settings so
+    /// Inside a kookoo session ($KOOKOO_SURFACE_ID set), injects --settings so
     /// Claude Code's hooks report state back to the app via the bundled
-    /// KookyHook helper. `KOOKY_AGENT_MARKERS` enables the OSC-title fallback
+    /// KookyHook helper. `KOOKOO_AGENT_MARKERS` enables the OSC-title fallback
     /// for remote shells that can write terminal bytes but cannot reach the
     /// local unix socket. Outside both, transparent passthrough.
     static let claudeWrapperScript = """
@@ -1595,23 +1601,23 @@ enum KookyShellIntegration {
 
     \(agentEntryGuards)
 
-    if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+    if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
         \(agentMarkerCommand(slug: "claude", event: .running))
         # Claude still emits lifecycle hooks (and a session_id) for
         # --no-session-persistence runs. Mark only this wrapper invocation so
         # KookyHook can decline that non-resumable id without disabling future
         # normal Claude runs in the same terminal tab.
-        unset KOOKY_CLAUDE_NO_SESSION_PERSISTENCE
+        unset KOOKOO_CLAUDE_NO_SESSION_PERSISTENCE
         for _kooky_arg in "$@"; do
             [[ "$_kooky_arg" == "--" ]] && break
             if [[ "$_kooky_arg" == "--no-session-persistence" ]]; then
-                export KOOKY_CLAUDE_NO_SESSION_PERSISTENCE=1
+                export KOOKOO_CLAUDE_NO_SESSION_PERSISTENCE=1
                 break
             fi
         done
         unset _kooky_arg
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOKS_PATH" ]]; then
-            "$real" --settings "$KOOKY_HOOKS_PATH" "$@"
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOKS_PATH" ]]; then
+            "$real" --settings "$KOOKOO_HOOKS_PATH" "$@"
         else
             "$real" "$@"
         fi
@@ -1633,22 +1639,22 @@ enum KookyShellIntegration {
 
     \(agentEntryGuards)
 
-    if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+    if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
         # Codex doesn't expose SessionStart / SessionEnd lifecycle hooks
         # we can override per-invocation. Bracket the run from the wrapper:
         # send `running` before codex starts (immediate icon promotion),
         # then `ended` after exit (revert to terminal). Mid-run state
         # transitions still come from Codex's `notify` config below.
         \(agentMarkerCommand(slug: "codex", event: .running))
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-            "$KOOKY_HOOK_BIN" codex running 2>/dev/null
-            "$real" -c "notify=[\\"$KOOKY_HOOK_BIN\\",\\"codex\\",\\"attention\\"]" "$@"
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+            "$KOOKOO_HOOK_BIN" codex running 2>/dev/null
+            "$real" -c "notify=[\\"$KOOKOO_HOOK_BIN\\",\\"codex\\",\\"attention\\"]" "$@"
         else
             "$real" "$@"
         fi
         status=$?
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-            "$KOOKY_HOOK_BIN" codex ended 2>/dev/null
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+            "$KOOKOO_HOOK_BIN" codex ended 2>/dev/null
         fi
         \(agentMarkerCommand(slug: "codex", event: .ended))
         exit $status
@@ -1666,7 +1672,7 @@ enum KookyShellIntegration {
         return """
         \(wrapperPreamble(binary: "ssh"))
 
-        if [[ -n "${KOOKY_DISABLE_SSH_AGENT_MARKERS:-}" || ! -t 0 || ! -t 1 ]]; then
+        if [[ -n "${KOOKOO_DISABLE_SSH_AGENT_MARKERS:-}" || ! -t 0 || ! -t 1 ]]; then
             exec "$real" "$@"
         fi
 
@@ -1725,12 +1731,12 @@ enum KookyShellIntegration {
                 destination_seen=1
                 continue
             fi
-            # kooky-ssh only: `kooky-ssh <dest> -- <agent argv…>` asks the
+            # kookoo-ssh only: `kookoo-ssh <dest> -- <agent argv…>` asks the
             # remote bootstrap to launch that agent after rc replay. Gated on
             # the invoked filename so the public `ssh` shim (same script,
             # user-setting gated install) never hijacks a manually typed
             # `ssh host -- cmd` — that stays a plain remote command.
-            if [[ "${0##*/}" == "kooky-ssh" && "$arg" == "--" ]]; then
+            if [[ "${0##*/}" == "kookoo-ssh" && "$arg" == "--" ]]; then
                 remote_agent_args=("${args[@]:$((i + 1))}")
                 args=("${args[@]:0:$i}")
                 break
@@ -1755,17 +1761,17 @@ enum KookyShellIntegration {
             # replay, so PATH managers like nvm are already loaded.
             printf -v _kooky_remote_agent '%q ' "${remote_agent_args[@]}"
             printf -v _kooky_remote_agent_q '%q' "${_kooky_remote_agent% }"
-            remote_command="env KOOKY_REMOTE_AGENT=$_kooky_remote_agent_q $remote_command"
+            remote_command="env KOOKOO_REMOTE_AGENT=$_kooky_remote_agent_q $remote_command"
         fi
         _kooky_mux_opts=()
-        if [[ "${0##*/}" == "kooky-ssh" ]]; then
-            # kooky-owned connections multiplex (ControlPath shared with the
+        if [[ "${0##*/}" == "kookoo-ssh" ]]; then
+            # kookoo-owned connections multiplex (ControlPath shared with the
             # paste upload's ssh/scp — `sshMultiplexOptions`): this
             # interactively authenticated connection is the master the
             # headless upload rides, which is what lets password /
             # interactive-passphrase workspaces paste files at all. The
             # public `ssh` shim never gets this — silently switching manual
-            # ssh onto shared connections is not kooky's call to make.
+            # ssh onto shared connections is not kookoo's call to make.
             _kooky_mux_opts=(\(sshMultiplexOptions.joined(separator: " ")))
         fi
         # No exec: the wrapper must OUTLIVE ssh to emit the logout marker —
@@ -1786,7 +1792,7 @@ enum KookyShellIntegration {
     /// with that dir prepended after normal rc replay. The temp dir is removed
     /// when the remote shell exits, so this does not persist files on servers.
     /// Consume-once eval of the agent command the kooky-ssh wrapper passed
-    /// via the `KOOKY_REMOTE_AGENT` env prefix — interpolated into all three
+    /// via the `KOOKOO_REMOTE_AGENT` env prefix — interpolated into all three
     /// bootstrap shell branches (same single-source shape as the local
     /// `agentLaunchBlock`). `heredocEscaped: true` renders the `\$` form the
     /// zsh/bash rc heredocs need (the OUTER bootstrap shell must leave
@@ -1796,9 +1802,9 @@ enum KookyShellIntegration {
     private static func remoteAgentEvalBlock(heredocEscaped: Bool) -> String {
         let d = heredocEscaped ? #"\$"# : "$"
         return """
-        if [ -n "\(d){KOOKY_REMOTE_AGENT:-}" ]; then
-            _kooky_remote_agent="\(d)KOOKY_REMOTE_AGENT"
-            unset KOOKY_REMOTE_AGENT
+        if [ -n "\(d){KOOKOO_REMOTE_AGENT:-}" ]; then
+            _kooky_remote_agent="\(d)KOOKOO_REMOTE_AGENT"
+            unset KOOKOO_REMOTE_AGENT
             eval "\(d)_kooky_remote_agent"
         fi
         """
@@ -1825,7 +1831,7 @@ enum KookyShellIntegration {
     _kooky_path=${_kooky_path#:}
 
     if [ -z "$_kooky_real" ]; then
-        printf '\033]2;kooky-agent:%s:ended\a' "$_kooky_slug" > /dev/tty 2>/dev/null
+        printf '\033]2;kookoo-agent:%s:ended\a' "$_kooky_slug" > /dev/tty 2>/dev/null
         printf '\n  %s is not installed.\n\n' "$_kooky_slug" >&2
         exit 127
     fi
@@ -1834,20 +1840,20 @@ enum KookyShellIntegration {
         [ "$_kooky_arg" = update ] && { PATH=$_kooky_path; export PATH; break; }
     done
 
-    printf '\033]2;kooky-agent:%s:running\a' "$_kooky_slug" > /dev/tty 2>/dev/null
+    printf '\033]2;kookoo-agent:%s:running\a' "$_kooky_slug" > /dev/tty 2>/dev/null
     "$_kooky_real" "$@"
     _kooky_status=$?
-    printf '\033]2;kooky-agent:%s:ended\a' "$_kooky_slug" > /dev/tty 2>/dev/null
+    printf '\033]2;kookoo-agent:%s:ended\a' "$_kooky_slug" > /dev/tty 2>/dev/null
     exit "$_kooky_status"
     """#
 
     static let remoteAgentBootstrapScript: String = {
         let slugs = remoteAgentMarkerSlugs.map(quote).joined(separator: " ")
         return #"""
-        _kooky_root="${TMPDIR:-/tmp}/kooky-agent-markers-${USER:-user}-$$"
+        _kooky_root="${TMPDIR:-/tmp}/kookoo-agent-markers-${USER:-user}-$$"
         _kooky_bin="$_kooky_root/bin"
         mkdir -p "$_kooky_bin" 2>/dev/null || {
-            printf 'kooky: could not create remote marker directory\n' >&2
+            printf 'kookoo: could not create remote marker directory\n' >&2
             "${SHELL:-/bin/sh}" -l
             exit $?
         }
@@ -1856,9 +1862,9 @@ enum KookyShellIntegration {
 
         _kooky_write_agent_wrapper() {
             _kooky_slug="$1"
-            cat > "$_kooky_bin/$_kooky_slug" <<'KOOKY_AGENT_WRAPPER'
+            cat > "$_kooky_bin/$_kooky_slug" <<'KOOKOO_AGENT_WRAPPER'
         \#(remoteAgentShimScript)
-        KOOKY_AGENT_WRAPPER
+        KOOKOO_AGENT_WRAPPER
             chmod +x "$_kooky_bin/$_kooky_slug"
         }
 
@@ -1870,10 +1876,10 @@ enum KookyShellIntegration {
         case "${SHELL:-}" in
             */zsh)
                 mkdir -p "$_kooky_root/zsh"
-                cat > "$_kooky_root/zsh/.zshrc" <<KOOKY_ZSHRC
-        if [[ -n "\${KOOKY_ORIGINAL_ZDOTDIR:-}" ]]; then
-            export ZDOTDIR="\$KOOKY_ORIGINAL_ZDOTDIR"
-            unset KOOKY_ORIGINAL_ZDOTDIR
+                cat > "$_kooky_root/zsh/.zshrc" <<KOOKOO_ZSHRC
+        if [[ -n "\${KOOKOO_ORIGINAL_ZDOTDIR:-}" ]]; then
+            export ZDOTDIR="\$KOOKOO_ORIGINAL_ZDOTDIR"
+            unset KOOKOO_ORIGINAL_ZDOTDIR
         else
             unset ZDOTDIR
         fi
@@ -1884,14 +1890,14 @@ enum KookyShellIntegration {
         [[ -r "\${ZDOTDIR:-\$HOME}/.zshenv" ]] && source "\${ZDOTDIR:-\$HOME}/.zshenv"
         [[ -r "\${ZDOTDIR:-\$HOME}/.zprofile" ]] && source "\${ZDOTDIR:-\$HOME}/.zprofile"
         [[ -r "\${ZDOTDIR:-\$HOME}/.zshrc" ]] && source "\${ZDOTDIR:-\$HOME}/.zshrc"
-        export KOOKY_AGENT_MARKERS=1
+        export KOOKOO_AGENT_MARKERS=1
         export PATH="$_kooky_bin:\$PATH"
         \#(remoteAgentEvalBlock(heredocEscaped: true))
-        KOOKY_ZSHRC
-                KOOKY_ORIGINAL_ZDOTDIR="${ZDOTDIR:-}" ZDOTDIR="$_kooky_root/zsh" zsh -l
+        KOOKOO_ZSHRC
+                KOOKOO_ORIGINAL_ZDOTDIR="${ZDOTDIR:-}" ZDOTDIR="$_kooky_root/zsh" zsh -l
                 ;;
             */bash)
-                cat > "$_kooky_root/bashrc" <<KOOKY_BASHRC
+                cat > "$_kooky_root/bashrc" <<KOOKOO_BASHRC
         _kooky_login_rc_loaded=
         for _kooky_rc in "\$HOME/.bash_profile" "\$HOME/.bash_login" "\$HOME/.profile"; do
             if [[ -r "\$_kooky_rc" ]]; then
@@ -1905,14 +1911,14 @@ enum KookyShellIntegration {
             source "\$HOME/.bashrc"
         fi
         unset _kooky_login_rc_loaded
-        export KOOKY_AGENT_MARKERS=1
+        export KOOKOO_AGENT_MARKERS=1
         export PATH="$_kooky_bin:\$PATH"
         \#(remoteAgentEvalBlock(heredocEscaped: true))
-        KOOKY_BASHRC
+        KOOKOO_BASHRC
                 bash --rcfile "$_kooky_root/bashrc" -i
                 ;;
             *)
-                export KOOKY_AGENT_MARKERS=1
+                export KOOKOO_AGENT_MARKERS=1
                 export PATH="$_kooky_bin:$PATH"
                 # Non-zsh/bash login shells (fish, csh, …): run the agent in
                 # THIS POSIX bootstrap before handing over. It won't see the
@@ -1944,11 +1950,11 @@ enum KookyShellIntegration {
             printf '\\n  \\033[33mThe `agy` on PATH is the Antigravity IDE launcher, not the CLI.\\033[0m\\n' >&2
             printf '  Install the CLI:\\n' >&2
             printf '    \\033[36mcurl -fsSL https://antigravity.google/cli/install.sh | bash\\033[0m\\n\\n' >&2
-            if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+            if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
                 \(agentMarkerCommand(slug: "agy", event: .ended))
             fi
-            if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-                "$KOOKY_HOOK_BIN" agy ended 2>/dev/null
+            if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+                "$KOOKOO_HOOK_BIN" agy ended 2>/dev/null
             fi
             exit 127
             ;;
@@ -1966,19 +1972,19 @@ enum KookyShellIntegration {
 
     \(agentEntryGuards)
 
-    if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+    if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
         \(agentMarkerCommand(slug: "kiro-cli", event: .running))
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-            "$KOOKY_HOOK_BIN" kiro-cli running 2>/dev/null
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+            "$KOOKOO_HOOK_BIN" kiro-cli running 2>/dev/null
         fi
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_KIRO_ACP_RECORD_PATH" ]]; then
-            KIRO_ACP_RECORD_PATH="$KOOKY_KIRO_ACP_RECORD_PATH" "$real" "$@"
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_KIRO_ACP_RECORD_PATH" ]]; then
+            KIRO_ACP_RECORD_PATH="$KOOKOO_KIRO_ACP_RECORD_PATH" "$real" "$@"
         else
             "$real" "$@"
         fi
         status=$?
-        if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-            "$KOOKY_HOOK_BIN" kiro-cli ended 2>/dev/null
+        if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+            "$KOOKOO_HOOK_BIN" kiro-cli ended 2>/dev/null
         fi
         \(agentMarkerCommand(slug: "kiro-cli", event: .ended))
         exit $status
@@ -2001,22 +2007,22 @@ enum KookyShellIntegration {
 
     /// The `running` → exec → `ended` body shared by `bracketWrapperScript`
     /// and `antigravityWrapperScript`. Outside a kooky session (and without
-    /// `KOOKY_AGENT_MARKERS`) the bracket is a no-op — `exec "$real"` is the
+    /// `KOOKOO_AGENT_MARKERS`) the bracket is a no-op — `exec "$real"` is the
     /// only line that runs so the wrapper is transparent when the user invokes
     /// the binary from a plain Terminal.app shell.
     private static func bracketBody(slug: String) -> String {
         """
         \(agentEntryGuards)
 
-        if [[ -n "$KOOKY_SURFACE_ID" || -n "$KOOKY_AGENT_MARKERS" ]]; then
+        if [[ -n "$KOOKOO_SURFACE_ID" || -n "$KOOKOO_AGENT_MARKERS" ]]; then
             \(agentMarkerCommand(slug: slug, event: .running))
-            if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-                "$KOOKY_HOOK_BIN" \(slug) running 2>/dev/null
+            if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+                "$KOOKOO_HOOK_BIN" \(slug) running 2>/dev/null
             fi
             "$real" "$@"
             status=$?
-            if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-                "$KOOKY_HOOK_BIN" \(slug) ended 2>/dev/null
+            if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+                "$KOOKOO_HOOK_BIN" \(slug) ended 2>/dev/null
             fi
             \(agentMarkerCommand(slug: slug, event: .ended))
             exit $status
@@ -2035,8 +2041,8 @@ enum KookyShellIntegration {
     import type { PluginAPI } from "@ampcode/plugin"
 
     export default function (amp: PluginAPI) {
-      const surface = process.env.KOOKY_SURFACE_ID
-      const hookBin = process.env.KOOKY_HOOK_BIN
+      const surface = process.env.KOOKOO_SURFACE_ID
+      const hookBin = process.env.KOOKOO_HOOK_BIN
       if (!surface || !hookBin) return
 
       const send = (args: string[]) => {
@@ -2058,18 +2064,18 @@ enum KookyShellIntegration {
     /// OpenCode auto-loads any `.ts`/`.js` file in
     /// `$XDG_CONFIG_HOME/opencode/plugin/` (or `~/.config/opencode/plugin/`)
     /// at startup. The plugin runs in opencode's own Bun runtime, inherits
-    /// KOOKY_SURFACE_ID + KOOKY_HOOK_BIN from the shell, and shells out to
+    /// KOOKOO_SURFACE_ID + KOOKOO_HOOK_BIN from the shell, and shells out to
     /// KookyHook on each lifecycle event. The first-line marker
     /// (`managedFileMarker`) lets `writeManagedFile` recognise the file as
-    /// kooky-generated on upgrade — a user's own `kooky.ts` plugin would
+    /// kookoo-generated on upgrade — a user's own `kookoo.ts` plugin would
     /// not carry the marker and stays untouched.
     static let opencodePluginScript = """
     // \(managedFileMarker) — pings KookyHook on prompt-submit and turn-end so
     // the sidebar agent dot tracks per-session activity. Safe to delete; will
     // be regenerated next time kooky launches.
     export const KookyPlugin = async ({ $, client, directory }) => {
-      const surface = process.env.KOOKY_SURFACE_ID
-      const hookBin = process.env.KOOKY_HOOK_BIN
+      const surface = process.env.KOOKOO_SURFACE_ID
+      const hookBin = process.env.KOOKOO_HOOK_BIN
       if (!surface || !hookBin) return {}
 
       const ping = async (state) => {
@@ -2123,10 +2129,10 @@ enum KookyShellIntegration {
     }
 
     private static let bashLauncherFilePath: String =
-        NSTemporaryDirectory().appending("kooky-bash-launch-\(getpid()).sh")
+        NSTemporaryDirectory().appending("kookoo-bash-launch-\(getpid()).sh")
 
     private static let bashRcfilePath: String =
-        NSTemporaryDirectory().appending("kooky-bashrc-\(getpid())")
+        NSTemporaryDirectory().appending("kookoo-bashrc-\(getpid())")
 
     private static let kookyBashrc: String = """
         # Default word-jump bindings; readline doesn't bind Ctrl/Alt+arrow on
@@ -2162,9 +2168,9 @@ enum KookyShellIntegration {
         fi
         unset _kooky_login_rc_loaded
 
-        # User rc may rewrite PATH; re-prepend the kooky wrapper directory so
+        # User rc may rewrite PATH; re-prepend the kookoo wrapper directory so
         # `claude` etc. resolve to our shims first.
-        [[ -n "$KOOKY_BIN_DIR" ]] && export PATH="$KOOKY_BIN_DIR:$PATH"
+        [[ -n "$KOOKOO_BIN_DIR" ]] && export PATH="$KOOKOO_BIN_DIR:$PATH"
 
         _kooky_osc7_pwd() { printf '\\e]7;file://%s%s\\e\\\\' "$HOSTNAME" "$PWD"; }
         # Re-assert the cwd as the OSC title each prompt (see zsh wrapper) —
@@ -2175,7 +2181,7 @@ enum KookyShellIntegration {
         \(ShellCommandIntegration.bash)
 
         # No command-line reporting here on purpose: bash gets no OSC 133 from
-        # kooky (only the zsh and fish integrations emit it), so there is no
+        # kookoo (only the zsh and fish integrations emit it), so there is no
         # command RESULT for the text to label — it would cost a subshell plus
         # a hook spawn per prompt to feed a row that can never render. Giving
         # bash 133 is its own item: the `C` marker needs PS0, which stock
@@ -2217,12 +2223,12 @@ enum KookyShellIntegration {
     }
 
     private static let zshDirectoryPath: String =
-        NSTemporaryDirectory().appending("kooky-zsh-\(getpid())")
+        NSTemporaryDirectory().appending("kookoo-zsh-\(getpid())")
 
     private static let kookyZshrc: String = """
         # Default word-jump bindings. zsh ZLE only binds Alt+B/F by default;
         # most other terminals (iTerm2, ghostty, Apple Terminal) remap the
-        # Ctrl/Alt+arrow sequences to ESC+B/F so users don't notice. kooky
+        # Ctrl/Alt+arrow sequences to ESC+B/F so users don't notice. kookoo
         # binds them directly here. Placed before sourcing ~/.zshrc so user
         # rc files retain final say if they override the same sequences.
         bindkey '^[[1;5D' backward-word    # Ctrl+Left
@@ -2236,11 +2242,11 @@ enum KookyShellIntegration {
         # `$ZDOTDIR/...` reference inside .zshenv / .zprofile / .zshrc
         # (compinit's `.zcompdump`, plugin caches, znap/zinit roots, HISTFILE
         # overrides) resolves to real `$HOME` instead of our ephemeral
-        # kooky-zsh-<pid> dir. Also stops `curl | bash`-style installers
+        # kookoo-zsh-<pid> dir. Also stops `curl | bash`-style installers
         # (opencode, rustup) from writing PATH exports to our ephemeral rc.
-        if [[ -n "$KOOKY_ORIGINAL_ZDOTDIR" ]]; then
-            export ZDOTDIR="$KOOKY_ORIGINAL_ZDOTDIR"
-            unset KOOKY_ORIGINAL_ZDOTDIR
+        if [[ -n "$KOOKOO_ORIGINAL_ZDOTDIR" ]]; then
+            export ZDOTDIR="$KOOKOO_ORIGINAL_ZDOTDIR"
+            unset KOOKOO_ORIGINAL_ZDOTDIR
         else
             unset ZDOTDIR
         fi
@@ -2254,7 +2260,7 @@ enum KookyShellIntegration {
         # Re-assert the cwd as the OSC title each prompt — registered before
         # the user rc so it runs first in precmd_functions. Drops a stale
         # ssh / TUI title; a title the user's theme sets later this prompt
-        # still wins (it runs after). kooky maps a cwd-shaped title to the
+        # still wins (it runs after). kookoo maps a cwd-shaped title to the
         # bare basename. `return $_s` keeps $? intact for the user hooks.
         autoload -Uz add-zsh-hook
         _kooky_title_pwd() { local _s=$?; printf '\\e]2;%s\\a' "$PWD"; return $_s }
@@ -2270,9 +2276,9 @@ enum KookyShellIntegration {
         [[ -r "${ZDOTDIR:-$HOME}/.zprofile" ]] && source "${ZDOTDIR:-$HOME}/.zprofile"
         [[ -r "${ZDOTDIR:-$HOME}/.zshrc" ]] && source "${ZDOTDIR:-$HOME}/.zshrc"
 
-        # User rc may rewrite PATH; re-prepend the kooky wrapper directory so
+        # User rc may rewrite PATH; re-prepend the kookoo wrapper directory so
         # `claude` etc. resolve to our shims first.
-        [[ -n "$KOOKY_BIN_DIR" ]] && export PATH="$KOOKY_BIN_DIR:$PATH"
+        [[ -n "$KOOKOO_BIN_DIR" ]] && export PATH="$KOOKOO_BIN_DIR:$PATH"
 
         _kooky_osc7_pwd() { printf '\\e]7;file://%s%s\\e\\\\' "$HOST" "$PWD" }
         add-zsh-hook chpwd _kooky_osc7_pwd
@@ -2363,14 +2369,14 @@ enum KookyShellIntegration {
     # the prompt hook and the agent launcher so PATH is ready regardless of which
     # fires first. This is what makes a manually-typed `claude` light the dot.
     function __kooky_prepend_path
-        test -n "$KOOKY_BIN_DIR"; or return
+        test -n "$KOOKOO_BIN_DIR"; or return
         # Force the wrapper dir to the FRONT, even when it's already present
         # somewhere — config.fish / fish_add_path / kiro routinely leave it
         # mid-PATH (e.g. behind ~/.local/bin), and the shim only wins when it's
         # first. Skip when already first (avoids per-prompt PATH churn); else
         # drop any existing copy and prepend (no duplicates).
-        test "$PATH[1]" = "$KOOKY_BIN_DIR"; and return
-        set -gx PATH "$KOOKY_BIN_DIR" (string match -v -- "$KOOKY_BIN_DIR" $PATH)
+        test "$PATH[1]" = "$KOOKOO_BIN_DIR"; and return
+        set -gx PATH "$KOOKOO_BIN_DIR" (string match -v -- "$KOOKOO_BIN_DIR" $PATH)
     end
 
     # PATH re-prepend + OSC 7 cwd, each prompt (fires after config.fish, so we
@@ -2384,7 +2390,7 @@ enum KookyShellIntegration {
     # Two-layer dedup mirrors the zsh wrapper: cache `node --version` against the
     # resolved node path, and skip the IPC fork entirely when no key changed.
     function __kooky_env_status --on-event fish_prompt
-        if test -z "$KOOKY_SURFACE_ID"; or test -z "$KOOKY_HOOK_BIN"; or not test -x "$KOOKY_HOOK_BIN"
+        if test -z "$KOOKOO_SURFACE_ID"; or test -z "$KOOKOO_HOOK_BIN"; or not test -x "$KOOKOO_HOOK_BIN"
             return
         end
         set -l node_path ""
@@ -2408,14 +2414,14 @@ enum KookyShellIntegration {
         end
         # Only advance the dedup cache when the IPC actually succeeded, so a
         # transient socket gap retries next prompt instead of freezing.
-        if "$KOOKY_HOOK_BIN" env "$VIRTUAL_ENV" "$CONDA_DEFAULT_ENV" "$NVM_BIN" "$NVM_DIR" "$__kooky_node_version_last" "$https_v" "$http_v" "$all_v" 2>/dev/null
+        if "$KOOKOO_HOOK_BIN" env "$VIRTUAL_ENV" "$CONDA_DEFAULT_ENV" "$NVM_BIN" "$NVM_DIR" "$__kooky_node_version_last" "$https_v" "$http_v" "$all_v" 2>/dev/null
             set -g __kooky_env_last "$env_now"
         end
     end
 
     # The accepted command line, for the Session Info inspector. Deliberately
     # OUTSIDE the OSC 133 version gate below: fish 4 emits the prompt/command
-    # boundaries natively, so this marker is what kooky needs on every fish.
+    # boundaries natively, so this marker is what kookoo needs on every fish.
     # Control characters are flattened first — a raw BEL or ESC inside the
     # command would terminate the OSC string early and let the rest of the
     # command render as terminal output.
@@ -2426,7 +2432,7 @@ enum KookyShellIntegration {
     end
 
     # OSC 133 prompt/command markers — fish 4+ emits these natively, so only add
-    # them on fish 3.x to avoid double-marking. Gives kooky per-command exit
+    # them on fish 3.x to avoid double-marking. Gives kookoo per-command exit
     # status (the failed-command red dot), duration, and jump-to-prompt.
     set -l __kooky_major (string split '.' -- $version)[1]
     if test "$__kooky_major" -lt 4 2>/dev/null
@@ -2446,21 +2452,21 @@ enum KookyShellIntegration {
     # guard blocks re-entry from any subshell the agent spawns.
     function __kooky_agent_launch --on-event fish_prompt
         functions -e __kooky_agent_launch
-        test -n "$KOOKY_AGENT"; and test -z "$KOOKY_AGENT_LAUNCHED"; or return
-        set -gx KOOKY_AGENT_LAUNCHED 1
+        test -n "$KOOKOO_AGENT"; and test -z "$KOOKOO_AGENT_LAUNCHED"; or return
+        set -gx KOOKOO_AGENT_LAUNCHED 1
         __kooky_prepend_path
-        set -l _kooky_cmd $KOOKY_AGENT
-        set -e KOOKY_AGENT
+        set -l _kooky_cmd $KOOKOO_AGENT
+        set -e KOOKOO_AGENT
         set -l _kooky_bin (string split -m1 ' ' -- $_kooky_cmd)[1]
-        # `eval` lets KOOKY_AGENT carry multi-word commands (resume flag, prompt,
+        # `eval` lets KOOKOO_AGENT carry multi-word commands (resume flag, prompt,
         # extra options); a single-word `claude` behaves identically.
         eval $_kooky_cmd
         # The agent ran foreground, so reaching here means it exited (or a user
         # alias shadowed the PATH wrapper before its `ended` ping). Revert the
         # eagerly-promoted tab icon to a plain shell; idempotent if the wrapper
         # already pinged ended.
-        if test -n "$KOOKY_SURFACE_ID"; and test -n "$KOOKY_HOOK_BIN"
-            "$KOOKY_HOOK_BIN" $_kooky_bin ended 2>/dev/null
+        if test -n "$KOOKOO_SURFACE_ID"; and test -n "$KOOKOO_HOOK_BIN"
+            "$KOOKOO_HOOK_BIN" $_kooky_bin ended 2>/dev/null
         end
     end
     """
@@ -2475,7 +2481,7 @@ enum KookyShellIntegration {
 
     /// Absolute path to the kooky-owned fish vendor conf file.
     static let fishVendorConfPath: String = {
-        (fishVendorDataRoot as NSString).appendingPathComponent("fish/vendor_conf.d/kooky.fish")
+        (fishVendorDataRoot as NSString).appendingPathComponent("fish/vendor_conf.d/kookoo.fish")
     }()
 
     /// Writes the fish vendor conf. Called from `installAgentHooks` so it tracks
@@ -2500,7 +2506,7 @@ enum KookyShellIntegration {
         let dir = NSTemporaryDirectory()
         let pidSuffix = "-\(getpid())"
         guard let entries = try? fm.contentsOfDirectory(atPath: dir) else { return }
-        for entry in entries where entry.hasPrefix("kooky-") {
+        for entry in entries where entry.hasPrefix("kookoo-") {
             guard (entry as NSString).deletingPathExtension.hasSuffix(pidSuffix) else { continue }
             try? fm.removeItem(atPath: dir.appending(entry))
         }
@@ -2508,16 +2514,16 @@ enum KookyShellIntegration {
 
     // MARK: - Internals
 
-    /// Inline agent launch — invoked by both wrapper rcs to start KOOKY_AGENT
-    /// before the first prompt prints. KOOKY_AGENT_LAUNCHED guards against
+    /// Inline agent launch — invoked by both wrapper rcs to start KOOKOO_AGENT
+    /// before the first prompt prints. KOOKOO_AGENT_LAUNCHED guards against
     /// re-entry from subshells the agent itself may spawn.
     static let agentLaunchBlock = """
-        if [[ -n "$KOOKY_AGENT" && -z "$KOOKY_AGENT_LAUNCHED" ]]; then
-            export KOOKY_AGENT_LAUNCHED=1
-            _kooky_cmd="$KOOKY_AGENT"
+        if [[ -n "$KOOKOO_AGENT" && -z "$KOOKOO_AGENT_LAUNCHED" ]]; then
+            export KOOKOO_AGENT_LAUNCHED=1
+            _kooky_cmd="$KOOKOO_AGENT"
             _kooky_agent_bin="${_kooky_cmd%% *}"
-            unset KOOKY_AGENT
-            # `eval` lets KOOKY_AGENT carry multi-word commands (e.g. an
+            unset KOOKOO_AGENT
+            # `eval` lets KOOKOO_AGENT carry multi-word commands (e.g. an
             # editor + file path); single-word agent commands like `claude`
             # behave identically.
             eval "$_kooky_cmd"
@@ -2528,8 +2534,8 @@ enum KookyShellIntegration {
             # the eagerly-promoted tab icon on the agent. Revert to a plain
             # shell. Idempotent — a wrapper that already pinged `ended` makes
             # this a no-op (`applyHookEvent` dedups same-value writes).
-            if [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" ]]; then
-                "$KOOKY_HOOK_BIN" "$_kooky_agent_bin" ended 2>/dev/null
+            if [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" ]]; then
+                "$KOOKOO_HOOK_BIN" "$_kooky_agent_bin" ended 2>/dev/null
             fi
             # Restore the agent's exit code — the revert ping clobbered `$?`,
             # but the first prompt (and theme hooks / `_kooky_title_pwd` that
@@ -2548,14 +2554,14 @@ enum KookyShellIntegration {
     ///     this turns the hook into a no-op the vast majority of the time.
     static let envStatusBlock = """
         _kooky_env_status() {
-            [[ -n "$KOOKY_SURFACE_ID" && -n "$KOOKY_HOOK_BIN" && -x "$KOOKY_HOOK_BIN" ]] || return 0
+            [[ -n "$KOOKOO_SURFACE_ID" && -n "$KOOKOO_HOOK_BIN" && -x "$KOOKOO_HOOK_BIN" ]] || return 0
             local _kooky_node_path=""
             command -v node >/dev/null 2>&1 && _kooky_node_path="$(command -v node)"
             local _kooky_node_key="${_kooky_node_path}|${NVM_BIN:-}"
-            if [[ "$_kooky_node_key" != "$_KOOKY_NODE_KEY_LAST" ]]; then
-                _KOOKY_NODE_VERSION_LAST=""
-                [[ -n "$_kooky_node_path" ]] && _KOOKY_NODE_VERSION_LAST="$("$_kooky_node_path" --version 2>/dev/null)"
-                _KOOKY_NODE_KEY_LAST="$_kooky_node_key"
+            if [[ "$_kooky_node_key" != "$_KOOKOO_NODE_KEY_LAST" ]]; then
+                _KOOKOO_NODE_VERSION_LAST=""
+                [[ -n "$_kooky_node_path" ]] && _KOOKOO_NODE_VERSION_LAST="$("$_kooky_node_path" --version 2>/dev/null)"
+                _KOOKOO_NODE_KEY_LAST="$_kooky_node_key"
             fi
             # Accept both lowercase and uppercase forms — curl / git / requests
             # respect lowercase; some tools (and many corp setups) export
@@ -2563,14 +2569,14 @@ enum KookyShellIntegration {
             local _kooky_https_proxy="${https_proxy:-${HTTPS_PROXY:-}}"
             local _kooky_http_proxy="${http_proxy:-${HTTP_PROXY:-}}"
             local _kooky_all_proxy="${all_proxy:-${ALL_PROXY:-}}"
-            local _kooky_env_now="${VIRTUAL_ENV:-}|${CONDA_DEFAULT_ENV:-}|${NVM_BIN:-}|${NVM_DIR:-}|$_KOOKY_NODE_VERSION_LAST|$_kooky_https_proxy|$_kooky_http_proxy|$_kooky_all_proxy"
-            [[ "$_kooky_env_now" == "$_KOOKY_ENV_LAST" ]] && return 0
+            local _kooky_env_now="${VIRTUAL_ENV:-}|${CONDA_DEFAULT_ENV:-}|${NVM_BIN:-}|${NVM_DIR:-}|$_KOOKOO_NODE_VERSION_LAST|$_kooky_https_proxy|$_kooky_http_proxy|$_kooky_all_proxy"
+            [[ "$_kooky_env_now" == "$_KOOKOO_ENV_LAST" ]] && return 0
             # Only advance the dedup cache when the IPC actually succeeded —
-            # if kooky-hook returns non-zero (kooky restarting, socket gone
+            # if kookoo-hook returns non-zero (kookoo restarting, socket gone
             # before the hook server bound), the next prompt will retry
             # instead of staying frozen at the unsent value.
-            "$KOOKY_HOOK_BIN" env "${VIRTUAL_ENV:-}" "${CONDA_DEFAULT_ENV:-}" "${NVM_BIN:-}" "${NVM_DIR:-}" "$_KOOKY_NODE_VERSION_LAST" "$_kooky_https_proxy" "$_kooky_http_proxy" "$_kooky_all_proxy" 2>/dev/null \
-                && _KOOKY_ENV_LAST="$_kooky_env_now"
+            "$KOOKOO_HOOK_BIN" env "${VIRTUAL_ENV:-}" "${CONDA_DEFAULT_ENV:-}" "${NVM_BIN:-}" "${NVM_DIR:-}" "$_KOOKOO_NODE_VERSION_LAST" "$_kooky_https_proxy" "$_kooky_http_proxy" "$_kooky_all_proxy" 2>/dev/null \
+                && _KOOKOO_ENV_LAST="$_kooky_env_now"
             # Mask our internal IPC status so user precmd hooks downstream in
             # zsh's precmd_functions chain don't see `$?=1` and bleed it into
             # their prompt rendering. The dedup logic is internal — its
@@ -2607,7 +2613,7 @@ enum KookyShellIntegration {
             # row the moment a long input wraps — wiping the first visible line.
             [[ "$PROMPT" != *$'\e]133;B\a'* ]] && PROMPT="${PROMPT}"$'%{\e]133;B\a%}'
             _kooky_env_status
-            # Same masking concern as `_kooky_env_status` itself: the kooky
+            # Same masking concern as `_kooky_env_status` itself: the kookoo
             # hooks must not leak `$?` into user prompts that downstream
             # precmd hooks may sample.
             return 0
@@ -2661,11 +2667,11 @@ enum KookyShellIntegration {
         let existed = FileManager.default.fileExists(atPath: path)
         writeFile(at: path, contents: contents, executable: executable)
         guard FileManager.default.fileExists(atPath: path) else {
-            NSLog("kooky: could not write \(label) at \(path) — spawning without shell integration")
+            NSLog("kookoo: could not write \(label) at \(path) — spawning without shell integration")
             return false
         }
         if !existed {
-            NSLog("kooky: \(label) was absent — wrote \(path) (first launch, or rebuilt after TMPDIR cleanup)")
+            NSLog("kookoo: \(label) was absent — wrote \(path) (first launch, or rebuilt after TMPDIR cleanup)")
         }
         return true
     }

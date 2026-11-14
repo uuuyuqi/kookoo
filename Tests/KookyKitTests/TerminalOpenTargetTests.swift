@@ -2,7 +2,7 @@ import XCTest
 @testable import KookyKit
 
 final class TerminalOpenTargetTests: XCTestCase {
-    private let cwd = URL(fileURLWithPath: "/tmp/kooky-project", isDirectory: true)
+    private let cwd = URL(fileURLWithPath: "/tmp/kookoo-project", isDirectory: true)
 
     private func resolve(
         _ raw: String,
@@ -60,7 +60,7 @@ final class TerminalOpenTargetTests: XCTestCase {
         )
         XCTAssertEqual(
             reference?.url,
-            URL(fileURLWithPath: "/tmp/kooky-project/Sources/Kooky/main.swift")
+            URL(fileURLWithPath: "/tmp/kookoo-project/Sources/Kooky/main.swift")
         )
     }
 
@@ -69,7 +69,7 @@ final class TerminalOpenTargetTests: XCTestCase {
     }
 
     func testLineAndColumnSuffixAreRemovedFromExistingPath() {
-        let path = "/tmp/kooky-project/Sources/Kooky/main.swift"
+        let path = "/tmp/kookoo-project/Sources/Kooky/main.swift"
         let reference = fileReference(
             "Sources/Kooky/main.swift:42:7",
             existing: [path],
@@ -81,7 +81,7 @@ final class TerminalOpenTargetTests: XCTestCase {
     }
 
     func testBareRelativeFilenameWithLocationIsNotTreatedAsURLScheme() {
-        let path = "/tmp/kooky-project/main.swift"
+        let path = "/tmp/kookoo-project/main.swift"
         let reference = fileReference(
             "main.swift:42:7",
             existing: [path],
@@ -132,7 +132,7 @@ final class TerminalOpenTargetTests: XCTestCase {
     }
 
     func testSourceLocationFragmentIsRemoved() {
-        let path = "/tmp/kooky-project/Sources/Kooky/main.swift"
+        let path = "/tmp/kookoo-project/Sources/Kooky/main.swift"
         let reference = fileReference(
             "Sources/Kooky/main.swift#L18C4",
             existing: [path],

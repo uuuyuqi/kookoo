@@ -63,7 +63,7 @@ final class GitStatusFetcherTests: XCTestCase {
         // badges vanish on exactly the large changesets they matter for).
         // 1500 deletions under a long directory name ≈ 100KB+ of numstat.
         let root = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-numstat-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-numstat-\(UUID().uuidString)", isDirectory: true)
         let dir = root.appendingPathComponent(
             "deeply-nested-directory-name-that-pads-numstat-lines-past-the-pipe-buffer",
             isDirectory: true

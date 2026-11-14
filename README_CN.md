@@ -45,6 +45,9 @@
 | Reasonix | `reasonix` | ✓ | ✓ | ✓ |
 | Kiro CLI | `kiro-cli` | ✗ | ✗ | ✓ |
 | Droid | `droid` | ✓ | ✗ | ✓ |
+| Qoder CLI | `qoder` | ✗ | ✗ | ✗ |
+| Qoder CN CLI | `qodercn` | ✗ | ✗ | ✗ |
+| Qoder CLI (Legacy) | `qodercli` | ✗ | ✗ | ✗ |
 
 **等你处理**:agent 停下来需要你回应时圆点变琥珀色,包括在等你批准某个工具;Grok Build 和 Kiro CLI 没有这个信号,所以它们的圆点只报运行中和已结束。**工具 pill**:在 pane 底部状态栏显示当前正在跑的工具。**会话历史**:标出哪些 agent 的历史对话能在 agent 面板的历史页里翻阅和恢复——见下文。用不上的 agent 可以在 Settings → Agents 里隐藏。
 

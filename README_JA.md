@@ -45,6 +45,9 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 | Reasonix | `reasonix` | ✓ | ✓ | ✓ |
 | Kiro CLI | `kiro-cli` | ✗ | ✗ | ✓ |
 | Droid | `droid` | ✓ | ✗ | ✓ |
+| Qoder CLI | `qoder` | ✗ | ✗ | ✗ |
+| Qoder CN CLI | `qodercn` | ✗ | ✗ | ✗ |
+| Qoder CLI (Legacy) | `qodercli` | ✗ | ✗ | ✗ |
 
 **ユーザー待ち**: agent が停止して応答を必要としている時 (ツールの承認待ちを含む) にドットが琥珀色になります。Grok Build と Kiro CLI はこの信号を出さないため、ドットは実行中と終了のみを表します。**ツール pill**: 現在実行中のツールを pane 下部のステータスバーに表示します。**セッション履歴**: 過去の会話を agent パネルの履歴ページで閲覧・再開できる agent を示します —— 下記参照。使わない agent は Settings → Agents で非表示にできます。
 

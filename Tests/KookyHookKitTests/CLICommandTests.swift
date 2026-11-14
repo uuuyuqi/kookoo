@@ -1,7 +1,7 @@
 import XCTest
 @testable import KookyHookKit
 
-/// Pins the `kooky-cli` front half: the per-verb argv grammar, the
+/// Pins the `kookoo-cli` front half: the per-verb argv grammar, the
 /// command → wire-request mapping, path normalization, and the wire
 /// round-trip. External tools script against this surface, so a grammar
 /// change that isn't deliberate must redden here.
@@ -242,7 +242,7 @@ final class CLICommandTests: XCTestCase {
                 isKey: true,
                 workspaces: [KookyCLIWorkspaceInfo(
                     id: "W",
-                    title: "kooky",
+                    title: "kookoo",
                     path: "/p",
                     isActive: true,
                     tabs: [KookyCLITabInfo(id: "S", title: "t", cwd: "/p", isActive: true, agent: "terminal", agentState: nil)]
@@ -318,18 +318,18 @@ final class CLICommandTests: XCTestCase {
             isKey: true,
             workspaces: [KookyCLIWorkspaceInfo(
                 id: "W1",
-                title: "kooky",
-                path: "/Users/x/kooky",
+                title: "kookoo",
+                path: "/Users/x/kookoo",
                 isActive: true,
                 tabs: [
-                    KookyCLITabInfo(id: "AAA", title: "fix", cwd: "/Users/x/kooky", isActive: true, agent: "claude-code", agentState: "running"),
+                    KookyCLITabInfo(id: "AAA", title: "fix", cwd: "/Users/x/kookoo", isActive: true, agent: "claude-code", agentState: "running"),
                     KookyCLITabInfo(id: "BBB", title: "zsh", cwd: "/Users/x", isActive: false, agent: "terminal", agentState: nil),
                 ]
             )]
         )]
         let text = KookyHookKit.renderCLIList(windows)
         XCTAssertTrue(text.contains("window 1 (key)"))
-        XCTAssertTrue(text.contains("workspace \"kooky\" (active)"))
+        XCTAssertTrue(text.contains("workspace \"kookoo\" (active)"))
         XCTAssertTrue(text.contains("* AAA  claude-code (running)"))
         XCTAssertTrue(text.contains("  BBB  terminal  \"zsh\""))
         XCTAssertEqual(KookyHookKit.renderCLIList([]), "no windows")
@@ -379,7 +379,7 @@ final class CLICommandTests: XCTestCase {
     /// Every dynamic value the CLI prints goes through `plain` — error
     /// lines and notes included, not just list rows. A refusal quotes the
     /// caller's own `--agent` value back at them, and that string came from
-    /// whatever tool invoked kooky-cli.
+    /// whatever tool invoked kookoo-cli.
     func testPlainStripsEverythingThatCouldForgeALine() {
         XCTAssertEqual(KookyHookKit.plain("a\nb"), "a b")
         // ESC and BEL become spaces; the printable `]` is not a control

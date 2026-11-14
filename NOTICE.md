@@ -76,3 +76,10 @@ SOFTWARE.
 - Source: <https://github.com/ghostty-org/ghostty>
 - License: MIT
 - Distribution: prebuilt `GhosttyKit.xcframework` fetched by `scripts/setup-libghostty.sh` into `Vendor/` (gitignored)
+
+### Qoder brand mark
+- Source: <https://qoder.com/> (current New Qoder site, retrieved 2026-11-14)
+- Asset: <https://img.alicdn.com/imgextra/i4/O1CN012JUQmkuk4LH0cGga_!!6000000004828-2-tps-304-304.png>
+- Owner: BRIGHT ZENITH PRIVATE LIMITED / Qoder; all brand rights remain with their owner.
+- File: `Sources/KookyKit/Resources/Icons/qoder.png`
+- Used to identify compatibility with Qoder CLI. Kookoo is independent and is not endorsed by Qoder. This mark is not licensed under Kookoo's MIT license; no general redistribution license was identified. Review brand usage permission before commercial distribution.

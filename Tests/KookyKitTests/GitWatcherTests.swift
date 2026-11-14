@@ -6,7 +6,7 @@ final class GitWatcherTests: XCTestCase {
 
     override func setUpWithError() throws {
         tempRoot = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("kooky-gitwatcher-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-gitwatcher-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
     }
 

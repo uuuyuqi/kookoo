@@ -15,7 +15,7 @@ final class WorktreeManagerTests: XCTestCase {
 
     private func tempDir() -> URL {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-wt-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-wt-\(UUID().uuidString)")
         tempRoots.append(url)
         return url
     }
@@ -89,19 +89,19 @@ final class WorktreeManagerTests: XCTestCase {
 
     func testDefaultDirectoryNameSlugsBranchPathSeparators() {
         XCTAssertEqual(
-            WorktreeManager.defaultDirectoryName(sourceName: "kooky", branch: "feature/worktree ux"),
-            "kooky-feature-worktree-ux"
+            WorktreeManager.defaultDirectoryName(sourceName: "kookoo", branch: "feature/worktree ux"),
+            "kookoo-feature-worktree-ux"
         )
         XCTAssertEqual(
-            WorktreeManager.defaultDirectoryName(sourceName: "kooky", branch: "bugfix\\pane:drag"),
-            "kooky-bugfix-pane-drag"
+            WorktreeManager.defaultDirectoryName(sourceName: "kookoo", branch: "bugfix\\pane:drag"),
+            "kookoo-bugfix-pane-drag"
         )
     }
 
     func testDefaultDirectoryNameKeepsPlaceholderShapeWhenBranchEmpty() {
         XCTAssertEqual(
-            WorktreeManager.defaultDirectoryName(sourceName: "kooky", branch: ""),
-            "kooky-"
+            WorktreeManager.defaultDirectoryName(sourceName: "kookoo", branch: ""),
+            "kookoo-"
         )
     }
 

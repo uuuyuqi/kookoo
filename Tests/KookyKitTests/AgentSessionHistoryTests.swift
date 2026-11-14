@@ -8,7 +8,7 @@ final class AgentSessionScannerTests: XCTestCase {
 
     override func setUpWithError() throws {
         tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-session-scan-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-session-scan-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 
@@ -696,7 +696,7 @@ final class SessionHistoryFilterTests: XCTestCase {
 
     override func setUpWithError() throws {
         tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-history-filter-\(UUID().uuidString)")
+            .appendingPathComponent("kookoo-history-filter-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 

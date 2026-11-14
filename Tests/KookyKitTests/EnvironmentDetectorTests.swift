@@ -7,7 +7,7 @@ final class EnvironmentDetectorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        tempDir = fm.temporaryDirectory.appendingPathComponent("kooky-env-test-\(UUID().uuidString)", isDirectory: true)
+        tempDir = fm.temporaryDirectory.appendingPathComponent("kookoo-env-test-\(UUID().uuidString)", isDirectory: true)
         try? fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 
@@ -102,7 +102,7 @@ final class EnvironmentDetectorTests: XCTestCase {
 
     func testPromptReportedNodeVersionWinsOverNvmBin() {
         let env = [
-            "KOOKY_NODE_VERSION": "v23.2.0",
+            "KOOKOO_NODE_VERSION": "v23.2.0",
             "NVM_BIN": "/Users/corey/.nvm/versions/node/v20.1.0/bin",
         ]
         XCTAssertEqual(EnvironmentDetector.extract(shellEnv: env, cwd: tempDir).nodeVersion, "v23.2.0")
@@ -152,7 +152,7 @@ final class EnvironmentDetectorTests: XCTestCase {
                 "CONDA_DEFAULT_ENV": "",
                 "NVM_BIN": "",
                 "NVM_DIR": "",
-                "KOOKY_NODE_VERSION": "",
+                "KOOKOO_NODE_VERSION": "",
             ],
             cwd: tempDir,
             allowProjectFallback: false

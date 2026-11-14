@@ -54,7 +54,7 @@ enum ConversationResumeStrategy: Hashable {
 /// A named profile that turns into a `TerminalSessionConfig` when the user
 /// picks it from the "+" menu. The shell starts under our wrapper `.zshrc`
 /// (KookyShellIntegration), which sources the user's config, then — if
-/// `KOOKY_AGENT` is set — invokes the agent inline. The user never sees the
+/// `KOOKOO_AGENT` is set — invokes the agent inline. The user never sees the
 /// shell prompt or the command echo, and on agent exit they land in a clean
 /// shell prompt with their full PATH/aliases intact.
 struct AgentTemplate: Identifiable, Hashable {
@@ -119,6 +119,10 @@ struct AgentTemplate: Identifiable, Hashable {
     /// <agent> right-click, the "based on" Picker, etc.) — once presets
     /// exist there are many shell templates, not one.
     var isShell: Bool { initialCommand == nil }
+
+    /// Legacy qodercli flags are not assumed to match the current Qoder CLI.
+    /// It can be launched normally, but is not offered in the Ask menu.
+    var supportsInitialPrompt: Bool { !isShell && rosterId != "qoder-legacy" }
 
     /// The builtin roster id this template answers to — a custom agent
     /// resolves to its frozen base, a builtin to itself. This is the key the
@@ -230,7 +234,7 @@ struct AgentTemplate: Identifiable, Hashable {
     }
 
     /// `extraOptions` is appended after `initialCommand` (space-separated)
-    /// when forming `KOOKY_AGENT`. The wrapper rc's `eval` splits on
+    /// when forming `KOOKOO_AGENT`. The wrapper rc's `eval` splits on
     /// whitespace, so the caller handles its own quoting for tokens that
     /// contain spaces.
     ///
@@ -240,14 +244,14 @@ struct AgentTemplate: Identifiable, Hashable {
     /// assigned ids (currently Grok).
     ///
     /// `initialPrompt`, when non-empty, drives the right-click "Ask <agent>"
-    /// path: the prompt is POSIX-quoted and inserted into `KOOKY_AGENT` as
+    /// path: the prompt is POSIX-quoted and inserted into `KOOKOO_AGENT` as
     /// the first argv after the binary name (or after `promptLaunchFlag`
     /// when that's set — Copilot's `-p`, Amp's `-x`). Mutually exclusive
     /// with `resumeId` — asking a fresh question shouldn't graft onto a
     /// stale conversation, so `initialPrompt` wins and `resumeId` is
     /// silently dropped when both are supplied.
     /// `rawLaunchCommand` (CLI `open -e`) is a caller-supplied shell command
-    /// line that becomes KOOKY_AGENT verbatim — the same eval channel agent
+    /// line that becomes KOOKOO_AGENT verbatim — the same eval channel agent
     /// templates use, minus the template composition. Local-only semantics:
     /// when `sshHost` is also set the ssh composition wins and the raw
     /// command is dropped (running caller commands on a remote is not this
@@ -263,7 +267,7 @@ struct AgentTemplate: Identifiable, Hashable {
         // Pick a shell that has a kooky integration wrapper. Plain terminal
         // sessions respect $SHELL where we have a wrapper (zsh/bash/fish); other
         // shells (nu/...) get $SHELL too, just without cwd tracking.
-        // Any session that carries a KOOKY_AGENT launch command — an agent
+        // Any session that carries a KOOKOO_AGENT launch command — an agent
         // template, ANY template connecting to an `sshHost`, or a raw CLI
         // command — forces a wrapped shell so the auto-launch eval actually
         // runs; `.other` users get zsh as a working fallback.
@@ -301,21 +305,21 @@ struct AgentTemplate: Identifiable, Hashable {
                 initialPrompt: initialPrompt
             )
                 .map { " -- \($0)" } ?? ""
-            config.environment["KOOKY_AGENT"] = "kooky-ssh \(KookyShellIntegration.quote(sshHost))\(agentSuffix)"
+            config.environment["KOOKOO_AGENT"] = "kookoo-ssh \(KookyShellIntegration.quote(sshHost))\(agentSuffix)"
         } else if let rawLaunchCommand {
-            config.environment["KOOKY_AGENT"] = rawLaunchCommand
+            config.environment["KOOKOO_AGENT"] = rawLaunchCommand
         } else if let launch = launchCommand(
             extraOptions: extraOptions,
             resumeId: resumeId,
             newSessionId: newSessionId,
             initialPrompt: initialPrompt
         ) {
-            config.environment["KOOKY_AGENT"] = launch
+            config.environment["KOOKOO_AGENT"] = launch
         }
         return config
     }
 
-    /// The KOOKY_AGENT launch string for this template — binary + resume /
+    /// The KOOKOO_AGENT launch string for this template — binary + resume /
     /// prompt / extra-options fragments — or nil for plain shells. Single
     /// source for both the local launch and the remote (`kooky-ssh … -- <cmd>`)
     /// composition above.
@@ -328,6 +332,7 @@ struct AgentTemplate: Identifiable, Hashable {
         guard let initialCommand else { return nil }
         let trimmedExtras = extraOptions?.trimmingCharacters(in: .whitespaces) ?? ""
         let trimmedPrompt = initialPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmedPrompt.isEmpty || supportsInitialPrompt else { return nil }
         // Resume arguments go between binary name and user options
         // (`claude --resume <id> --model opus`). This is load-bearing for
         // subcommand-shaped resumes such as `codex resume <id>`.
@@ -381,8 +386,8 @@ struct AgentTemplate: Identifiable, Hashable {
     /// `export` keyword is dropped (so a block pasted from `.zshrc` works),
     /// and the split is on the *first* `=` so values may contain `=`. A value
     /// wrapped in one matching pair of quotes is unwrapped. Keys that aren't
-    /// valid shell identifiers are dropped, as are `KOOKY_`-prefixed keys —
-    /// letting a custom agent set `KOOKY_SURFACE_ID` would misroute hook pings.
+    /// valid shell identifiers are dropped, as are `KOOKOO_`-prefixed keys —
+    /// letting a custom agent set `KOOKOO_SURFACE_ID` would misroute hook pings.
     static func parseEnv(_ raw: String) -> [String: String] {
         var result: [String: String] = [:]
         // `\.isNewline` splits LF / CR / CRLF alike — `split(separator: "\n")`
@@ -408,9 +413,9 @@ struct AgentTemplate: Identifiable, Hashable {
         return result
     }
 
-    /// `^[A-Za-z_][A-Za-z0-9_]*$`, and not kooky-internal (`KOOKY_` prefix).
+    /// `^[A-Za-z_][A-Za-z0-9_]*$`, and not kookoo-internal (`KOOKOO_` prefix).
     private static func isValidEnvKey(_ key: String) -> Bool {
-        guard let first = key.first, !key.hasPrefix("KOOKY_") else { return false }
+        guard let first = key.first, !key.hasPrefix("KOOKOO_") else { return false }
         guard first == "_" || (first.isASCII && first.isLetter) else { return false }
         return key.allSatisfy { $0 == "_" || ($0.isASCII && ($0.isLetter || $0.isNumber)) }
     }
@@ -581,7 +586,7 @@ extension AgentTemplate {
     /// Pi — Earendil's minimal terminal coding harness; binary `pi` (npm
     /// `@earendil-works/pi-coding-agent`). No JSON lifecycle hooks, but pi
     /// auto-loads TypeScript extensions with a rich event API, so kooky ships a
-    /// managed `~/.pi/agent/extensions/kooky.ts` (see
+    /// managed `~/.pi/agent/extensions/kookoo.ts` (see
     /// `piStyleExtensionScript(slug:)`) that
     /// maps pi's session / turn events to running / attention / ended (same
     /// model as the OpenCode plugin) AND reports the session id back so resume
@@ -720,9 +725,31 @@ extension AgentTemplate {
         resumeStrategy: .arguments(["--resume"])
     )
 
-    /// The 16 templates shipped with kooky. User-defined custom agents are
+    /// Current international and China CLIs have separate accounts/configs.
+    /// Never silently fall back across regions or into the legacy executable.
+    /// Reference: docs.qoder.com/cli/cli-reference and docs.qoder.cn/cli/cli-reference.
+    static let qoder = AgentTemplate(
+        id: "qoder", title: "Qoder CLI", symbol: "terminal",
+        iconAsset: "qoder", tintHex: "151515", initialCommand: "qoder",
+        promptLaunchFlag: "--prompt-interactive", resumeStrategy: .arguments(["--resume"])
+    )
+
+    static let qoderCN = AgentTemplate(
+        id: "qoder-cn", title: "Qoder CN CLI", symbol: "terminal",
+        iconAsset: "qoder", tintHex: "151515", initialCommand: "qodercn",
+        promptLaunchFlag: "--prompt-interactive", resumeStrategy: .arguments(["--resume"])
+    )
+
+    /// Launch-only compatibility. No automatic resume, prompt flags, history
+    /// scanner or persistent Qoder hook/config writes are installed.
+    static let qoderLegacy = AgentTemplate(
+        id: "qoder-legacy", title: "Qoder CLI (Legacy)", symbol: "terminal",
+        iconAsset: "qoder", tintHex: "151515", initialCommand: "qodercli"
+    )
+
+    /// The builtin templates shipped with Kookoo. User-defined custom agents are
     /// merged on top via `all` at runtime.
-    static let builtin: [AgentTemplate] = [.terminal, .claudeCode, .codex, .gemini, .opencode, .amp, .cursor, .copilot, .grok, .antigravity, .kimi, .pi, .ohMyPi, .reasonix, .kiro, .droid]
+    static let builtin: [AgentTemplate] = [.terminal, .claudeCode, .codex, .gemini, .opencode, .amp, .cursor, .copilot, .grok, .antigravity, .kimi, .pi, .ohMyPi, .reasonix, .kiro, .droid, .qoder, .qoderCN, .qoderLegacy]
 
     /// Builtin lookup by id — session-history resume, filter chips, and row
     /// icons all resolve records back to a template through this.
@@ -809,7 +836,7 @@ extension AgentTemplate {
     /// (Terminal + presets) are filtered HERE — there's nothing to ask them.
     @MainActor
     static func askAgents(model: KookySettingsModel) -> [AgentTemplate] {
-        visibleOrdered(model: model).filter { !$0.isShell }
+        visibleOrdered(model: model).filter { $0.supportsInitialPrompt }
     }
 
     /// The user's default launch template resolved against the ask roster —

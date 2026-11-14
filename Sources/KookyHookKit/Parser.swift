@@ -10,7 +10,7 @@ import Foundation
 public enum KookyHookKit {
     public static var socketPath: String {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return support.appendingPathComponent("kooky/socket").path
+        return support.appendingPathComponent("kookoo/socket").path
     }
 
     /// One-shot socket write. Returns true on success. `HookServer` accepts
@@ -62,7 +62,7 @@ public enum KookyHookKit {
     /// Env-snapshot payload from positional args. Order follows the
     /// `kooky-hook env ...` calling convention in `ShellIntegration.swift`'s
     /// precmd hook: VIRTUAL_ENV, CONDA_DEFAULT_ENV, NVM_BIN, NVM_DIR,
-    /// KOOKY_NODE_VERSION, https_proxy, http_proxy, all_proxy.
+    /// KOOKOO_NODE_VERSION, https_proxy, http_proxy, all_proxy.
     public static func buildEnvPayload(surface: String, args: [String]) -> [String: String] {
         func arg(_ index: Int) -> String { args.indices.contains(index) ? args[index] : "" }
         return [
@@ -72,7 +72,7 @@ public enum KookyHookKit {
             "CONDA_DEFAULT_ENV": arg(1),
             "NVM_BIN": arg(2),
             "NVM_DIR": arg(3),
-            "KOOKY_NODE_VERSION": arg(4),
+            "KOOKOO_NODE_VERSION": arg(4),
             "https_proxy": arg(5),
             "http_proxy": arg(6),
             "all_proxy": arg(7),
@@ -132,7 +132,7 @@ public enum KookyHookKit {
     /// Wrapper-scoped marker for a Claude invocation whose session cannot be
     /// resumed. The wrapper exports it only to that Claude process tree, so a
     /// later normal `claude` run in the same terminal is unaffected.
-    public static let claudeNoSessionPersistenceKey = "KOOKY_CLAUDE_NO_SESSION_PERSISTENCE"
+    public static let claudeNoSessionPersistenceKey = "KOOKOO_CLAUDE_NO_SESSION_PERSISTENCE"
 
     /// Whether the CLI should mirror this hook payload's conversation id.
     /// Tool payloads are deliberately skipped because lifecycle hooks already
@@ -165,7 +165,7 @@ public enum KookyHookKit {
 
     /// ConversationId payload routed to `HookServer` so `WorkspaceStore`
     /// can persist it on `Session` and prepend `--resume <id>` to
-    /// `KOOKY_AGENT` on next launch.
+    /// `KOOKOO_AGENT` on next launch.
     public static func buildConversationIdPayload(surface: String, conversationId: String) -> [String: String] {
         [
             "kind": "conversationId",

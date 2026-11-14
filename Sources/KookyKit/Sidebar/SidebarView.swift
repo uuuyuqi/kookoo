@@ -431,7 +431,7 @@ struct SidebarView: View {
             } else {
                 HStack(spacing: 0) {
                     FirstGlyphCenteredLayout(axisX: Theme.sidebarLeadingIconCenterX) {
-                        Text("Kooky")
+                        Text("Kookoo")
                             .font(Theme.display(15.5, weight: .semibold))
                             .foregroundStyle(Theme.chromeForeground)
                         Text("K")
@@ -546,7 +546,7 @@ struct SidebarView: View {
             .padding(.bottom, Theme.space2)
         }
         // ⌘⇧R parks the active workspace on the store; reveal its row so the
-        // row's own rename popover can open. onChange catches a request made
+        // row's inline title field can open. onChange catches a request made
         // while the sidebar is up; onAppear catches one parked while the
         // sidebar was hidden (SidebarView mounts only after the reveal).
         .onChange(of: store.pendingRenameWorkspace?.id) { _, _ in
@@ -599,6 +599,7 @@ struct SidebarView: View {
                     onDuplicate: { store.duplicateWorkspace(worktree) },
                     onRename: { store.renameWorkspace(worktree, to: $0) },
                     onSetTag: { store.setTag($0, for: worktree) },
+                    onRequestRename: { store.requestRenameWorkspace(worktree) },
                     onGoToSource: { store.activateWorkspace(parent) }
                 )
                 // Source-list hierarchy should be visible without decoding a
@@ -619,8 +620,8 @@ struct SidebarView: View {
         }
     }
 
-    /// Bring the active workspace's row into the view hierarchy so its rename
-    /// popover can anchor, then hand off to the row via `renameRequested`. The
+    /// Bring the active workspace's row into the view hierarchy so its inline title
+    /// field can appear, then hand off to the row via `renameRequested`. The
     /// row may be unmounted — nested under a collapsed worktree parent, or
     /// scrolled out of the LazyVStack's realized window. Without this the ⌘⇧R
     /// flag would sit unconsumed and then fire stale when the user later
@@ -693,6 +694,7 @@ private struct DraggableWorkspaceRow: View {
             onDuplicate: { store.duplicateWorkspace(workspace) },
             onRename: { store.renameWorkspace(workspace, to: $0) },
             onSetTag: { store.setTag($0, for: workspace) },
+            onRequestRename: { store.requestRenameWorkspace(workspace) },
             disclosure: disclosure,
             onCreateWorktree: onCreateWorktree,
             onGoToSource: onGoToSource

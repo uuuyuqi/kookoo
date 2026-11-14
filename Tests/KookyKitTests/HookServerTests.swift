@@ -28,7 +28,7 @@ final class HookServerTests: XCTestCase {
 
     func testParseEnvPayload() throws {
         let json = #"""
-        {"surface":"\#(Self.surfaceUUID.uuidString)","kind":"env","VIRTUAL_ENV":"/v","CONDA_DEFAULT_ENV":"","NVM_BIN":"","NVM_DIR":"","KOOKY_NODE_VERSION":"","https_proxy":"","http_proxy":"","all_proxy":""}
+        {"surface":"\#(Self.surfaceUUID.uuidString)","kind":"env","VIRTUAL_ENV":"/v","CONDA_DEFAULT_ENV":"","NVM_BIN":"","NVM_DIR":"","KOOKOO_NODE_VERSION":"","https_proxy":"","http_proxy":"","all_proxy":""}
         """#
         let message = HookServer.parseMessage(data(json))
         guard case let .shellEnvironment(env, _) = message else {

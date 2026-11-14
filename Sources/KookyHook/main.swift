@@ -25,13 +25,13 @@ import KookyHookKit
 //           | tool <pre|post> <id> <name> <identifier> [ok|fail]
 //                                            (extension-reported tool call — Pi)
 // Usage: kooky-hook env <VIRTUAL_ENV> <CONDA_DEFAULT_ENV> <NVM_BIN> <NVM_DIR> <NODE_VERSION> <https_proxy> <http_proxy> <all_proxy>
-// Reads:  $KOOKY_SURFACE_ID       UUID of the originating session
+// Reads:  $KOOKOO_SURFACE_ID       UUID of the originating session
 // Reads:  stdin                   Hook commands carrying --hook-stdin pipe a
 //                                 JSON object. The helper extracts that
 //                                 agent's exact session/conversation id and
 //                                 mirrors it as `kind: conversationId`.
 
-let surface = ProcessInfo.processInfo.environment["KOOKY_SURFACE_ID"] ?? ""
+let surface = ProcessInfo.processInfo.environment["KOOKOO_SURFACE_ID"] ?? ""
 guard !surface.isEmpty else { exit(0) }
 
 let socketPath = KookyHookKit.socketPath

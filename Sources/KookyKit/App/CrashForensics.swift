@@ -7,7 +7,7 @@ import Darwin
 /// calls exit(1) leaves nothing behind — no crash report (a "clean" exit,
 /// not a signal), no unified-log entry. Observed twice on 2026-07-07 after
 /// clicking the agent panel on a long-lived instance; the reason line was
-/// lost both times. stderr is rerouted to ~/Library/Logs/kooky/stderr.log,
+/// lost both times. stderr is rerouted to ~/Library/Logs/kookoo/stderr.log,
 /// and exit() / uncaught-exception hooks stamp it with who died and why.
 public enum CrashForensics {
     /// Call once, before NSApplication starts — a panic during app/delegate
@@ -18,7 +18,7 @@ public enum CrashForensics {
         redirectStderrIfDiscarded()
         atexit { CrashForensics.dumpExitBacktrace() }
         NSSetUncaughtExceptionHandler { exc in
-            fputs("\n=== kooky uncaught exception \(exc.name.rawValue): \(exc.reason ?? "?") ===\n", stderr)
+            fputs("\n=== kookoo uncaught exception \(exc.name.rawValue): \(exc.reason ?? "?") ===\n", stderr)
             for line in exc.callStackSymbols { fputs(line + "\n", stderr) }
             fflush(stderr)
         }
@@ -35,7 +35,7 @@ public enum CrashForensics {
               (fdStat.st_mode & S_IFMT) == S_IFCHR,
               fdStat.st_rdev == nullStat.st_rdev else { return }
         let dir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/kooky", isDirectory: true)
+            .appendingPathComponent("Library/Logs/kookoo", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let path = dir.appendingPathComponent("stderr.log").path
         // Rotate past ~2MB so the append-only log can't grow unbounded.
@@ -50,14 +50,14 @@ public enum CrashForensics {
         // re-derives buffering from the new fd) — force it back to unbuffered
         // so a dying process can't strand its last line in a libc buffer.
         setvbuf(stderr, nil, _IONBF, 0)
-        fputs("\n=== kooky \(KookyApp.displayVersion) launched \(timestamp()) pid \(getpid()) ===\n", stderr)
+        fputs("\n=== kookoo \(KookyApp.displayVersion) launched \(timestamp()) pid \(getpid()) ===\n", stderr)
     }
 
     /// exit() runs atexit handlers on the calling thread, so this backtrace
     /// names whoever called exit. A normal quit logs the AppKit termination
     /// path — that's what makes an abnormal caller stand out.
     private static func dumpExitBacktrace() {
-        fputs("\n=== kooky exit() called @ \(timestamp()) pid \(getpid()) ===\n", stderr)
+        fputs("\n=== kookoo exit() called @ \(timestamp()) pid \(getpid()) ===\n", stderr)
         fflush(stderr)
         var addrs = [UnsafeMutableRawPointer?](repeating: nil, count: 64)
         let count = backtrace(&addrs, Int32(addrs.count))

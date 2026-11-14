@@ -3,16 +3,40 @@ import XCTest
 
 @MainActor
 final class AgentTemplateTests: XCTestCase {
+    func testQoderRegionsRemainSeparateAndUseInteractivePromptFlag() {
+        for (template, binary) in [(AgentTemplate.qoder, "qoder"), (.qoderCN, "qodercn")] {
+            XCTAssertEqual(template.initialCommand, binary)
+            XCTAssertEqual(template.makeSessionConfig().environment["KOOKOO_AGENT"], binary)
+            XCTAssertEqual(template.makeSessionConfig(initialPrompt: "fix this error").environment["KOOKOO_AGENT"],
+                           "\(binary) --prompt-interactive 'fix this error'")
+            XCTAssertEqual(template.makeSessionConfig(resumeId: "abc-123").environment["KOOKOO_AGENT"],
+                           "\(binary) --resume abc-123")
+            XCTAssertFalse(template.reportsToolCalls)
+            XCTAssertFalse(AgentSessionScanner.supportedAgentIds.contains(template.id))
+            XCTAssertEqual(AgentTemplate.from(hookSlug: binary)?.id, template.id)
+        }
+    }
+
+    func testLegacyQoderIsLaunchOnlyWithoutAssumedModernFlags() {
+        let template = AgentTemplate.qoderLegacy
+        XCTAssertEqual(template.makeSessionConfig().environment["KOOKOO_AGENT"], "qodercli")
+        XCTAssertNil(template.resumeStrategy)
+        XCTAssertFalse(template.supportsInitialPrompt)
+        XCTAssertNil(template.makeSessionConfig(initialPrompt: "do something").environment["KOOKOO_AGENT"])
+        XCTAssertEqual(AgentTemplate.from(hookSlug: "qodercli")?.id, template.id)
+        XCTAssertFalse(AgentTemplate.askAgents(model: KookySettingsModel()).contains { $0.id == template.id })
+    }
+
     func testTerminalTemplateHasNoAgentEnv() {
-        XCTAssertNil(AgentTemplate.terminal.makeSessionConfig().environment["KOOKY_AGENT"])
+        XCTAssertNil(AgentTemplate.terminal.makeSessionConfig().environment["KOOKOO_AGENT"])
     }
 
     func testAgentTemplatesPublishKookyAgentEnv() {
         for template in AgentTemplate.all where template.id != "terminal" {
             XCTAssertEqual(
-                template.makeSessionConfig().environment["KOOKY_AGENT"],
+                template.makeSessionConfig().environment["KOOKOO_AGENT"],
                 template.initialCommand,
-                "agent template \(template.id) must publish KOOKY_AGENT matching its initialCommand"
+                "agent template \(template.id) must publish KOOKOO_AGENT matching its initialCommand"
             )
         }
     }
@@ -30,12 +54,12 @@ final class AgentTemplateTests: XCTestCase {
 
     func testAgentTemplatesPickAShellWithIntegrationWrapper() {
         // Agent must run under one of our wrappers (zsh ZDOTDIR or bash
-        // --rcfile) — anything else means KOOKY_AGENT never fires.
+        // --rcfile) — anything else means KOOKOO_AGENT never fires.
         for template in AgentTemplate.all where template.id != "terminal" {
             let cmd = template.makeSessionConfig().command
             XCTAssertTrue(
-                cmd == "/bin/zsh" || cmd.contains("kooky-bash-launch-"),
-                "agent template \(template.id) launched without a kooky shell wrapper: \(cmd)"
+                cmd == "/bin/zsh" || cmd.contains("kookoo-bash-launch-"),
+                "agent template \(template.id) launched without a kookoo shell wrapper: \(cmd)"
             )
         }
     }
@@ -212,12 +236,12 @@ final class AgentTemplateTests: XCTestCase {
 
     func testMakeSessionConfigInjectsResumeFlagForClaude() {
         let config = AgentTemplate.claudeCode.makeSessionConfig(resumeId: "abc-123")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude --resume abc-123")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude --resume abc-123")
     }
 
     func testMakeSessionConfigCombinesResumeAndExtras() {
         let config = AgentTemplate.claudeCode.makeSessionConfig(extraOptions: "--model opus", resumeId: "abc-123")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude --resume abc-123 --model opus")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude --resume abc-123 --model opus")
     }
 
     func testClaudeNoSessionPersistenceDisablesConversationPersistence() {
@@ -230,7 +254,7 @@ final class AgentTemplateTests: XCTestCase {
             AgentTemplate.claudeCode.makeSessionConfig(
                 extraOptions: "--print --no-session-persistence",
                 resumeId: "ephemeral-id"
-            ).environment["KOOKY_AGENT"],
+            ).environment["KOOKOO_AGENT"],
             "claude --print --no-session-persistence"
         )
     }
@@ -274,7 +298,7 @@ final class AgentTemplateTests: XCTestCase {
 
     func testMakeSessionConfigSkipsResumeWhenIdEmpty() {
         let config = AgentTemplate.claudeCode.makeSessionConfig(resumeId: "")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude")
     }
 
     func testMakeSessionConfigInjectsAgentSpecificResumeArguments() {
@@ -295,7 +319,7 @@ final class AgentTemplateTests: XCTestCase {
         ]
         for (template, command) in expected {
             XCTAssertEqual(
-                template.makeSessionConfig(resumeId: "abc-123").environment["KOOKY_AGENT"],
+                template.makeSessionConfig(resumeId: "abc-123").environment["KOOKOO_AGENT"],
                 command,
                 "wrong resume command for \(template.id)"
             )
@@ -311,28 +335,28 @@ final class AgentTemplateTests: XCTestCase {
 
     func testResumeIdIsShellQuotedWhenUnexpectedCharactersAppear() {
         let config = AgentTemplate.codex.makeSessionConfig(resumeId: "id; echo injected")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "codex resume 'id; echo injected'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "codex resume 'id; echo injected'")
     }
 
     func testMakeSessionConfigInjectsResumeForClaudeBasedCustom() {
         let custom = CustomAgentData(id: "claude-opus", baseAgentId: "claude-code")
         let template = AgentTemplate.fromCustom(custom)
         let config = template.makeSessionConfig(resumeId: "xyz")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude --resume xyz")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude --resume xyz")
     }
 
     func testMakeSessionConfigInjectsResumeForPi() {
         // Pi takes a launch-time `--session <id>`; the extension captures the
         // session id and reports it via `kooky-hook pi conversation <id>`.
         let config = AgentTemplate.pi.makeSessionConfig(resumeId: "abc-123")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "pi --session abc-123")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "pi --session abc-123")
     }
 
     func testMakeSessionConfigNormalizesLegacyPiFilenameStem() {
         let legacy = "2026-07-14T19-24-02-459Z_019f6216-161b-737e-ba6b-0f974a7b7b8c"
         let config = AgentTemplate.pi.makeSessionConfig(resumeId: legacy)
         XCTAssertEqual(
-            config.environment["KOOKY_AGENT"],
+            config.environment["KOOKOO_AGENT"],
             "pi --session 019f6216-161b-737e-ba6b-0f974a7b7b8c"
         )
     }
@@ -344,7 +368,7 @@ final class AgentTemplateTests: XCTestCase {
         let legacy = "2026-07-14T19-24-02-459Z_019f6216-161b-737e-ba6b-0f974a7b7b8c"
         let config = custom.makeSessionConfig(resumeId: legacy)
         XCTAssertEqual(
-            config.environment["KOOKY_AGENT"],
+            config.environment["KOOKOO_AGENT"],
             "pi --session 019f6216-161b-737e-ba6b-0f974a7b7b8c"
         )
     }
@@ -352,20 +376,20 @@ final class AgentTemplateTests: XCTestCase {
     func testMakeSessionConfigPreservesPiCustomIdEndingInUUID() {
         let id = "team_019f6216-161b-737e-ba6b-0f974a7b7b8c"
         let config = AgentTemplate.pi.makeSessionConfig(resumeId: id)
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "pi --session \(id)")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "pi --session \(id)")
     }
 
     func testMakeSessionConfigPreservesPiConversationIdCase() {
         let id = "019F6216-161B-737E-BA6B-0F974A7B7B8C"
         let config = AgentTemplate.pi.makeSessionConfig(resumeId: id)
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "pi --session \(id)")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "pi --session \(id)")
     }
 
     func testMakeSessionConfigPreservesLegacyPiUUIDCaseWhenNormalizing() {
         let legacy = "2026-07-14T19-24-02-459Z_019F6216-161B-737E-BA6B-0F974A7B7B8C"
         let config = AgentTemplate.pi.makeSessionConfig(resumeId: legacy)
         XCTAssertEqual(
-            config.environment["KOOKY_AGENT"],
+            config.environment["KOOKOO_AGENT"],
             "pi --session 019F6216-161B-737E-BA6B-0F974A7B7B8C"
         )
     }
@@ -373,7 +397,7 @@ final class AgentTemplateTests: XCTestCase {
     func testMakeSessionConfigDoesNotNormalizeClaudeConversationId() {
         let id = "2026-07-14T19-24-02-459Z_019f6216-161b-737e-ba6b-0f974a7b7b8c"
         let config = AgentTemplate.claudeCode.makeSessionConfig(resumeId: id)
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude --resume \(id)")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude --resume \(id)")
     }
 
     func testReportsToolCallsOnlyForToolFeedingAgents() {
@@ -408,32 +432,32 @@ final class AgentTemplateTests: XCTestCase {
 
     func testMakeSessionConfigPositionalPromptForClaude() {
         let config = AgentTemplate.claudeCode.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude -- 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude -- 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForCopilot() {
         let config = AgentTemplate.copilot.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "copilot -p 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "copilot -p 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForAmp() {
         let config = AgentTemplate.amp.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "amp -x 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "amp -x 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForAntigravity() {
         let config = AgentTemplate.antigravity.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "agy -i 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "agy -i 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForKimi() {
         let config = AgentTemplate.kimi.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "kimi -p 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "kimi -p 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForPi() {
         let config = AgentTemplate.pi.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "pi -p 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "pi -p 'fix this error'")
     }
 
     func testMakeSessionConfigFlagPromptForReasonix() {
@@ -442,7 +466,7 @@ final class AgentTemplateTests: XCTestCase {
         // like Kimi and Pi) rather than seeding a live REPL the way Droid
         // and Kiro do.
         let config = AgentTemplate.reasonix.makeSessionConfig(initialPrompt: "fix this error")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "reasonix -p 'fix this error'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "reasonix -p 'fix this error'")
     }
 
     // MARK: - Monochrome icon theming
@@ -572,33 +596,33 @@ final class AgentTemplateTests: XCTestCase {
         ]
         for (template, bin) in pairs {
             let config = template.makeSessionConfig(initialPrompt: "hello")
-            XCTAssertEqual(config.environment["KOOKY_AGENT"], "\(bin) -- 'hello'", "agent \(template.id)")
+            XCTAssertEqual(config.environment["KOOKOO_AGENT"], "\(bin) -- 'hello'", "agent \(template.id)")
         }
     }
 
     func testMakeSessionConfigQuotesSingleQuotesInPrompt() {
         // POSIX wrap: `'` inside single quotes becomes `'\''`
         let config = AgentTemplate.claudeCode.makeSessionConfig(initialPrompt: "don't fix it")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude -- 'don'\\''t fix it'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude -- 'don'\\''t fix it'")
     }
 
     func testMakeSessionConfigCombinesPromptAndExtras() {
         let config = AgentTemplate.claudeCode.makeSessionConfig(extraOptions: "--model opus", initialPrompt: "review this")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude -- 'review this' --model opus")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude -- 'review this' --model opus")
     }
 
     func testInitialPromptSuppressesResume() {
         // Ask <agent> is a fresh question — don't graft onto a stale
         // conversation. Both supplied → prompt wins, resume dropped.
         let config = AgentTemplate.claudeCode.makeSessionConfig(resumeId: "old-convo", initialPrompt: "new question")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "claude -- 'new question'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "claude -- 'new question'")
     }
 
     func testEmptyInitialPromptIgnored() {
         let blankConfig = AgentTemplate.claudeCode.makeSessionConfig(initialPrompt: "   ")
-        XCTAssertEqual(blankConfig.environment["KOOKY_AGENT"], "claude")
+        XCTAssertEqual(blankConfig.environment["KOOKOO_AGENT"], "claude")
         let resumeConfig = AgentTemplate.claudeCode.makeSessionConfig(resumeId: "abc", initialPrompt: "")
-        XCTAssertEqual(resumeConfig.environment["KOOKY_AGENT"], "claude --resume abc")
+        XCTAssertEqual(resumeConfig.environment["KOOKOO_AGENT"], "claude --resume abc")
     }
 
     func testFromCustomInheritsPromptLaunchFlagFromCopilotBase() {
@@ -608,14 +632,14 @@ final class AgentTemplateTests: XCTestCase {
         let custom = CustomAgentData(id: "copilot-beta", baseAgentId: "copilot")
         let template = AgentTemplate.fromCustom(custom)
         let config = template.makeSessionConfig(initialPrompt: "hello")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "copilot -p 'hello'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "copilot -p 'hello'")
     }
 
     func testFromCustomInheritsPromptLaunchFlagFromAmpBase() {
         let custom = CustomAgentData(id: "amp-beta", baseAgentId: "amp")
         let template = AgentTemplate.fromCustom(custom)
         let config = template.makeSessionConfig(initialPrompt: "hello")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "amp -x 'hello'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "amp -x 'hello'")
     }
 
     func testPositionalPromptWithDashPrefixRoutedThroughSeparator() {
@@ -624,7 +648,7 @@ final class AgentTemplateTests: XCTestCase {
         // agent's argparse would reject it as an unknown flag. The
         // POSIX separator + POSIX-quoted prompt together neutralise it.
         let config = AgentTemplate.codex.makeSessionConfig(initialPrompt: "-rw-r--r--@  1 corey staff  44")
-        XCTAssertEqual(config.environment["KOOKY_AGENT"], "codex -- '-rw-r--r--@  1 corey staff  44'")
+        XCTAssertEqual(config.environment["KOOKOO_AGENT"], "codex -- '-rw-r--r--@  1 corey staff  44'")
     }
 
     // MARK: - parseEnv (custom-agent environment block)
@@ -695,9 +719,9 @@ final class AgentTemplateTests: XCTestCase {
     }
 
     func testParseEnvDropsKookyPrefixedKeys() {
-        // A custom agent must not shadow kooky's own env — KOOKY_SURFACE_ID
+        // A custom agent must not shadow kookoo's own env — KOOKOO_SURFACE_ID
         // in particular routes hook pings to the right tab.
-        XCTAssertEqual(AgentTemplate.parseEnv("KOOKY_SURFACE_ID=evil\nFOO=ok"), ["FOO": "ok"])
+        XCTAssertEqual(AgentTemplate.parseEnv("KOOKOO_SURFACE_ID=evil\nFOO=ok"), ["FOO": "ok"])
     }
 
     func testParseEnvLaterLineWinsOnDuplicateKey() {

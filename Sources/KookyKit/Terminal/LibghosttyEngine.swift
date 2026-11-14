@@ -19,7 +19,7 @@ final class LibghosttyApp {
             ghostty_init(0, $0.baseAddress)
         }
         guard initResult == 0 else {
-            NSLog("kooky: ghostty_init failed (\(initResult))")
+            NSLog("kookoo: ghostty_init failed (\(initResult))")
             return
         }
 
@@ -36,12 +36,12 @@ final class LibghosttyApp {
         )
 
         guard let config = KookySettings.makeGhosttyConfig() else {
-            NSLog("kooky: ghostty_config_new failed")
+            NSLog("kookoo: ghostty_config_new failed")
             return
         }
         self.app = ghostty_app_new(&runtime, config)
         if self.app == nil {
-            NSLog("kooky: ghostty_app_new failed")
+            NSLog("kookoo: ghostty_app_new failed")
         }
         currentConfig = config
         refreshHostConfig()
@@ -54,7 +54,7 @@ final class LibghosttyApp {
         // first tab — detects the mismatch and REBUILDS its per-surface
         // config from the original parse. That rebuild drops everything
         // kooky injected via the surface-config env_vars (ZDOTDIR,
-        // KOOKY_SURFACE_ID, …): the first tab's shell spawns with no kooky
+        // KOOKOO_SURFACE_ID, …): the first tab's shell spawns with no kookoo
         // integration at all — no shell hooks, no OSC 7/133, dead
         // red-dot/title/cwd tracking (the "restored tab is silent" bug). The
         // core's own corrective RELOAD_CONFIG action is coalesced onto the
@@ -103,7 +103,7 @@ final class LibghosttyApp {
     func reloadConfig() {
         guard let app else { return }
         guard let config = KookySettings.makeGhosttyConfig() else {
-            NSLog("kooky: ghostty_config_new failed during reload")
+            NSLog("kookoo: ghostty_config_new failed during reload")
             return
         }
         // One app-level update IS the whole reload: upstream App.updateConfig
@@ -432,7 +432,7 @@ private let kookyActionCb: ghostty_runtime_action_cb = { _, target, action in
         // Metal state that would otherwise be silent — the blind spot to check
         // first if any visual corruption survives the render-loop fix.
         if action.action.renderer_health == GHOSTTY_RENDERER_HEALTH_UNHEALTHY {
-            NSLog("kooky: ghostty renderer reported UNHEALTHY")
+            NSLog("kookoo: ghostty renderer reported UNHEALTHY")
         }
         return true
     case GHOSTTY_ACTION_SECURE_INPUT:
@@ -1101,7 +1101,7 @@ final class GhosttySurfaceView: NSView {
         // cleanup). Rewrite every shell's bridge so the cached paths are live.
         KookyShellIntegration.ensureSpawnBridges()
         // Merge our wrapper ZDOTDIR into the caller's env dict. AgentTemplate
-        // populates KOOKY_AGENT here so the wrapper .zshrc auto-launches the
+        // populates KOOKOO_AGENT here so the wrapper .zshrc auto-launches the
         // selected CLI before the user ever sees a shell prompt. nil = the
         // bridge rc couldn't be (re)written; skip the injection so zsh loads
         // the user's real rc chain instead of a dead ZDOTDIR (issue #45).
@@ -1142,7 +1142,7 @@ final class GhosttySurfaceView: NSView {
         }
 
         guard let new else {
-            NSLog("kooky: ghostty_surface_new failed")
+            NSLog("kookoo: ghostty_surface_new failed")
             return
         }
         surface = new

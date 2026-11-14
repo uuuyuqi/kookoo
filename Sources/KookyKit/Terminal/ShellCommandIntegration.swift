@@ -2,7 +2,7 @@ import Foundation
 
 enum ShellCommandIntegration {
     static let keySequence = "\u{18}\u{1F}"
-    static let titlePrefix = "kooky-shell-control:"
+    static let titlePrefix = "kookoo-shell-control:"
 
     enum Event: String { case available, finished }
 
@@ -19,12 +19,12 @@ enum ShellCommandIntegration {
     // editor while the widget runs, so they cannot become part of an eval.
     static let zsh = #"""
     _kooky_unset_proxy() { unset "$@"; }
-    _kooky_shell_control_available() { printf '\e]2;kooky-shell-control:available:%s\a' "$$"; }
+    _kooky_shell_control_available() { printf '\e]2;kookoo-shell-control:available:%s\a' "$$"; }
     _kooky_shell_control_status() { return "$1"; }
     _kooky_shell_control() {
         local _kooky_control_text _kooky_control_hook _kooky_control_status
         local _kooky_control_buffer=$BUFFER _kooky_control_cursor=$CURSOR
-        if _kooky_control_text=$("$KOOKY_HOOK_BIN" shell-command "$$" </dev/null) && [[ -n "$_kooky_control_text" ]]; then
+        if _kooky_control_text=$("$KOOKOO_HOOK_BIN" shell-command "$$" </dev/null) && [[ -n "$_kooky_control_text" ]]; then
             zle -I
             eval "$_kooky_control_text"
             _kooky_control_status=$?
@@ -43,7 +43,7 @@ enum ShellCommandIntegration {
             CURSOR=$_kooky_control_cursor
             zle reset-prompt
         fi
-        printf '\e]2;kooky-shell-control:finished:%s\a' "$$"
+        printf '\e]2;kookoo-shell-control:finished:%s\a' "$$"
     }
     zle -N _kooky_shell_control
     for _kooky_keymap in main emacs viins vicmd; do
@@ -56,10 +56,10 @@ enum ShellCommandIntegration {
 
     static let bash = #"""
     _kooky_unset_proxy() { unset "$@"; }
-    _kooky_shell_control_available() { printf '\e]2;kooky-shell-control:available:%s\a' "$$"; }
+    _kooky_shell_control_available() { printf '\e]2;kookoo-shell-control:available:%s\a' "$$"; }
     _kooky_shell_control() {
         local _kooky_control_text
-        if _kooky_control_text=$("$KOOKY_HOOK_BIN" shell-command "$$" </dev/null) && [[ -n "$_kooky_control_text" ]]; then
+        if _kooky_control_text=$("$KOOKOO_HOOK_BIN" shell-command "$$" </dev/null) && [[ -n "$_kooky_control_text" ]]; then
             printf '\n'
             eval "$_kooky_control_text"
             _kooky_env_status
@@ -67,7 +67,7 @@ enum ShellCommandIntegration {
         fi
         # Bash 3.2 caches Readline's expanded prompt during bind -x. Keep
         # the draft intact; its next normal prompt refreshes PS1 as usual.
-        printf '\e]2;kooky-shell-control:finished:%s\a' "$$"
+        printf '\e]2;kookoo-shell-control:finished:%s\a' "$$"
     }
     for _kooky_keymap in emacs-standard vi-insert vi-command; do
         bind -m "$_kooky_keymap" -x '"\C-x\C-_":_kooky_shell_control'
@@ -88,7 +88,7 @@ enum ShellCommandIntegration {
         end
     end
     function __kooky_shell_control
-        set -l _kooky_control_text ("$KOOKY_HOOK_BIN" shell-command $fish_pid </dev/null)
+        set -l _kooky_control_text ("$KOOKOO_HOOK_BIN" shell-command $fish_pid </dev/null)
         if test -n "$_kooky_control_text"
             printf '\n'
             eval $_kooky_control_text
@@ -96,12 +96,12 @@ enum ShellCommandIntegration {
             __kooky_prompt
             commandline -f repaint
         end
-        printf '\e]2;kooky-shell-control:finished:%s\a' $fish_pid
+        printf '\e]2;kookoo-shell-control:finished:%s\a' $fish_pid
     end
     function __kooky_shell_control_available --on-event fish_prompt
         bind -M default \cx\c_ __kooky_shell_control
         bind -M insert \cx\c_ __kooky_shell_control
-        printf '\e]2;kooky-shell-control:available:%s\a' $fish_pid
+        printf '\e]2;kookoo-shell-control:available:%s\a' $fish_pid
     end
     """#
 }

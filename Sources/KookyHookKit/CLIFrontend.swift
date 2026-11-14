@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-// The `kooky-cli` front half: argv parsing, output rendering, and the
+// The `kookoo-cli` front half: argv parsing, output rendering, and the
 // request/response socket transport. Pure helpers in KookyHookKit so the
 // per-verb grammar (required flags, mutual exclusion, UUID shape) is
 // unit-testable without spawning the binary — `Sources/KookyCLI/main.swift`
@@ -44,47 +44,47 @@ extension KookyHookKit {
         "open": VerbSpec(
             valueFlags: ["--cwd", "-e", "--agent", "--title"],
             boolFlags: ["--no-focus"],
-            usage: "usage: kooky-cli open [--cwd <dir>] [-e <command> | --agent <template-id>] [--title <title>] [--no-focus]"
+            usage: "usage: kookoo-cli open [--cwd <dir>] [-e <command> | --agent <template-id>] [--title <title>] [--no-focus]"
         ),
         "resume": VerbSpec(
             valueFlags: ["--agent", "--id", "--cwd"],
             boolFlags: [],
-            usage: "usage: kooky-cli resume --agent <agent-id> --id <conversation-id> [--cwd <dir>]"
+            usage: "usage: kookoo-cli resume --agent <agent-id> --id <conversation-id> [--cwd <dir>]"
         ),
         "list": VerbSpec(
             valueFlags: [],
             boolFlags: ["--json"],
-            usage: "usage: kooky-cli list [--json]"
+            usage: "usage: kookoo-cli list [--json]"
         ),
         "focus": VerbSpec(
             valueFlags: ["--tab"],
             boolFlags: [],
-            usage: "usage: kooky-cli focus --tab <session-uuid>"
+            usage: "usage: kookoo-cli focus --tab <session-uuid>"
         ),
         "close": VerbSpec(
             valueFlags: ["--tab"],
             boolFlags: [],
-            usage: "usage: kooky-cli close --tab <session-uuid>"
+            usage: "usage: kookoo-cli close --tab <session-uuid>"
         ),
         "rename": VerbSpec(
             valueFlags: ["--tab", "--title"],
             boolFlags: [],
-            usage: "usage: kooky-cli rename --tab <session-uuid> --title <title>"
+            usage: "usage: kookoo-cli rename --tab <session-uuid> --title <title>"
         ),
         "status": VerbSpec(
             valueFlags: [],
             boolFlags: ["--json"],
-            usage: "usage: kooky-cli status [--json]"
+            usage: "usage: kookoo-cli status [--json]"
         ),
     ]
 
     private static func unknownVerbFailure(_ verb: String) -> KookyCLIParseFailure {
         KookyCLIParseFailure(
-            "unknown command '\(verb)' — one of: open, resume, list, focus, close, rename, status. Run `kooky-cli --help`."
+            "unknown command '\(verb)' — one of: open, resume, list, focus, close, rename, status. Run `kookoo-cli --help`."
         )
     }
 
-    /// Parses `kooky-cli` arguments (argv minus the binary name).
+    /// Parses `kookoo-cli` arguments (argv minus the binary name).
     public static func parseCLICommand(_ args: [String]) -> Result<KookyCLICommand, KookyCLIParseFailure> {
         // Help is a VERB-position word or a bare flag token — never scanned
         // out of flag values, or `open -e "--help"` would print help instead
@@ -147,7 +147,7 @@ extension KookyHookKit {
             require("--tab").flatMap { raw in
                 guard let uuid = UUID(uuidString: raw) else {
                     return .failure(KookyCLIParseFailure(
-                        "--tab expects a session UUID — copy one from `kooky-cli list`."
+                        "--tab expects a session UUID — copy one from `kookoo-cli list`."
                     ))
                 }
                 return .success(uuid.uuidString)
@@ -164,7 +164,7 @@ extension KookyHookKit {
             // `--cwd` is optional everywhere: a Terminal preset brings its
             // own directory, and with no directory named at all the tab
             // opens wherever the active workspace already is. Bare
-            // `kooky-cli open` is therefore "give me a new tab".
+            // `kookoo-cli open` is therefore "give me a new tab".
             return .success(.open(
                 cwd: values["--cwd"],
                 command: command,
@@ -248,9 +248,9 @@ extension KookyHookKit {
 
     public static func renderCLIHelp() -> String {
         """
-        kooky-cli — control a running kooky from scripts and other apps
+        kookoo-cli — control a running kookoo from scripts and other apps
 
-        usage: kooky-cli <command> [options]
+        usage: kookoo-cli <command> [options]
 
           open [--cwd <dir>] [-e <command> | --agent <template-id>]
                [--title <title>] [--no-focus]
@@ -267,17 +267,17 @@ extension KookyHookKit {
                                   later with focus
           resume --agent <agent-id> --id <conversation-id> [--cwd <dir>]
                                   reopen an agent conversation (same
-                                  semantics as kooky://resume deep links)
+                                  semantics as kookoo://resume deep links)
           list [--json]           windows → workspaces → tabs, with ids
           focus --tab <uuid>      bring a tab to the front
           close --tab <uuid>      close a tab (in-app confirmation rules apply)
           rename --tab <uuid> --title <title>
                                   set a tab's title (clear it in-app)
           status [--json]         app version + protocol; exits 1 when
-                                  kooky isn't running
+                                  kookoo isn't running
 
         Exit code 0 means the request was accepted; anything else prints one
-        reason line on stderr. Every command except `status` launches kooky
+        reason line on stderr. Every command except `status` launches kookoo
         first if it isn't running.
         """
     }
@@ -319,7 +319,7 @@ extension KookyHookKit {
     /// error lines, notes, the app's reported version. Not just the ones
     /// that obviously come from a terminal title: a refusal message quotes
     /// the caller's own `--agent` value back at them, and that string came
-    /// from whatever tool invoked kooky-cli.
+    /// from whatever tool invoked kookoo-cli.
     public static func plain(_ value: String) -> String {
         String(String.UnicodeScalarView(value.unicodeScalars.map { scalar in
             let isC0OrDelete = scalar.value < 0x20 || scalar.value == 0x7F

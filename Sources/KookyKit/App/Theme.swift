@@ -491,12 +491,12 @@ enum KookyFonts {
         registered = true
         for name in ["Onest", "JetBrainsMono-Regular"] {
             guard let url = bundleResourceURL(name: name, ext: "ttf", subdirectory: "Fonts") else {
-                NSLog("kooky: missing font \(name).ttf")
+                NSLog("kookoo: missing font \(name).ttf")
                 continue
             }
             var error: Unmanaged<CFError>?
             if !CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error) {
-                NSLog("kooky: font register failed for \(name): \(String(describing: error?.takeRetainedValue()))")
+                NSLog("kookoo: font register failed for \(name): \(String(describing: error?.takeRetainedValue()))")
             }
         }
     }

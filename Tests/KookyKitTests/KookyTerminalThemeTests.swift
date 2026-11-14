@@ -60,7 +60,7 @@ final class KookyTerminalThemeTests: XCTestCase {
         let theme = KookyTerminalTheme.preset(for: "solarized-light")
         XCTAssertEqual(theme?.title, "Solarized Light")
         XCTAssertEqual(
-            KookyTerminalTheme.preset(for: "kooky:solarized-light"),
+            KookyTerminalTheme.preset(for: "kookoo:solarized-light"),
             theme
         )
     }
@@ -182,7 +182,7 @@ final class KookyTerminalThemeTests: XCTestCase {
                 selection: state.selection,
                 customRawValue: nil
             ),
-            "kooky:solarized-light"
+            "kookoo:solarized-light"
         )
     }
 
@@ -406,7 +406,7 @@ final class KookyTerminalThemeTests: XCTestCase {
             "nord"
         )
 
-        let bundled = KookySettingsModel.themeSelection(for: "kooky:nord", in: themes)
+        let bundled = KookySettingsModel.themeSelection(for: "kookoo:nord", in: themes)
         XCTAssertEqual(bundled.selection, "nord")
         XCTAssertEqual(
             KookySettingsModel.persistedThemeValue(
@@ -414,7 +414,7 @@ final class KookyTerminalThemeTests: XCTestCase {
                 customRawValue: nil,
                 in: themes
             ),
-            "kooky:nord"
+            "kookoo:nord"
         )
 
         try "background = #FDFDFD\nforeground = #101010\n"
@@ -451,7 +451,7 @@ final class KookyTerminalThemeTests: XCTestCase {
 
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kooky-theme-test-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("kookoo-theme-test-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
