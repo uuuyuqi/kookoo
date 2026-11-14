@@ -1,8 +1,20 @@
 # Kookoo Terminal
 
+## [↓ Download Kookoo for macOS](https://github.com/uuuyuqi/kookoo/releases)
+
+**Apple silicon (M-series) · macOS 14+ · Preview**
+
+Open the release list above, choose the newest **Pre-release**, and download its `.dmg` asset. Preview builds are not stable releases.
+
+**Already installed?** Use **Help → Check for Updates**. Restarting stops terminal tasks; see [update verification and recovery limits](docs/updating.md).
+
+> **Not notarized:** current builds use ad-hoc signing, not Apple Developer ID signing or notarization. macOS or company security policies may block installation. Do not disable or bypass those protections; contact your device administrator if needed.
+
+---
+
 A native macOS terminal for working with AI coding agents. Independently maintained, derived from [Kooky](https://github.com/iAmCorey/kooky) v0.51.12. Original Git history, copyright, MIT license and third-party notices are retained.
 
-## Kookoo 0.1.3
+## Features
 
 - Native split terminals, multiple workspaces and the existing agent launcher.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
@@ -26,7 +38,7 @@ bash scripts/build-dmg.sh
 
 The Ghostty engine download is pinned by SHA-256. An optional `KOOKOO_SDK=/absolute/path/to/MacOSX.sdk` selects a compatible installed SDK for app builds without changing system settings.
 
-Outputs: `dist/Kookoo.app`, `dist/Kookoo-v0.1.3.dmg`.
+Outputs: `dist/Kookoo.app`, `dist/Kookoo-vX.Y.Z.dmg`.
 
 ### Signing and managed computers
 

@@ -1,5 +1,17 @@
 # Kookoo Terminal
 
+## [↓ 下载 Kookoo macOS 版](https://github.com/uuuyuqi/kookoo/releases)
+
+**Apple silicon（M 系列）· macOS 14+ · Preview 预览版**
+
+打开上方发布列表，选择最新的 **Pre-release**，下载其 `.dmg` 安装包。预览版不等于稳定版。
+
+**已经安装？** 在应用内选择 **Help → Check for Updates**。重启会停止终端任务，详见[更新验证和恢复限制](docs/updating.md)。
+
+> **尚未公证：** 当前构建使用 ad-hoc 签名，不是 Apple Developer ID 签名，也未经 Apple 公证。macOS 或公司安全策略可能阻止安装。不要关闭或绕过这些保护；必要时联系设备管理员。
+
+---
+
 独立维护的 macOS 终端，基于 [Kooky](https://github.com/iAmCorey/kooky) v0.51.12。保留原项目 Git 历史、版权、MIT 许可证和第三方声明。本项目不是上游的官方发行版，也不自动同步上游。
 
 [![License](https://img.shields.io/github/license/uuuyuqi/kookoo?style=flat-square)](LICENSE)

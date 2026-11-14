@@ -1,5 +1,17 @@
 # Kookoo Terminal
 
+## [↓ Kookoo macOS 版をダウンロード](https://github.com/uuuyuqi/kookoo/releases)
+
+**Apple silicon（M シリーズ）· macOS 14+ · Preview**
+
+上のリリース一覧で最新の **Pre-release** を選び、`.dmg` をダウンロードしてください。プレビュー版は安定版ではありません。
+
+**インストール済みの場合：** アプリの **Help → Check for Updates** から更新できます。再起動するとターミナルのタスクが停止します。[更新検証と復旧の制限](docs/updating.md)も参照してください。
+
+> **未公証：** 現在のビルドは ad-hoc 署名で、Apple Developer ID 署名や Apple の公証はありません。macOS や会社のセキュリティポリシーによってインストールできない場合があります。保護を無効化・回避せず、必要に応じて端末管理者に相談してください。
+
+---
+
 [Kooky](https://github.com/iAmCorey/kooky) v0.51.12 を基に、独立して保守している macOS ターミナルです。元の Git 履歴、著作権、MIT ライセンス、第三者の権利表記を保持しています。上流の公式リリースではなく、上流との自動同期も行いません。
 
 [![License](https://img.shields.io/github/license/uuuyuqi/kookoo?style=flat-square)](LICENSE)
