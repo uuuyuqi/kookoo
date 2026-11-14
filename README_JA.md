@@ -1,20 +1,22 @@
-# kooky
+# Kookoo Terminal
 
-[![License](https://img.shields.io/github/license/iAmCorey/kooky?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/iAmCorey/kooky?style=flat-square)](https://github.com/iAmCorey/kooky/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-007AFF?style=flat-square)](https://github.com/iAmCorey/kooky/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/iAmCorey/kooky/total?style=flat-square)](https://github.com/iAmCorey/kooky/releases)
-[![Stars](https://img.shields.io/github/stars/iAmCorey/kooky?style=flat-square)](https://github.com/iAmCorey/kooky/stargazers)
+[Kooky](https://github.com/iAmCorey/kooky) v0.51.12 を基に、独立して保守している macOS ターミナルです。元の Git 履歴、著作権、MIT ライセンス、第三者の権利表記を保持しています。上流の公式リリースではなく、上流との自動同期も行いません。
+
+[![License](https://img.shields.io/github/license/uuuyuqi/kookoo?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/uuuyuqi/kookoo?include_prereleases&style=flat-square)](https://github.com/uuuyuqi/kookoo/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-007AFF?style=flat-square)](https://github.com/uuuyuqi/kookoo/releases)
+[![Downloads](https://img.shields.io/github/downloads/uuuyuqi/kookoo/total?style=flat-square)](https://github.com/uuuyuqi/kookoo/releases)
+[![Stars](https://img.shields.io/github/stars/uuuyuqi/kookoo?style=flat-square)](https://github.com/uuuyuqi/kookoo/stargazers)
 
 > *AI コーディングのためのミニマルでモダンな macOS ターミナル。*
 
 🇯🇵 日本語  ·  🇬🇧 [English](README.md)  ·  🇨🇳 [中文](README_CN.md)
 
-![kooky](img/screenshot-1.png)
+![kookoo](img/screenshot-1.png)
 
 AI コーディングのために作られた、ミニマルでモダンな macOS ターミナルです。サイドバーで workspace を管理、水平 / 垂直の split pane、ワンクリックで agent を起動、agent のステータスをリアルタイム表示、pane 下部で Git・Node・Python など作業環境の状態が一目で確認できます。オープンソース、MIT ライセンス。アカウント不要、テレメトリなし、アプリの状態は端末内にのみ保存。GPU レンダリングは [libghostty](https://github.com/ghostty-org/ghostty) ベース。
 
-**[最新版をダウンロード](https://github.com/iAmCorey/kooky/releases/latest)**  ·  [変更履歴](CHANGELOG.md)
+**[プレビュー版（Preview）をダウンロード](https://github.com/uuuyuqi/kookoo/releases)**  ·  [変更履歴](CHANGELOG.md)
 
 ---
 
@@ -26,7 +28,7 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 
 **workspace を一目で見分ける。** workspace を右クリックして色を付けられます —— 7 つのプリセット、または **Custom Tag…** で好きな色と名前を。行の左端に縦線として表示され、サイドバーの広い / 狭いどちらでも出ます。同じ色をもう一度クリックすれば解除されます。タグは agent パネルにも引き継がれるので、「誰があなたを必要としているか」順に並ぶあの一覧の中で、同じプロジェクトの agent が自然に一つのまとまりとして読めます (Settings → Appearance でオフにできます)。workspace にホバーすると、タイトル・`#タグ`・動いている agent・場所が表示されます。
 
-**ワンクリックで AI agent セッション。** `+` メニューから選ぶだけで、最初の prompt を打つ前に agent が起動します。15 個すべてが各 CLI 固有の session ID を使って kooky の再起動を跨いで会話を resume するので、tab を閉じて再度開いても直前の続きから再開できます。
+**ワンクリックで AI agent セッション。** `+` メニューから選ぶだけで、最初の prompt を打つ前に agent が起動します。15 個すべてが各 CLI 固有の session ID を使って kookoo の再起動を跨いで会話を resume するので、tab を閉じて再度開いても直前の続きから再開できます。
 
 | Agent | コマンド | ユーザー待ち | ツール pill | セッション履歴 |
 | --- | --- | :---: | :---: | :---: |
@@ -58,11 +60,11 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 
 **Git worktree。** 任意の git workspace を右クリック → "Create Worktree…" で新しい branch (または既存 branch の checkout) に対する worktree を作成します。worktree はサイドバーで元のリポジトリの下にネストして表示され、独自の tab + agent を持ちます —— main で何かが走っている最中でも、Claude を feature branch で並行して動かせます。コマンドラインで `git worktree add` した worktree は、同じシートの adopt モードでいつでもサイドバーに取り込めます。ディレクトリが消えたエントリは起動時に自動でクリーンアップされます。
 
-**SSH workspace。** File → New SSH Workspace… (または ⌘P) で、リモートマシン上に「住む」workspace を作成します。以降の新しい tab・分割ペイン・再起動時に復元される tab は、すべて同じホストへ自動で再接続します。agent tab を開くと agent はリモート側で起動 —— リモート自身のシェル設定を読み込んでから始まるので、nvm などで入れたツールもきちんと見つかります。ローカルのファイルやスクリーンショットを貼り付けると、kooky が先にアップロードしてからリモートパスを貼り付けるため、向こうの agent が実際に開けます。同一ホストへの接続は共有され、追加の tab は即座に接続。パスワード認証のホストでも貼り付けを含めて全部使えます。
+**SSH workspace。** File → New SSH Workspace… (または ⌘P) で、リモートマシン上に「住む」workspace を作成します。以降の新しい tab・分割ペイン・再起動時に復元される tab は、すべて同じホストへ自動で再接続します。agent tab を開くと agent はリモート側で起動 —— リモート自身のシェル設定を読み込んでから始まるので、nvm などで入れたツールもきちんと見つかります。ローカルのファイルやスクリーンショットを貼り付けると、kookoo が先にアップロードしてからリモートパスを貼り付けるため、向こうの agent が実際に開けます。同一ホストへの接続は共有され、追加の tab は即座に接続。パスワード認証のホストでも貼り付けを含めて全部使えます。
 
-**Keep-awake(スリープ防止)。** agent が作業中に Mac が寝てしまうことはありません。トップバーの呼吸するインジケーターライトをクリックすると 3 段階を循環します:Off;Auto —— agent の作業中や SSH 接続中はスリープせず(蓋を閉じても継続、初回のみ管理者認証が必要)、作業が終わった瞬間に通常のスリープへ戻ります;Always —— 目に見える caffeinate として、切り替えるまでずっと起きたままです。kooky の外でスリープ設定を変えても(`sudo pmset` や他のツール)、数秒でダイヤルが双方向に追従します。
+**Keep-awake(スリープ防止)。** agent が作業中に Mac が寝てしまうことはありません。トップバーの呼吸するインジケーターライトをクリックすると 3 段階を循環します:Off;Auto —— agent の作業中や SSH 接続中はスリープせず(蓋を閉じても継続、初回のみ管理者認証が必要)、作業が終わった瞬間に通常のスリープへ戻ります;Always —— 目に見える caffeinate として、切り替えるまでずっと起きたままです。kookoo の外でスリープ設定を変えても(`sudo pmset` や他のツール)、数秒でダイヤルが双方向に追従します。
 
-**最近使ったプロジェクト。** kooky は workspace を開いたフォルダを自動で記憶します —— 設定も手動追加も不要。File → Open Recent から選ぶか、⌘P でプロジェクト名を入力して Enter で再オープン:閉じたプロジェクトは「recent」エントリとして表示されます。削除済みフォルダは自動的に隠れ、worktree / SSH ディレクトリがリストに混ざることもありません。
+**最近使ったプロジェクト。** kookoo は workspace を開いたフォルダを自動で記憶します —— 設定も手動追加も不要。File → Open Recent から選ぶか、⌘P でプロジェクト名を入力して Enter で再オープン:閉じたプロジェクトは「recent」エントリとして表示されます。削除済みフォルダは自動的に隠れ、worktree / SSH ディレクトリがリストに混ざることもありません。
 
 **選択範囲を右クリック → "Ask <agent>"。** ターミナル内でエラー / ログ / ファイルパスを選択して右クリック、好きな agent を選ぶと、新しい tab が開いた時点で選択範囲が最初の prompt として送信済みの状態になります。⌘C / ⌘V の往復なしで "これは何？" から答えに直行。
 
@@ -72,7 +74,7 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 
 **ストレスのない入力。** テキストを選択すると、マウスを離した瞬間にクリップボードへコピーされます — ⌘C は不要で、Ghostty の設定に関わらずどのマシンでも有効です (Settings → General → Clipboard でオフにできます)。⌘ を押しながら `/path/file.swift:42` のようなローカルファイルパスをクリックすると、指定したエディタで開けます。Web リンクに使うブラウザも選択できます (Settings → General → Open With)。zsh の prompt 上のどこをクリックしても shell カーソルがそこに移動します (modifier 不要、ghostty.app と同じ操作感)。Finder からファイル / フォルダを pane にドラッグすると、エスケープ済みの絶対パスがカーソル位置に挿入されます。 ⌘ を押しながら URL(または OSC 8 ハイパーリンク)にホバーすると、クリック前にバッジが実際のリンク先を表示します。中クリックでペーストできます。Option を Alt/Meta として使いたい場合(zellij、Emacs キーバインド)は settings.json で `macos-option-as-alt`(`true` / `"left"` / `"right"`)を設定してください — 未設定なら macOS ネイティブの特殊文字入力のままです。分割表示中は `focus-follows-mouse` でポインタの下の pane にキーボードフォーカスが移り、`mouse-hide-while-typing` で入力中はカーソルが自動的に隠れます。
 
-**クリップボードと入力の安全。** 貼り付けた瞬間に実行されかねないテキスト(bracketed-paste 保護外の複数行)は、内容プレビュー付きの確認を先に表示します — Web からコピーした罠付き `curl … | sh` が ⌘V で即実行されることはありません。リモートプログラムによる OSC 52 でのクリップボード読み取り(tmux、SSH 上の nvim)は承認が必要で、`clipboard-write = ask` は書き込みも同様に守ります。sudo / ssh のパスワード入力中は kooky が macOS のセキュア キーボード入力を保持し、他プロセスはキー入力を監視できません。
+**クリップボードと入力の安全。** 貼り付けた瞬間に実行されかねないテキスト(bracketed-paste 保護外の複数行)は、内容プレビュー付きの確認を先に表示します — Web からコピーした罠付き `curl … | sh` が ⌘V で即実行されることはありません。リモートプログラムによる OSC 52 でのクリップボード読み取り(tmux、SSH 上の nvim)は承認が必要で、`clipboard-write = ask` は書き込みも同様に守ります。sudo / ssh のパスワード入力中は kookoo が macOS のセキュア キーボード入力を保持し、他プロセスはキー入力を監視できません。
 
 **Prompt composer (⌘L)。** pane 下部からチャット風の入力ボックスがせり上がり、長い複数行の prompt を落ち着いて書けます —— うっかり Return で途中送信されることはありません。Return で現在の agent (または shell) に送信、Shift+Return で改行、Esc でキャンセル (下書きは保持)。⌘L か pane 下部ステータスバーの compose ボタンで開きます。
 
@@ -80,19 +82,19 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 
 **zsh・bash・fish に対応。** 手入力した agent の検出、cwd 追跡、ステータスバーの各スロット、ワンクリック agent 起動が 3 つの shell すべてで同じように動作します —— Fig / Amazon Q / kiro のような shell 補完ツールを併用していても動き続けます。
 
-**通知。** 見ていない tab で agent がユーザー待ちになったり、そこでコマンドが失敗したりすると、kooky が macOS 通知を出します —— 種類ごとに Settings → Notifications でオン / オフできます。上部 chrome のベル (⇧⌘I) は、それらの通知を全ウィンドウ横断で 1 つの受信箱にまとめます —— 誰が待っているか、何が失敗したか、何が完了したか —— 未読があれば赤いドットが点きます。エントリをクリックすればその tab に直接ジャンプ、tab に切り替えればその通知は自動でクリアされます。 ターミナル内のプログラム自身も通知を出せます(OSC 9/777、`printf '\e]9;done\a'`):tab が見えていなければバナーが出て、どちらにしても受信箱に残ります。ベル(`\a`)はデフォルトで Dock のアテンションを要求し、`bell-features` でシステム音やカスタム音声も設定できます。
+**通知。** 見ていない tab で agent がユーザー待ちになったり、そこでコマンドが失敗したりすると、kookoo が macOS 通知を出します —— 種類ごとに Settings → Notifications でオン / オフできます。上部 chrome のベル (⇧⌘I) は、それらの通知を全ウィンドウ横断で 1 つの受信箱にまとめます —— 誰が待っているか、何が失敗したか、何が完了したか —— 未読があれば赤いドットが点きます。エントリをクリックすればその tab に直接ジャンプ、tab に切り替えればその通知は自動でクリアされます。 ターミナル内のプログラム自身も通知を出せます(OSC 9/777、`printf '\e]9;done\a'`):tab が見えていなければバナーが出て、どちらにしても受信箱に残ります。ベル(`\a`)はデフォルトで Dock のアテンションを要求し、`bell-features` でシステム音やカスタム音声も設定できます。
 
 ![全ウィンドウ横断で集約される通知センター](img/screenshot-3.png)
 
 **Agent パネル。** 上部のトグル (左サイドバーと同じ 3 段階の折りたたみ) で右サイドバーを開くと、全ウィンドウの agent を一覧でき、あなたを必要とする順に並びます —— ユーザー待ち、失敗、実行中、アイドル。任意の行をクリックすればその tab に直接ジャンプ、コンパクトモードではステータス色のドット付きアイコンの細い列に縮みます。
 
-**セッション履歴。** Agent パネルを 2 ページ目 (下部の時計アイコン) に切り替えると、ほとんどの内蔵 agent (上の表参照) の過去の会話を新しい順に一覧できます —— kooky の外で始めた会話も含まれます。タイトルやプロジェクトで検索、agent や現在のワークスペースで絞り込み (ローカルのワークスペースのみ —— SSH ワークスペースのセッションはリモート側にあります)、行をクリックすればその会話を再開: 会話の元のフォルダに新しい tab が開き、agent 自身のセッション ID でコンテキストが完全に復元されます。
+**セッション履歴。** Agent パネルを 2 ページ目 (下部の時計アイコン) に切り替えると、ほとんどの内蔵 agent (上の表参照) の過去の会話を新しい順に一覧できます —— kookoo の外で始めた会話も含まれます。タイトルやプロジェクトで検索、agent や現在のワークスペースで絞り込み (ローカルのワークスペースのみ —— SSH ワークスペースのセッションはリモート側にあります)、行をクリックすればその会話を再開: 会話の元のフォルダに新しい tab が開き、agent 自身のセッション ID でコンテキストが完全に復元されます。
 
 ![過去の Claude Code / Codex の会話を検索して再開](img/screenshot-5.webp)
 
 **セッション情報。** Agent パネルの 3 ページ目 (下部の ⓘ アイコン) はアクティブな tab のインスペクタです: workspace・ディレクトリ・リモートホスト・git branch / リポジトリ / diff・Python venv・Node バージョン・proxy に加え、CPU・メモリ・listen 中のポートを示すライブなプロセスツリー、直前に完了したコマンドとその終了コード・所要時間 (zsh/fish)、ターミナルタイトルまで確認できます。見るだけではありません: フィールドにホバーして完全な値をワンクリックでコピー、ポートをクリックしてブラウザで開く、プロセスを右クリックして PID のコピーや終了ができ、ローカルセッションで失敗したコマンドには **Ask AI** ボタンが現れて、コマンド・終了コード・ディレクトリをそのまま agent の新しい tab に渡します。折りたたみ状態は再起動後も保持され、作業に合わせてリアルタイムに更新されます。コマンドラインはメモリ内にのみ保持され、ディスクには書き込まれません。
 
-**メニューバーの Agent 一覧。** macOS のメニューバーに任意で Kooky アイテムを表示でき、agent が存在するときだけリアルタイムの件数が付きます。開くと、すべてのアクティブな agent tab のタイトルとプロジェクトパスを確認して直接ジャンプできるほか、Open Kooky、Settings、Keep Awake の 3 段階切り替え、Quit も利用できます。Settings → General → `show-in-menu-bar` で表示を切り替えられます。
+**メニューバーの Agent 一覧。** macOS のメニューバーに任意で Kookoo アイテムを表示でき、agent が存在するときだけリアルタイムの件数が付きます。開くと、すべてのアクティブな agent tab のタイトルとプロジェクトパスを確認して直接ジャンプできるほか、Open Kookoo、Settings、Keep Awake の 3 段階切り替え、Quit も利用できます。Settings → General → `show-in-menu-bar` で表示を切り替えられます。
 
 **エディタやターミナルで開く。** 上部 chrome の分割ボタンが、現在の tab のディレクトリを別のアプリに渡します。アイコンをクリックすると直前に使ったアプリで再度開き、シェブロンをクリックすると Mac にインストール済みの対応アプリから選べます: VS Code · Cursor · Windsurf · Zed · Sublime Text · Antigravity · Trae · Kiro · Xcode · IntelliJ IDEA · PyCharm · WebStorm · Terminal · iTerm · Ghostty · Warp · Finder。Settings → Open in で並べ替えや非表示ができます。
 
@@ -100,83 +102,51 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 
 **SwiftUI ネイティブ、ミニマルな chrome。** Onest + JetBrains Mono。カスタム About パネル、ショートカットヒント付きのネイティブメニュー、日本語 IME を完全サポート。
 
-**Light + Dark のペアテーマ。** Light 用と Dark 用の terminal 配色をそれぞれ選び、System / Light / Dark の外観モードは別に設定できます。System は macOS の変更にリアルタイムで追従し、terminal とウィンドウ全体を同時に切り替えます。40 種類以上の組み込み配色には **Ghostty Dark**、Ayu、Catppuccin、Everforest、GitHub、Gruvbox、Material、Night Owl、Nord、Rosé Pine のほか、Codex Desktop でも使われているオープンソーステーマが含まれます。`~/.config/ghostty/themes` のカスタムテーマは背景色に応じて Light または Dark の picker に自動表示されます。組み込みテーマの設定値には `kooky:` 名前空間を使うため、同名の Ghostty カスタムテーマもアップグレード後にそのまま維持されます。以前の Default の挙動も維持され、テーマを選んだことがない場合は Appearance を変更するまで Ghostty の設定を引き継ぎます。 ターミナル内のプログラムが「背景は暗い?」と問い合わせると(nvim の background 自動検出、delta)、現在の kooky テーマに基づく答えが返ります。引き継いだ Ghostty 設定の `theme = light:X,dark:Y` 条件テーマも正しく解決されます。
+**Light + Dark のペアテーマ。** Light 用と Dark 用の terminal 配色をそれぞれ選び、System / Light / Dark の外観モードは別に設定できます。System は macOS の変更にリアルタイムで追従し、terminal とウィンドウ全体を同時に切り替えます。40 種類以上の組み込み配色には **Ghostty Dark**、Ayu、Catppuccin、Everforest、GitHub、Gruvbox、Material、Night Owl、Nord、Rosé Pine のほか、Codex Desktop でも使われているオープンソーステーマが含まれます。`~/.config/ghostty/themes` のカスタムテーマは背景色に応じて Light または Dark の picker に自動表示されます。組み込みテーマの設定値には `kookoo:` 名前空間を使うため、同名の Ghostty カスタムテーマもアップグレード後にそのまま維持されます。以前の Default の挙動も維持され、テーマを選んだことがない場合は Appearance を変更するまで Ghostty の設定を引き継ぎます。 ターミナル内のプログラムが「背景は暗い?」と問い合わせると(nvim の background 自動検出、delta)、現在の kookoo テーマに基づく答えが返ります。引き継いだ Ghostty 設定の `theme = light:X,dark:Y` 条件テーマも正しく解決されます。
 
 **設定可能。** Settings (`⌘,`) ではフォント、カーソル、背景の不透明度(liquid-glass または数値の `background-blur` と組み合わせると、どの macOS でも伝統的なすりガラス表現になります)、デフォルトの新規 tab 挙動、Terminal preset、agents、Open in、pane ステータスバーも調整できます。`confirm-close-surface` をオンにすると、プロセスが動作中の tab を閉じる前に確認が入ります。外観の変更は開いているすべてのウィンドウに即時反映されます。
 
-**ディープリンク。** 他のアプリから kooky で agent の会話を再開できます。`kooky://resume?agent=<agent>&id=<会話id>[&cwd=<パス>]` は、会話がすでに開いていればその tab へジャンプし、なければ会話のプロジェクトディレクトリで新しい tab として再開します（`agent` は History パネルと同じ id を受け付けます: `claude-code`、`codex`、`copilot`、`cursor`、`opencode`、`kiro`、`gemini` など）。オプションの `cwd` を付けると、セッションスキャンの保持範囲より古い会話も再開できます。会話 id は厳密に検証され、リンクからプロンプトやコマンドは渡せません。拒否されたリンクは理由をシートで表示します。`cwd` のスペースは `%20` でエンコードしてください（`+` はデコードされません）。
+**ディープリンク。** 他のアプリから kookoo で agent の会話を再開できます。`kookoo://resume?agent=<agent>&id=<会話id>[&cwd=<パス>]` は、会話がすでに開いていればその tab へジャンプし、なければ会話のプロジェクトディレクトリで新しい tab として再開します（`agent` は History パネルと同じ id を受け付けます: `claude-code`、`codex`、`copilot`、`cursor`、`opencode`、`kiro`、`gemini` など）。オプションの `cwd` を付けると、セッションスキャンの保持範囲より古い会話も再開できます。会話 id は厳密に検証され、リンクからプロンプトやコマンドは渡せません。拒否されたリンクは理由をシートで表示します。`cwd` のスペースは `%20` でエンコードしてください（`+` はデコードされません）。
 
-**ローカルファースト。** アカウント不要、テレメトリなし、クラウド同期なし。kooky の状態はすべて端末内に保存されます。
+**ローカルファースト。** アカウント不要、テレメトリなし、クラウド同期なし。kookoo の状態はすべて端末内に保存されます。
 
 **libghostty 駆動。** ghostty と同じ GPU 加速セルレンダリングエンジン。画面のリフレッシュレートに同期して描画するので、120Hz / ProMotion ディスプレイでもスクロールが滑らかでティアリングしません。
 
 ## CLI
 
-`kooky-cli` を使うと、スクリプトや他のローカルアプリから起動中の kooky を操作できます — tab を開いてコマンドを実行、agent の会話を再開、tab の一覧 / フォーカス / クローズ：
+`kookoo-cli` を使うと、スクリプトや他のローカルアプリから起動中の kookoo を操作できます — tab を開いてコマンドを実行、agent の会話を再開、tab の一覧 / フォーカス / クローズ：
 
 ```sh
-kooky-cli open --cwd ~/Github/vibex -e "npx @deepseek-ai/dsh web"   # 新しい tab: そこへ cd してコマンドを実行
-kooky-cli open --cwd ~/Github/vibex --agent claude-code             # 新しい tab で agent テンプレートを起動
-kooky-cli open --agent claude-code                                  # --cwd なし: アクティブな workspace のディレクトリで開く
-kooky-cli open --agent preset-1                                     # Terminal preset は自前のディレクトリを持つ
-kooky-cli open -e "npm run dev" --title "dev server" --no-focus     # 名前を付けてバックグラウンドで開く
-kooky-cli resume --agent codex --id <会話id>                        # kooky://resume ディープリンクと同じ意味論
-kooky-cli list --json                                               # ウィンドウ → workspace → tab のツリーと id
-kooky-cli focus --tab <session-uuid>                                # tab を最前面へ
-kooky-cli close --tab <session-uuid>                                # アプリ内の確認ルールに従います
-kooky-cli rename --tab <session-uuid> --title <タイトル>            # tab のタイトルを設定
-kooky-cli status                                                    # バージョンと状態。未起動なら終了コード 1
+kookoo-cli open --cwd ~/Github/vibex -e "npx @deepseek-ai/dsh web"   # 新しい tab: そこへ cd してコマンドを実行
+kookoo-cli open --cwd ~/Github/vibex --agent claude-code             # 新しい tab で agent テンプレートを起動
+kookoo-cli open --agent claude-code                                  # --cwd なし: アクティブな workspace のディレクトリで開く
+kookoo-cli open --agent preset-1                                     # Terminal preset は自前のディレクトリを持つ
+kookoo-cli open -e "npm run dev" --title "dev server" --no-focus     # 名前を付けてバックグラウンドで開く
+kookoo-cli resume --agent codex --id <会話id>                        # kookoo://resume ディープリンクと同じ意味論
+kookoo-cli list --json                                               # ウィンドウ → workspace → tab のツリーと id
+kookoo-cli focus --tab <session-uuid>                                # tab を最前面へ
+kookoo-cli close --tab <session-uuid>                                # アプリ内の確認ルールに従います
+kookoo-cli rename --tab <session-uuid> --title <タイトル>            # tab のタイトルを設定
+kookoo-cli status                                                    # バージョンと状態。未起動なら終了コード 1
 ```
 
-`status` 以外のコマンドは、kooky が起動していなければ先に起動します。終了コード 0 はリクエスト受理を意味し、失敗時は stderr に理由を 1 行出力します。`--agent` は Settings → Agents と同じテンプレート id(ビルトイン、カスタム、Terminal preset)を受け付けます。`--cwd` は省略可能です: 省略するとアクティブな workspace のディレクトリで開き、Terminal preset は自身の固定ディレクトリを使います —— どちらの場合も `--cwd` を渡せばそちらが優先されます。`--title` は自動タイトルより優先され、手動リネームと同じ扱いです。`--no-focus` はバックグラウンドで開きます: kooky は前面に出ず(CLI が kooky を起動する場合も含む)、いま見ている内容も切り替わりません —— tab はバックグラウンドですでに動いています。見たくなったら `focus` で前面に呼び出せます。
+`status` 以外のコマンドは、kookoo が起動していなければ先に起動します。終了コード 0 はリクエスト受理を意味し、失敗時は stderr に理由を 1 行出力します。`--agent` は Settings → Agents と同じテンプレート id(ビルトイン、カスタム、Terminal preset)を受け付けます。`--cwd` は省略可能です: 省略するとアクティブな workspace のディレクトリで開き、Terminal preset は自身の固定ディレクトリを使います —— どちらの場合も `--cwd` を渡せばそちらが優先されます。`--title` は自動タイトルより優先され、手動リネームと同じ扱いです。`--no-focus` はバックグラウンドで開きます: kookoo は前面に出ず(CLI が kookoo を起動する場合も含む)、いま見ている内容も切り替わりません —— tab はバックグラウンドですでに動いています。見たくなったら `focus` で前面に呼び出せます。
 
-バイナリは app 内の `Kooky.app/Contents/MacOS/kooky-cli` に同梱され、kooky は起動のたびに安定パス `~/Library/Application Support/kooky/bin/kooky-cli` へコピーを更新します。外部ツールからはこちらを呼んでください: このパスはアップデートをまたいで不変で、macOS Gatekeeper が `/Applications` 内から exec される未公証ヘルパーを kill する問題も回避できます。PATH に入れたい場合は symlink を:
+バイナリは app 内の `Kookoo.app/Contents/MacOS/kookoo-cli` に同梱され、kookoo は起動のたびに安定パス `~/Library/Application Support/kookoo/bin/kookoo-cli` へコピーを更新します。外部ツールからはこちらを呼んでください。このパスはアップデートをまたいで不変ですが、macOS や会社のセキュリティポリシーの対象外になるわけではありません。PATH に入れたい場合は symlink を:
 
 ```sh
-ln -s ~/Library/Application\ Support/kooky/bin/kooky-cli /usr/local/bin/kooky-cli
+ln -s ~/Library/Application\ Support/kookoo/bin/kookoo-cli /usr/local/bin/kookoo-cli
 ```
 
-コマンドは kooky のローカルな owner-only ソケットだけを通ります — `kooky://` URL からは今までどおりコマンドを渡せません。
+コマンドは kookoo のローカルな owner-only ソケットだけを通ります — `kookoo://` URL からは今までどおりコマンドを渡せません。
 
 ## インストール
 
-[Releases](https://github.com/iAmCorey/kooky/releases) から最新の `.dmg` をダウンロード、開いて `Kooky.app` を `Applications` フォルダにドラッグしてください。
+[Kookoo Releases（Preview を含む）](https://github.com/uuuyuqi/kookoo/releases) でバージョンを選び、`.dmg` をダウンロードして `Kookoo.app` を `Applications` にドラッグしてください。現在は Apple silicon 向けのプレビュー版（Pre-release）です。各リリースの説明を確認し、安定版とは区別してください。
 
-**初回起動は Gatekeeper にブロックされます**。現在のビルドは adhoc 署名 (Apple Developer ID 未取得 —— 公開配布署名と公証は実際のユーザーが増えてから対応予定) なので、*"Kooky cannot be opened because Apple cannot check it for malicious software"* または *"is damaged and cannot be opened"* というエラーが出ます。下記の 3 通りからどれか一つを実行してください：
+現在のアプリは **ad-hoc 署名**で、Developer ID 署名や Apple の公証はありません。Gatekeeper や会社の端末保護によって起動できない場合があります。保護を無効化・回避せず、承認済みの署名付き配布版を使用するか、端末管理者に相談してください。
 
-<details>
-<summary><b>方法 A —— システム設定から <i>(推奨)</i></b></summary>
-
-1. まず `Kooky.app` をダブルクリック。macOS が警告を出すのでダイアログを閉じます。
-2. **システム設定 → プライバシーとセキュリティ** を開き、**セキュリティ** セクションまでスクロール。
-3. *"Kooky was blocked to protect your Mac"* の隣に表示される **Open Anyway** をクリックし、パスワードを入力。
-4. もう一度 `Kooky.app` をダブルクリック、今度は **Open** ボタンが表示されるのでクリックして完了。
-</details>
-
-<details>
-<summary><b>方法 B —— ターミナル 1 行</b></summary>
-
-```sh
-xattr -d com.apple.quarantine /Applications/Kooky.app
-```
-</details>
-
-<details>
-<summary><b>方法 C —— "Open Anyway" ボタンすら表示されない場合</b></summary>
-
-Sequoia 以降では adhoc 署名アプリに対して "Open Anyway" ボタンが完全に隠れることがあります。その場合は旧版の "Anywhere" オプションを一旦有効化してから方法 A をやり直します：
-
-```sh
-sudo spctl --global-disable      # macOS 15+；古いシステムは --master-disable
-# システム設定 → プライバシーとセキュリティ → "Allow applications from" で Anywhere を選択
-# Kooky.app をダブルクリック → 起動できるはず
-sudo spctl --global-enable       # Kooky が一度起動したら、すぐに Gatekeeper を戻す
-```
-
-注意：これは **システム全体の設定** です。無効の間はあらゆる未署名アプリの起動を許可してしまいます。Kooky が一度起動したら必ず元に戻してください。Kooky 自体は個別に信頼済みとして記憶されるので、以後ブロックされません。
-</details>
-
-macOS は **初回起動のみブロック** します。それ以降は Spotlight / Dock / Finder から通常のアプリと同じように起動できます。
+署名付きアップデートに対応するバージョンをインストールした後は、Help → Check for Updates から更新を確認できます。更新の署名は Apple の公証とは異なります。アプリの再起動はターミナルのタスクを停止します。[更新検証と復旧の制限](docs/updating.md)も参照してください。
 
 ## ソースからビルド
 
@@ -189,15 +159,15 @@ swift run                            # 開発モードで直接起動
 swift test                           # 1000+ 個のユニットテスト
 ./scripts/bench.sh                   # パフォーマンスベンチマーク (release ビルド、結果は bench-history.jsonl に記録)
 
-./scripts/build-app.sh               # dist/Kooky.app を出力
-./scripts/build-dmg.sh --build       # dist/Kooky-vX.Y.Z.dmg を出力
+./scripts/build-app.sh               # dist/Kookoo.app を出力
+./scripts/build-dmg.sh --build       # dist/Kookoo-vX.Y.Z.dmg を出力
 ```
 
 `Vendor/` と `dist/` は `.gitignore` 済みです。libghostty の setup スクリプトは冪等で、SHA に変更がなければスキップされます。
 
 ## スター履歴
 
-[![Star History Chart](https://api.star-history.com/chart?repos=iAmCorey/kooky&type=date&legend=top-left&sealed_token=ZX5h8laOXIE38b__FRNpP7ae52yRupThIRrcgidF7RI0OOzVcsKIo1iJ_iDp6UcMoxzNCL99N3RY__N7TFUszIgxzljBSBRRiAPYPt9QC9lKf7X3ShAQJg)](https://www.star-history.com/?type=date&repos=iAmCorey%2Fkooky)
+[![Star History Chart](https://api.star-history.com/chart?repos=uuuyuqi/kookoo&type=date&legend=top-left)](https://www.star-history.com/?type=date&repos=uuuyuqi%2Fkookoo)
 
 ## ライセンス
 
