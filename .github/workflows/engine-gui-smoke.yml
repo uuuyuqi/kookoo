@@ -30,7 +30,7 @@ jobs:
           echo '6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10  dist/engine-candidate/GhosttyKit.xcframework.tar.gz' | shasum -a 256 -c -
           mkdir -p Vendor
           tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
-          bash scripts/build-app.sh
+          KOOKOO_ENGINE_COMPLIANCE_DIR=dist/engine-candidate/EngineCompliance bash scripts/build-app.sh
           codesign --verify --deep --strict dist/Kookoo.app
       - name: Probe real app and terminal in disposable runner
         run: bash scripts/tests/engine-gui-smoke.sh dist/Kookoo.app

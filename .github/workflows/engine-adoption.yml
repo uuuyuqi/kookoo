@@ -29,10 +29,13 @@ jobs:
           cd EngineCompliance
           shasum -a 256 -c SHA256SUMS
           cd ../../..
-          bash scripts/setup-libghostty.sh
+          mkdir -p Vendor
+          tar -xzf dist/reviewed-engine/GhosttyKit.xcframework.tar.gz -C Vendor
       - name: Test current application against reviewed engine
         run: swift test --build-system native
       - name: Package notices before app signature
+        env:
+          KOOKOO_ENGINE_COMPLIANCE_DIR: dist/reviewed-engine/EngineCompliance
         run: |
           bash scripts/build-app.sh
           test -f dist/Kookoo.app/Contents/Resources/EngineThirdPartyNotices.md
