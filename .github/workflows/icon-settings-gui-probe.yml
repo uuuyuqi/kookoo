@@ -102,7 +102,19 @@ jobs:
           screencapture -x "$ROOT/evidence/confirmation.png"
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/alert-ax.txt"
           cat "$ROOT/evidence/alert-ax.txt"
-          osascript "$ROOT/click.applescript" 'Cancel'
+          osascript <<'AS'
+          tell application "System Events" to tell process "Kookoo"
+            set a to button 1 of sheet 1 of window "Settings"
+            set b to button 2 of sheet 1 of window "Settings"
+            set ax to item 1 of position of a
+            set bx to item 1 of position of b
+            if ax < bx then
+              click a
+            else
+              click b
+            end if
+          end tell
+          AS
           sleep 1
           cmp "$ROOT/baseline.icns" "$ICON"
           defaults read "$BID" kookoo.appIconID >"$ROOT/pref-cancel.txt" 2>&1 || true
@@ -111,7 +123,19 @@ jobs:
           cat "$ROOT/pref-before.txt" "$ROOT/pref-cancel.txt"
           osascript -e 'tell application "System Events" to tell process "Kookoo" to click button 2 of UI element 3 of scroll area 1 of group 1 of window "Settings"'
           sleep 1
-          osascript "$ROOT/click.applescript" 'Change Icon'
+          osascript <<'AS'
+          tell application "System Events" to tell process "Kookoo"
+            set a to button 1 of sheet 1 of window "Settings"
+            set b to button 2 of sheet 1 of window "Settings"
+            set ax to item 1 of position of a
+            set bx to item 1 of position of b
+            if ax > bx then
+              click a
+            else
+              click b
+            end if
+          end tell
+          AS
           sleep 2
           cmp "$ICON" "$APP/Contents/Resources/IconChoices/01-pearl.icns"
           test "$(defaults read "$BID" kookoo.appIconID)" = "01-pearl"
