@@ -1,0 +1,40 @@
+name: Independent engine candidate (no release)
+on:
+  workflow_dispatch:
+  push:
+    branches: [fork/independent-engine]
+    paths:
+      - scripts/build-libghostty.sh
+      - scripts/kooky-libghostty-issue53.patch
+      - .github/workflows/engine-candidate.yml
+permissions:
+  contents: read
+jobs:
+  build-and-integrate:
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact pinned source and run upstream tests
+        run: bash scripts/build-libghostty.sh
+      - name: Test Kookoo with candidate (isolated runner only)
+        run: |
+          cd dist/engine-candidate
+          shasum -a 256 -c SHA256SUMS
+          cd ../..
+          mkdir -p Vendor
+          tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
+          # build-app calls setup-libghostty; this test-only stamp prevents it
+          # replacing the candidate with the production prebuilt archive.
+          printf '%s\n' '88c3325dc9698d887da7e07ee0f9b79c53020be2-kooky53r1' > Vendor/.ghostty-sha
+          swift test --build-system native
+          bash scripts/build-app.sh
+          codesign --verify --deep --strict dist/Kookoo.app
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: independent-engine-candidate
+          path: dist/engine-candidate
+          if-no-files-found: warn
