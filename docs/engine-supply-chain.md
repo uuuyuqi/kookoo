@@ -171,3 +171,44 @@ The builder now pins the original runtime version explicitly rather than claimin
 an unknown commit. Sidecar provenance continues to identify the Kookoo build.
 A further exact-section comparison is required before claiming this closes the
 remaining metadata difference; archive/debug bytes are not expected to match.
+
+## Aligned candidate verification (2026-11-14, not a production switch)
+
+The final source build explicitly disables Sentry and pins the original runtime
+version string. Run [43598330698](https://github.com/uuuyuqi/kookoo/actions/runs/43598330698)
+passed core tests, 1109 Kookoo tests (6 skipped, zero failures), app packaging,
+notice checks and ad-hoc signature verification. Its retained artifact is
+14116316964. SHA256:
+
+- Framework: `6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10`
+- Patched engine source: `ce3ccf361e0cb2bfd9b54ee657bb5a89c3e4b463c16a9b37b1c9ba823d7b2460`
+- Candidate app source: `ff09ce897a708d90cae199a5c0053560b7703ddf4976b06a3cce22f8832ca7a8`
+
+All materials passed their included SHA256SUMS. Independent inspection against
+the pinned original framework found the same 226 archive members, 145 public
+engine symbols, architecture, deployment target and headers. Every object's
+non-DWARF section bytes, normalized relocations, and section-relative non-debug
+symbol metadata matched. Archive and debug bytes do not match; this is stronger
+runtime-code/data evidence, not a claim of a byte-identical archive or full
+reconstruction of the vendor's unknown original build command.
+
+The exact framework passed disposable-runner GUI probing in
+[43601202057](https://github.com/uuuyuqi/kookoo/actions/runs/43601202057).
+Screenshot inspection confirmed visible ANSI, CJK and emoji output. Real shell,
+alternate screen, 5000-line output and OSC title worked. Eleven brief process-only
+IP socket samples observed no connections, not a comprehensive network audit.
+Human IME, interactive pane resize and physical GPU/sleep cases remain untested.
+
+The exact corresponding-source bundles passed recipient relink verification in
+[43601202060](https://github.com/uuuyuqi/kookoo/actions/runs/43601202060):
+201/201 engine build steps succeeded, modified libintl's marker executed with
+value 42, and Kookoo rebuilt/relinked with ad-hoc signature verification. This
+uses the aligned no-Sentry/version flags. No private maintainer key was needed.
+This is technical evidence for a usable replacement route, not legal advice.
+
+The earlier Sentry-enabled candidates are superseded. Main, the production
+engine pin, releases and appcast remain unchanged. Before adoption, rebase onto
+the current app release and repeat integration tests; make source/notices durable
+release assets, add notices to the product packaging and visible entry, and
+include corresponding source for the actual shipping app (not this older
+candidate snapshot). Follow engine-release-checklist.md.
