@@ -22,14 +22,14 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: independent-engine-candidate
-          run-id: 43592553561
+          run-id: 43598330698
           github-token: ${{ github.token }}
           path: dist/reviewed-engine
       - name: Verify exact reviewed source bundles
         run: |
           cd dist/reviewed-engine/EngineCompliance
-          echo '5b89dac9ffbeb4914afe8d945f1c0f1bf3aba43e82518ad2fff3d4aad59a4032  sources/ghostty-patched-source.tar.gz' | shasum -a 256 -c -
-          echo '7dad1d20d18c6aed9bfc65ff5cdbfb0e1376baaccc393af28fa285559f644b3b  sources/kookoo-source.tar.gz' | shasum -a 256 -c -
+          echo 'ce3ccf361e0cb2bfd9b54ee657bb5a89c3e4b463c16a9b37b1c9ba823d7b2460  sources/ghostty-patched-source.tar.gz' | shasum -a 256 -c -
+          echo 'ff09ce897a708d90cae199a5c0053560b7703ddf4976b06a3cce22f8832ca7a8  sources/kookoo-source.tar.gz' | shasum -a 256 -c -
       - name: Modify libintl, execute its marker, and relink app from sources
         run: bash scripts/tests/libintl-relink-probe.sh dist/reviewed-engine/EngineCompliance dist/relink-evidence
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

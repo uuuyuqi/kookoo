@@ -30,7 +30,7 @@ with p.open('a') as f:
     f.write('\n/* Kookoo recipient relink probe only; never a production patch. */\nint kookoo_libintl_relink_probe(void) { return 42; }\n')
 PY
 (cd "$SOURCE" && zig build --summary all -Doptimize=ReleaseFast -Demit-xcframework=true \
-  -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false) 2>&1 | tee "$OUT/modified-engine-build.txt"
+  -Dsentry=false -Dversion-string=1.3.2-HEAD-+88c3325 -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false) 2>&1 | tee "$OUT/modified-engine-build.txt"
 LIB="$SOURCE/macos/GhosttyKit.xcframework/macos-arm64/libghostty-internal.a"
 nm -g "$LIB" 2>/dev/null | grep ' _kookoo_libintl_relink_probe$' > "$OUT/modified-library-symbol.txt"
 cat > "$WORK/probe.c" <<'C'

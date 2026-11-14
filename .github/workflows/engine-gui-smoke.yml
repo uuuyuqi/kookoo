@@ -22,12 +22,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: independent-engine-candidate
-          run-id: 43592553561
+          run-id: 43598330698
           github-token: ${{ github.token }}
           path: dist/engine-candidate
       - name: Verify exact reviewed candidate and assemble app
         run: |
-          echo '2c1428e1dbbe25a688b6ea633631f21d86ff57467161a0996b3ef9db2398bff4  dist/engine-candidate/GhosttyKit.xcframework.tar.gz' | shasum -a 256 -c -
+          echo '6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10  dist/engine-candidate/GhosttyKit.xcframework.tar.gz' | shasum -a 256 -c -
           mkdir -p Vendor
           tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
           bash scripts/build-app.sh
