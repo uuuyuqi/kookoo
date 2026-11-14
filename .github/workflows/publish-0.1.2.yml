@@ -1,0 +1,42 @@
+name: Publish validated Kookoo 0.1.2
+on:
+  push:
+    paths: ['.github/workflows/publish-0.1.2.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/kookoo'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: uuuyuqi/kookoo
+      SOURCE_SHA: 6fce84c32403a2d888fe32cb44c23dcc86fa3c18
+      VERIFIED_RUN: '43577583276'
+    steps:
+      - name: Verify source run and fetch its exact artifact
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.head_sha')" = "$SOURCE_SHA"
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.conclusion')" = success
+          mkdir dist
+          gh run download "$VERIFIED_RUN" --repo "$GH_REPO" --name Kookoo-macOS --dir dist
+          sha256sum -c dist/SHA256SUMS
+      - name: Publish preview without replacing existing releases
+        run: |
+          cat > notes.md <<'NOTES'
+          Kookoo 0.1.2 Preview: approved single-panel icon and update-check improvements.
+
+          Icon: the light orange/cyan terminal is now the icon's single outer panel, with the exact transparent silhouette of the original legacy icon. No nested white canvas. The divider under the traffic-light dots is stronger for small sizes. The user approved the equal-size dark/light-background previews before integration.
+
+          Update check: Preview releases are now discoverable (the previous /releases/latest endpoint omitted them). Drafts, downgrade candidates and untrusted download URLs are excluded.
+
+          Sparkle 2.10.1 integration and framework packaging are prepared, with explicit restart confirmation and terminal-task warning. IMPORTANT: production update-signing credentials and appcast are NOT configured. In-app installation is disabled safely; Check for Updates still downloads manually. Do not expect this build to update itself in place. No production private key was generated or saved.
+
+          Validation: 1,100 XCTest cases, 0 failures, 6 environment/opt-in skips; release build; embedded Sparkle framework verification; actual DMG mount; icon resource/volume flag checks; strict app signature verification; release checksum verification. Interactive old-to-new upgrade is not validated and not enabled.
+
+          Apple silicon / macOS 14+. Ad-hoc signed, NOT Developer ID signed or Apple-notarized. Gatekeeper/enterprise protection can still block the DMG or app; do not bypass those controls. The downloaded DMG file may retain a generic disk-image icon. Actual user Launchpad cache/rendering still requires visual confirmation after installing this new version.
+          NOTES
+          gh release create v0.1.2 --repo "$GH_REPO" --target "$SOURCE_SHA" --title "Kookoo 0.1.2 Preview" --prerelease --notes-file notes.md dist/Kookoo-v0.1.2.dmg dist/SHA256SUMS
