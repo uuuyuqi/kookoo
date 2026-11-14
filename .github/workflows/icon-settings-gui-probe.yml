@@ -79,7 +79,7 @@ jobs:
                 repeat with e in elems
                   try
                     if role of e is "AXButton" then
-                      if name of e is item 1 of argv or description of e is item 1 of argv then
+                      if (value of attribute "AXTitle" of e) is (item 1 of argv) then
                         click e
                         return "clicked " & item 1 of argv
                       end if
@@ -97,7 +97,7 @@ jobs:
           PID="$(pgrep -f '/Kookoo.app/Contents/MacOS/Kookoo' | head -1)"
           pgrep -P "$PID" >"$ROOT/children-before.txt" || true
           defaults read "$BID" kookoo.appIconID >"$ROOT/pref-before.txt" 2>&1 || true
-          osascript "$ROOT/click.applescript" 'Pearl app icon'
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to click button 2 of UI element 3 of scroll area 1 of group 1 of window "Settings"'
           sleep 1
           screencapture -x "$ROOT/evidence/confirmation.png"
           osascript -e 'tell application "System Events" to tell process "Kookoo" to get entire contents of front window' >"$ROOT/evidence/alert-ax.txt"
@@ -109,7 +109,7 @@ jobs:
           # Missing-key error text includes timestamps; compare only actual defaults if present.
           echo "CANCEL_ICON_UNCHANGED=YES"
           cat "$ROOT/pref-before.txt" "$ROOT/pref-cancel.txt"
-          osascript "$ROOT/click.applescript" 'Pearl app icon'
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to click button 2 of UI element 3 of scroll area 1 of group 1 of window "Settings"'
           sleep 1
           osascript "$ROOT/click.applescript" 'Change Icon'
           sleep 2
@@ -120,7 +120,7 @@ jobs:
           while read -r CHILD; do kill -0 "$CHILD"; done < "$ROOT/children-before.txt"
           echo "APP_AND_CHILD_SESSIONS_SURVIVED=YES"
           screencapture -x "$ROOT/evidence/selected.png"
-          osascript "$ROOT/click.applescript" 'Kookoo app icon'
+          osascript -e 'tell application "System Events" to tell process "Kookoo" to click button 1 of UI element 3 of scroll area 1 of group 1 of window "Settings"'
           sleep 1
           cmp "$ROOT/baseline.icns" "$ICON"
           test "$(defaults read "$BID" kookoo.appIconID)" = "default"
