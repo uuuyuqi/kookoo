@@ -240,6 +240,7 @@ struct SidebarWorkspaceRow: View {
     var onGoToSource: (() -> Void)? = nil
 
     @State private var isHovered = false
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var isContextMenuOpen = false
     @State private var rename = InlineWorkspaceRenameState()
     @FocusState private var renameFocused: Bool
@@ -257,6 +258,16 @@ struct SidebarWorkspaceRow: View {
         }
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous)
+                .strokeBorder(
+                    Theme.chromeForeground.opacity(isActive ? (contrast == .increased ? 0.60 : 0.12) : 0),
+                    lineWidth: contrast == .increased ? 1.5 : 0.75
+                )
+                .allowsHitTesting(false)
+        }
+        .shadow(color: .black.opacity(isActive ? 0.045 : 0), radius: 2, x: 0, y: 1)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
         .contentShape(Rectangle())
         .onTapGesture { if !rename.isEditing { onActivate() } }
         .onHover { isHovered = $0 }
@@ -581,8 +592,8 @@ struct SidebarWorkspaceRow: View {
     }
 
     private var rowFill: Color {
-        if isActive { return Theme.chromeSelection }
-        if isHovered { return Theme.chromeHover }
+        if isActive { return Theme.workspaceSelectionSurface }
+        if isHovered { return Theme.workspaceHoverSurface }
         return .clear
     }
 }

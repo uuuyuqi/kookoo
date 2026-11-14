@@ -56,6 +56,15 @@ enum Theme {
     /// permanently pressed button.
     static var chromeSelection: Color { resolved.chromeSelection }
 
+    /// A lifted workspace card instead of a permanently pressed grey block.
+    /// Keep the terminal palette as the source, including custom dark themes.
+    static var workspaceSelectionSurface: Color {
+        Color(nsColor: resolved.isLight
+            ? mix(resolved.backgroundColor, .white, 0.72)
+            : mix(resolved.chromeBackgroundColor, resolved.foregroundColor, 0.065))
+    }
+    static var workspaceHoverSurface: Color { chromeForeground.opacity(resolved.isLight ? 0.035 : 0.04) }
+
     /// Color libghostty draws inside the terminal surface. Exposed as NSColor
     /// so AppKit code (engines, etc.) can reach it without bridging.
     static var terminalSurface: NSColor { resolved.backgroundColor }
