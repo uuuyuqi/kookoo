@@ -9,7 +9,9 @@ let package = Package(
         // would mean reverting all session models to ObservableObject + @Published.
         .macOS(.v14)
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
+    ],
     targets: [
         // Thin executable: main.swift only. Everything else lives in KookyKit so
         // tests can `@testable import` it (SPM doesn't allow importing executables).
@@ -53,6 +55,7 @@ let package = Package(
             name: "KookyKit",
             dependencies: [
                 "GhosttyKit",
+                .product(name: "Sparkle", package: "Sparkle"),
                 // CLI wire types (KookyCLIRequest/Response) — compiled into
                 // both ends so the protocol can't drift. One-way dependency;
                 // KookyHookKit stays Foundation/Darwin-only.
@@ -66,6 +69,7 @@ let package = Package(
                 // libghostty bundles C++ deps (glslang, spirv-cross, imgui)
                 // and uses Metal for rendering; link the system frameworks.
                 .linkedLibrary("c++"),
+                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
                 .linkedFramework("Metal"),
                 .linkedFramework("MetalKit"),
                 .linkedFramework("CoreText"),

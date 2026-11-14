@@ -93,7 +93,7 @@ struct UpdatePromptView: View {
         switch outcome {
         case .newer(_, let url, _):
             BracketButton("later", action: onClose)
-            BracketButton("update") {
+            BracketButton("Download Manually") {
                 onDownload(url)
                 onClose()
             }
@@ -129,7 +129,7 @@ struct UpdatePromptView: View {
         switch outcome {
         case .newer:
             return String.localizedStringWithFormat(
-                String(localized: "current %@", bundle: .kookyResources),
+                String(localized: "current %@ · In-app installation is not configured in this build.", bundle: .kookyResources),
                 currentVersion
             )
         case .upToDate: return String(localized: "you're on the latest release.", bundle: .kookyResources)

@@ -66,6 +66,14 @@ cp .build/release/kookoo-cli "${APP}/Contents/MacOS/kookoo-cli"
 # the running .app will silently fall back to .build/release/ on disk.
 cp -R .build/release/Kooky_KookyKit.bundle "${APP}/Contents/Resources/"
 
+# Sparkle's binary package must be embedded for standalone launches. ditto
+# preserves the versioned framework symlinks, XPC services and permissions.
+SPARKLE_FRAMEWORK="$(find .build/artifacts -type d -name Sparkle.framework -path '*macos*' -print -quit)"
+[ -n "$SPARKLE_FRAMEWORK" ] || { echo "Sparkle macOS framework missing" >&2; exit 1; }
+mkdir -p "${APP}/Contents/Frameworks"
+ditto "$SPARKLE_FRAMEWORK" "${APP}/Contents/Frameworks/Sparkle.framework"
+codesign --verify --deep --strict "${APP}/Contents/Frameworks/Sparkle.framework"
+
 # App icon — generated from branding/AppIcon.png if present. macOS reads
 # .icns from CFBundleIconFile in Info.plist; we synthesize the multi-size
 # .iconset via sips, then iconutil packs it. Without a source PNG we ship
@@ -271,6 +279,30 @@ ${APPLE_ICON_PLIST_KEYS}
 </dict>
 </plist>
 PLIST
+
+# Optional release-signing public key. No private key is ever consumed by this
+# build. With no key, the app keeps its manual-download fallback and does not
+# instantiate Sparkle. Never ship a dummy production key.
+python3 - "$APP/Contents/Info.plist" <<'UPDATE_PLIST'
+import base64, os, plistlib, sys
+path = sys.argv[1]
+with open(path, 'rb') as f:
+    info = plistlib.load(f)
+info.update(SUEnableAutomaticChecks=False, SUAutomaticallyUpdate=False,
+            SUSendProfileInfo=False, SUVerifyUpdateBeforeExtraction=True)
+key = os.environ.get('KOOKOO_UPDATE_PUBLIC_KEY', '')
+if key:
+    try:
+        decoded = base64.b64decode(key, validate=True)
+        assert len(decoded) == 32 and any(decoded)
+        assert base64.b64encode(decoded).decode() == key
+    except Exception:
+        raise SystemExit('Invalid KOOKOO_UPDATE_PUBLIC_KEY (expected an Ed25519 public key)')
+    info['SUPublicEDKey'] = key
+    info['SUFeedURL'] = 'https://raw.githubusercontent.com/uuuyuqi/kookoo/main/appcast.xml'
+with open(path, 'wb') as f:
+    plistlib.dump(info, f)
+UPDATE_PLIST
 
 echo "==> Adhoc codesign (not Developer ID signed or notarized)"
 # Adhoc signing supplies integrity only. Gatekeeper or managed endpoint

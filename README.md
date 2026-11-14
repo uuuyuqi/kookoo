@@ -2,7 +2,7 @@
 
 A native macOS terminal for working with AI coding agents. Independently maintained, derived from [Kooky](https://github.com/iAmCorey/kooky) v0.51.12. Original Git history, copyright, MIT license and third-party notices are retained.
 
-## Kookoo 0.1.1
+## Kookoo 0.1.2
 
 - Native split terminals, multiple workspaces and the existing agent launcher.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
@@ -26,7 +26,7 @@ bash scripts/build-dmg.sh
 
 The Ghostty engine download is pinned by SHA-256. An optional `KOOKOO_SDK=/absolute/path/to/MacOSX.sdk` selects a compatible installed SDK for app builds without changing system settings.
 
-Outputs: `dist/Kookoo.app`, `dist/Kookoo-v0.1.1.dmg`.
+Outputs: `dist/Kookoo.app`, `dist/Kookoo-v0.1.2.dmg`.
 
 ### Signing and managed computers
 

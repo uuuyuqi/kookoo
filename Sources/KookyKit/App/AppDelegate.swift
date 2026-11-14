@@ -60,6 +60,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
     /// Aqua/Dark Aqua appearance for stable Liquid Glass rendering, so observe
     /// the application (which remains system-owned) rather than any window.
     private var systemAppearanceObservation: NSKeyValueObservation?
+    private lazy var inAppUpdater = InAppUpdater()
     /// File → Open Recent. Items are rebuilt from `RecentFolders` on every
     /// open via the dedicated delegate — the menu itself is a stable shell.
     private let openRecentMenu = NSMenu(title: "Open Recent")
@@ -1917,6 +1918,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate,
     }
 
     @objc private func handleCheckForUpdates(_ sender: NSMenuItem) {
+        if inAppUpdater.isConfigured {
+            inAppUpdater.checkForUpdates(sender)
+            return
+        }
         let originalTitle = sender.title
         sender.title = String(localized: "Checking for Updates…", bundle: .kookyResources)
         sender.isEnabled = false

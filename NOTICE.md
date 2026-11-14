@@ -83,3 +83,10 @@ SOFTWARE.
 - Owner: BRIGHT ZENITH PRIVATE LIMITED / Qoder; all brand rights remain with their owner.
 - File: `Sources/KookyKit/Resources/Icons/qoder.png`
 - Used to identify compatibility with Qoder CLI. Kookoo is independent and is not endorsed by Qoder. This mark is not licensed under Kookoo's MIT license; no general redistribution license was identified. Review brand usage permission before commercial distribution.
+
+## Sparkle
+
+In-app update infrastructure uses Sparkle 2.10.1 (https://sparkle-project.org/),
+Copyright Sparkle Project contributors, under its permissive license. The
+framework retains its bundled license notices. See
+https://github.com/sparkle-project/Sparkle/blob/2.10.1/LICENSE.
