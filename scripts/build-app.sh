@@ -55,6 +55,11 @@ mkdir -p "${APP}/Contents/MacOS"
 mkdir -p "${APP}/Contents/Resources"
 # Keep third-party icon attribution and license text with distributed binaries.
 cp LICENSE NOTICE.md "${APP}/Contents/Resources/"
+# Candidate adoption is explicit until durable engine publication is reviewed.
+# Missing or invalid requested materials fail before signing.
+if [[ -n "${KOOKOO_ENGINE_COMPLIANCE_DIR:-}" ]]; then
+    bash scripts/install-engine-notices.sh "$KOOKOO_ENGINE_COMPLIANCE_DIR" "${APP}/Contents/Resources"
+fi
 
 cp .build/release/Kooky "${APP}/Contents/MacOS/${APP_NAME}"
 cp .build/release/KookyHook "${APP}/Contents/MacOS/KookyHook"

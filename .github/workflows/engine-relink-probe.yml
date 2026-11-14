@@ -1,0 +1,40 @@
+name: Independent engine recipient relink (no release)
+on:
+  workflow_dispatch:
+  push:
+    branches: [fork/independent-engine]
+    paths:
+      - scripts/tests/libintl-relink-probe.sh
+      - .github/workflows/engine-relink-probe.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recipient-relink:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: independent-engine-candidate
+          run-id: 43598330698
+          github-token: ${{ github.token }}
+          path: dist/reviewed-engine
+      - name: Verify exact reviewed source bundles
+        run: |
+          cd dist/reviewed-engine/EngineCompliance
+          echo 'ce3ccf361e0cb2bfd9b54ee657bb5a89c3e4b463c16a9b37b1c9ba823d7b2460  sources/ghostty-patched-source.tar.gz' | shasum -a 256 -c -
+          echo 'ff09ce897a708d90cae199a5c0053560b7703ddf4976b06a3cce22f8832ca7a8  sources/kookoo-source.tar.gz' | shasum -a 256 -c -
+      - name: Modify libintl, execute its marker, and relink app from sources
+        run: bash scripts/tests/libintl-relink-probe.sh dist/reviewed-engine/EngineCompliance dist/relink-evidence
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: engine-recipient-relink-evidence
+          path: dist/relink-evidence
+          if-no-files-found: warn

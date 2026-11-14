@@ -31,6 +31,10 @@ struct AboutView: View {
                 .padding(.top, 12)
             aboutLink("Github ↗", url: KookyApp.repositoryURL)
                 .padding(.top, 14)
+            if let notices = Bundle.main.url(forResource: "EngineThirdPartyNotices", withExtension: "md") {
+                aboutLink("Third-party licenses ↗", url: notices, font: Theme.mono(10))
+                    .padding(.top, 8)
+            }
             Rectangle()
                 .fill(Theme.chromeHairline)
                 .frame(width: 32, height: 1)

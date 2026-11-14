@@ -1,0 +1,42 @@
+name: Independent engine GUI probe (no release)
+on:
+  workflow_dispatch:
+  push:
+    branches: [fork/independent-engine]
+    paths:
+      - scripts/tests/engine-gui-smoke.sh
+      - .github/workflows/engine-gui-smoke.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  isolated-gui-probe:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: independent-engine-candidate
+          run-id: 43598330698
+          github-token: ${{ github.token }}
+          path: dist/engine-candidate
+      - name: Verify exact reviewed candidate and assemble app
+        run: |
+          echo '6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10  dist/engine-candidate/GhosttyKit.xcframework.tar.gz' | shasum -a 256 -c -
+          mkdir -p Vendor
+          tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
+          bash scripts/build-app.sh
+          codesign --verify --deep --strict dist/Kookoo.app
+      - name: Probe real app and terminal in disposable runner
+        run: bash scripts/tests/engine-gui-smoke.sh dist/Kookoo.app
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: independent-engine-gui-evidence
+          path: dist/engine-gui-evidence
+          if-no-files-found: warn
