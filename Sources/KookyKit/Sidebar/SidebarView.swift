@@ -438,11 +438,9 @@ struct SidebarView: View {
             } else {
                 HStack(spacing: 0) {
                     FirstGlyphCenteredLayout(axisX: Theme.sidebarLeadingIconCenterX) {
-                        Text("Kookoo")
-                            .font(Theme.display(15.5, weight: .semibold))
-                            .foregroundStyle(Theme.chromeForeground)
+                        LaunchWordmark()
                         Text("K")
-                            .font(Theme.display(15.5, weight: .semibold))
+                            .font(LaunchWordmark.font)
                             .hidden()
                             .accessibilityHidden(true)
                     }
