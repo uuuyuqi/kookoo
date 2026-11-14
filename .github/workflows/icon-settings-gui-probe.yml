@@ -106,8 +106,10 @@ jobs:
           tell application "System Events" to tell process "Kookoo"
             set a to button 1 of sheet 1 of window "Settings"
             set b to button 2 of sheet 1 of window "Settings"
-            set ax to item 1 of position of a
-            set bx to item 1 of position of b
+            set ap to get position of a
+            set bp to get position of b
+            set ax to item 1 of ap
+            set bx to item 1 of bp
             if ax < bx then
               click a
             else
@@ -127,8 +129,10 @@ jobs:
           tell application "System Events" to tell process "Kookoo"
             set a to button 1 of sheet 1 of window "Settings"
             set b to button 2 of sheet 1 of window "Settings"
-            set ax to item 1 of position of a
-            set bx to item 1 of position of b
+            set ap to get position of a
+            set bp to get position of b
+            set ax to item 1 of ap
+            set bx to item 1 of bp
             if ax > bx then
               click a
             else
