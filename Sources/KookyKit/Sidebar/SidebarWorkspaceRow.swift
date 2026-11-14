@@ -453,7 +453,8 @@ struct SidebarWorkspaceRow: View {
         // window edge.
         .padding(.leading, Theme.sidebarContentLeadingX - Theme.space2)
         .padding(.trailing, Theme.space3)
-        .padding(.vertical, Theme.sidebarRowVerticalPadding)
+        .padding(.vertical, Theme.workspaceRowVerticalPadding)
+        .frame(minHeight: Theme.workspaceRowMinimumHeight)
     }
 
     private func compactBody(agents: [AgentTemplate], dotColor: Color?) -> some View {

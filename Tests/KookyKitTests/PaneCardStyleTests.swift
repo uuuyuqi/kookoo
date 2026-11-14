@@ -39,6 +39,12 @@ final class PaneCardStyleTests: XCTestCase {
                        Theme.sidebarLeadingIconCenterX)
     }
 
+    func testWorkspaceDensityKeepsReadableHitAreaWithoutChangingHeader() {
+        XCTAssertLessThan(Theme.workspaceRowVerticalPadding, Theme.sidebarRowVerticalPadding)
+        XCTAssertGreaterThanOrEqual(Theme.workspaceRowMinimumHeight, 44)
+        XCTAssertEqual(Theme.contentHeaderHeight, 42)
+    }
+
     func testZoomTargetsClickedPaneAndRestoresLayout() throws {
         let store = makeTestStore()
         let workspace = store.workspaces[0]

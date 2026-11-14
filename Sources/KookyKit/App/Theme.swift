@@ -401,6 +401,10 @@ enum Theme {
     /// Shared vertical breathing room for the left workspace rows and the
     /// right agent-panel rows so the two sidebars keep the same density.
     static let sidebarRowVerticalPadding: CGFloat = 9
+    /// Workspace rows remain two-line, but use less vertical whitespace.
+    /// A minimum hit area does not cap larger text or inline rename fields.
+    static let workspaceRowVerticalPadding: CGFloat = 6
+    static let workspaceRowMinimumHeight: CGFloat = 44
 
     // MARK: Motion
     /// Standard transition for chrome state changes (sidebar collapse,
