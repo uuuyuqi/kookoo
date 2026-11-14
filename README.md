@@ -85,6 +85,7 @@ See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md). Kookoo is not the upstream pr
 | Reasonix | `reasonix` | ✓ | ✓ | ✓ |
 | Kiro CLI | `kiro-cli` | ✗ | ✗ | ✓ |
 | Droid | `droid` | ✓ | ✗ | ✓ |
+| Devin CLI | `devin` | ✓ | ✗ | ✗ |
 | Qoder CLI | `qoder` | ✗ | ✗ | ✗ |
 | Qoder CN CLI | `qodercn` | ✗ | ✗ | ✗ |
 | Qoder CLI (Legacy) | `qodercli` | ✗ | ✗ | ✗ |
