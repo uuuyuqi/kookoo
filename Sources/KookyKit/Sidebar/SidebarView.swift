@@ -98,6 +98,7 @@ struct SidebarView: View {
     /// on drop. Lets each row compute whether the drag origin is above or
     /// below it so the drop indicator can flip edges.
     @State private var draggingWorkspaceId: UUID?
+    @State private var workspaceRowsHeight: CGFloat = 0
     /// True while a Finder folder drag is hovering the sidebar — gates the
     /// drop-zone outline so the user sees that releasing here opens a new
     /// workspace.
@@ -501,54 +502,71 @@ struct SidebarView: View {
     }
 
     private func list(isCompact: Bool, proxy: ScrollViewProxy) -> some View {
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 3) {
-                if isCompact {
-                    // 52pt-wide sidebar can't fit a disclosure triangle next
-                    // to a 28pt icon — fall back to a flat list. The order
-                    // is stable: store.workspaces already places worktrees
-                    // after their source by virtue of being appended at
-                    // creation time.
-                    ForEach(Array(store.workspaces.enumerated()), id: \.element.id) { index, workspace in
-                        // canCreateWorktree walks the fs (`findGitDir`) —
-                        // hoist once per workspace so the two row callbacks
-                        // don't each stat the same ancestor chain.
-                        let canCreate = canCreateWorktree(from: workspace)
-                        let goToSource: (() -> Void)? = workspace.worktreeParentId
-                            .flatMap { id in store.workspaces.first { $0.id == id } }
-                            .map { parent in { store.activateWorkspace(parent) } }
-                        DraggableWorkspaceRow(
-                            workspace: workspace,
-                            store: store,
-                            myIndex: index,
-                            isCompact: isCompact,
-                            draggingId: $draggingWorkspaceId,
-                            onCreateWorktree: canCreate ? { presentCreateWorktree(workspace) } : nil,
-                            onGoToSource: goToSource
-                        )
+        GeometryReader { viewport in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    LazyVStack(spacing: 3) {
+                        if isCompact {
+                            // 52pt-wide sidebar can't fit a disclosure triangle next
+                            // to a 28pt icon — fall back to a flat list. The order
+                            // is stable: store.workspaces already places worktrees
+                            // after their source by virtue of being appended at
+                            // creation time.
+                            ForEach(Array(store.workspaces.enumerated()), id: \.element.id) { index, workspace in
+                                // canCreateWorktree walks the fs (`findGitDir`) —
+                                // hoist once per workspace so the two row callbacks
+                                // don't each stat the same ancestor chain.
+                                let canCreate = canCreateWorktree(from: workspace)
+                                let goToSource: (() -> Void)? = workspace.worktreeParentId
+                                    .flatMap { id in store.workspaces.first { $0.id == id } }
+                                    .map { parent in { store.activateWorkspace(parent) } }
+                                DraggableWorkspaceRow(
+                                    workspace: workspace,
+                                    store: store,
+                                    myIndex: index,
+                                    isCompact: isCompact,
+                                    draggingId: $draggingWorkspaceId,
+                                    onCreateWorktree: canCreate ? { presentCreateWorktree(workspace) } : nil,
+                                    onGoToSource: goToSource
+                                )
+                            }
+                        } else {
+                            // A workspace is "top-level" either because it has no
+                            // parent, or because its parent is gone — defensive
+                            // fallback so a bug that strands a worktree (parent
+                            // closed while child kept) still surfaces the row in
+                            // the sidebar instead of vanishing it entirely.
+                            let parentIds = Set(store.workspaces.map(\.id))
+                            let topLevel = store.workspaces.enumerated().filter { _, ws in
+                                guard let parentId = ws.worktreeParentId else { return true }
+                                return !parentIds.contains(parentId)
+                            }
+                            ForEach(Array(topLevel), id: \.element.id) { index, workspace in
+                                workspaceTree(parent: workspace, parentIndex: index)
+                            }
+                        }
                     }
-                } else {
-                    // A workspace is "top-level" either because it has no
-                    // parent, or because its parent is gone — defensive
-                    // fallback so a bug that strands a worktree (parent
-                    // closed while child kept) still surfaces the row in
-                    // the sidebar instead of vanishing it entirely.
-                    let parentIds = Set(store.workspaces.map(\.id))
-                    let topLevel = store.workspaces.enumerated().filter { _, ws in
-                        guard let parentId = ws.worktreeParentId else { return true }
-                        return !parentIds.contains(parentId)
+                    // Source-list rows use an 8pt hover-fill inset. Their own 8pt
+                    // content inset then places the 20pt mark at x = 16...36. The
+                    // 40pt header already owns the vertical separation above the
+                    // source list, so don't double that gap with extra top padding.
+                    .padding(.horizontal, Theme.space2)
+                    .padding(.bottom, Theme.space2)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                        workspaceRowsHeight = $0
                     }
-                    ForEach(Array(topLevel), id: \.element.id) { index, workspace in
-                        workspaceTree(parent: workspace, parentIndex: index)
-                    }
+
+                    // Only the unused list area creates a workspace. Keeping the
+                    // gesture off the ScrollView/rows preserves rename, selection,
+                    // context menus and drag-reordering on existing workspaces.
+                    Color.clear
+                        .frame(height: max(0, viewport.size.height - workspaceRowsHeight))
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) { store.addWorkspace() }
+                        .accessibilityIdentifier("sidebar-new-workspace-area")
+                        .help("Double-click to create a workspace")
                 }
             }
-            // Source-list rows use an 8pt hover-fill inset. Their own 8pt
-            // content inset then places the 20pt mark at x = 16...36. The
-            // 40pt header already owns the vertical separation above the
-            // source list, so don't double that gap with extra top padding.
-            .padding(.horizontal, Theme.space2)
-            .padding(.bottom, Theme.space2)
         }
         // ⌘⇧R parks the active workspace on the store; reveal its row so the
         // row's inline title field can open. onChange catches a request made
