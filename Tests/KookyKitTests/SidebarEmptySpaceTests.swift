@@ -58,5 +58,24 @@ final class SidebarEmptySpaceTests: XCTestCase {
         try click(window, at: NSPoint(x: 100, y: 15), count: 2)
         settle()
         XCTAssertEqual(store.workspaces.count, originalCount + 2)
+
+        // File-browser space must keep its own semantics, never create a workspace.
+        store.setSidebarContent(.files)
+        settle()
+        try click(window, at: NSPoint(x: 100, y: 200), count: 1)
+        try click(window, at: NSPoint(x: 100, y: 200), count: 2)
+        settle()
+        XCTAssertEqual(store.workspaces.count, originalCount + 2)
+
+        // Compact mode still shows the workspace list and supports the shortcut.
+        store.setSidebarContent(.workspaces)
+        window.contentView = NSHostingView(rootView: SidebarView(store: store, mode: .compact))
+        window.setContentSize(NSSize(width: 52, height: 700))
+        settle()
+        try click(window, at: NSPoint(x: 26, y: 200), count: 1)
+        try click(window, at: NSPoint(x: 26, y: 200), count: 2)
+        settle()
+        XCTAssertEqual(store.workspaces.count, originalCount + 3)
     }
 }
+
