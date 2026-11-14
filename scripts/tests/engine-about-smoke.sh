@@ -47,12 +47,18 @@ guard let item = find(menu, "About Kookoo") else { fatalError("Missing About Koo
 guard AXUIElementPerformAction(item, kAXPressAction as CFString) == .success else { fatalError("About action failed") }
 Thread.sleep(forTimeInterval: 2)
 dump(app)
-guard var link = find(app, "Third-party licenses ↗") else { print("FAIL: Missing licenses AX element"); exit(1) }
+guard var link = find(app, "Third-party licenses") else { print("FAIL: Missing licenses AX element"); exit(1) }
 if value(link, kAXRoleAttribute) as? String != kAXButtonRole,
    let parent = value(link, kAXParentAttribute) { link = parent as! AXUIElement }
 guard AXUIElementPerformAction(link, kAXPressAction as CFString) == .success else { print("FAIL: License button action failed"); exit(1) }
-Thread.sleep(forTimeInterval: 3)
-print("PASS: actual About menu opened; visible Third-party licenses button found and pressed through Accessibility.")
+Thread.sleep(forTimeInterval: 2)
+let windows = value(app, kAXWindowsAttribute) as? [AXUIElement] ?? []
+guard let licenseWindow = windows.first(where: { title($0) == "Third-party licenses" }),
+      find(licenseWindow, "Open full license texts") != nil else {
+    print("FAIL: Internal license window did not open"); exit(1)
+}
+dump(licenseWindow)
+print("PASS: actual About opened, licenses button pressed, internal read-only license window and full-text folder entry verified.")
 SWIFT
 set +e
 swift "$WORK/about.swift" "$PID" > "$OUT/RESULT.txt" 2>&1

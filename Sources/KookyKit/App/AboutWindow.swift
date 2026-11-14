@@ -32,8 +32,14 @@ struct AboutView: View {
             aboutLink("Github ↗", url: KookyApp.repositoryURL)
                 .padding(.top, 14)
             if let notices = Bundle.main.url(forResource: "EngineThirdPartyNotices", withExtension: "md") {
-                aboutLink("Third-party licenses ↗", url: notices, font: Theme.mono(10))
-                    .padding(.top, 8)
+                Button("Third-party licenses") {
+                    EngineLicenseWindowController.shared.show(notices: notices)
+                }
+                .font(Theme.mono(10))
+                .foregroundStyle(Theme.chromeForeground)
+                .buttonStyle(.plain)
+                .hoverCursor(.pointingHand)
+                .padding(.top, 8)
             }
             Rectangle()
                 .fill(Theme.chromeHairline)
@@ -108,5 +114,44 @@ final class AboutWindowController: NSWindowController {
         window.appearance = Theme.windowAppearance
         window.configureGlassChrome()
         self.window = window
+    }
+}
+
+
+/// Keep notices readable without depending on a system Markdown editor.
+@MainActor
+private final class EngineLicenseWindowController: NSWindowController {
+    static let shared = EngineLicenseWindowController()
+    private init() { super.init(window: nil) }
+    required init?(coder: NSCoder) { fatalError("not a storyboard window") }
+
+    func show(notices: URL) {
+        guard let text = try? String(contentsOf: notices, encoding: .utf8) else { return }
+        if window == nil {
+            let folder = notices.deletingLastPathComponent().appendingPathComponent("EngineLicenses")
+            let view = VStack(alignment: .leading, spacing: 12) {
+                ScrollView {
+                    Text(verbatim: text)
+                        .font(.system(size: 13))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(20)
+                }
+                Button("Open full license texts") {
+                    NSWorkspace.shared.open(folder)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+            }
+            .frame(minWidth: 560, minHeight: 420)
+            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            window.title = "Third-party licenses"
+            window.styleMask = [.titled, .closable, .resizable]
+            window.setContentSize(NSSize(width: 680, height: 520))
+            window.center()
+            self.window = window
+        }
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
