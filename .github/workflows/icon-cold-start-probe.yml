@@ -1,0 +1,97 @@
+name: Isolated Icon Cold Start
+on:
+  push:
+    branches: [research/icon-switch-safety-20261114]
+    paths: [.github/workflows/icon-cold-start-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    steps:
+      - name: Earliest icon restore and launch recording
+        shell: bash
+        run: |
+          set -eu
+          ROOT="$(mktemp -d)"
+          mkdir -p "$ROOT/evidence"
+          echo "PROBE_EVIDENCE=$ROOT/evidence" >> "$GITHUB_ENV"
+          exec > >(tee "$ROOT/evidence/run.log") 2>&1
+          sw_vers
+          cat > "$ROOT/main.swift" <<'SWIFT'
+          import AppKit
+          let root = CommandLine.arguments[1]
+          let mode = CommandLine.arguments[2]
+          let start = ProcessInfo.processInfo.systemUptime
+          func log(_ text: String) {
+            let line = String(format: "%.3fms ", (ProcessInfo.processInfo.systemUptime-start)*1000)+text+"\n"
+            let p=root+"/evidence/"+mode+".log"
+            if let h=FileHandle(forWritingAtPath:p) { h.seekToEndOfFile();h.write(Data(line.utf8));try? h.close() }
+            else { try? line.write(toFile:p,atomically:true,encoding:.utf8) }
+          }
+          log("Swift main entered")
+          let app=NSApplication.shared
+          log("NSApplication.shared ready")
+          func applyIcon() {
+            let image=NSImage(size:NSSize(width:512,height:512))
+            image.lockFocus()
+            NSColor.systemPink.setFill()
+            NSBezierPath(roundedRect:NSRect(x:20,y:20,width:472,height:472),xRadius:90,yRadius:90).fill()
+            ("K" as NSString).draw(at:NSPoint(x:155,y:135),withAttributes:[.font:NSFont.boldSystemFont(ofSize:240),.foregroundColor:NSColor.white])
+            image.unlockFocus()
+            app.applicationIconImage=image
+            log("applicationIconImage assigned")
+          }
+          if mode=="early" { applyIcon() }
+          class Delegate:NSObject,NSApplicationDelegate {
+            func applicationWillFinishLaunching(_ n:Notification) { log("willFinishLaunching") }
+            func applicationDidFinishLaunching(_ n:Notification) {
+              log("didFinishLaunching")
+              if mode=="late" {
+                DispatchQueue.main.asyncAfter(deadline:.now()+0.8) { applyIcon() }
+              }
+              DispatchQueue.main.asyncAfter(deadline:.now()+2.0) { log("terminating");app.terminate(nil) }
+            }
+          }
+          let delegate=Delegate()
+          app.delegate=delegate
+          app.setActivationPolicy(.regular)
+          log("before app.run")
+          app.run()
+          SWIFT
+          swiftc "$ROOT/main.swift" -o "$ROOT/Probe"
+          for MODE in early late; do
+            APP="$ROOT/$MODE.app"
+            mkdir -p "$APP/Contents/MacOS"
+            cp "$ROOT/Probe" "$APP/Contents/MacOS/Probe"
+            cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plist version="1.0"><dict>
+          <key>CFBundleIdentifier</key><string>dev.kookoo.isolated-cold-$MODE</string>
+          <key>CFBundleExecutable</key><string>Probe</string>
+          <key>CFBundleName</key><string>Icon $MODE Probe</string>
+          <key>CFBundlePackageType</key><string>APPL</string>
+          <key>CFBundleVersion</key><string>1</string>
+          </dict></plist>
+          PLIST
+            codesign --force --sign - "$APP"
+            # Attempt recording only on disposable CI desktop; permission failure is evidence, not bypassed.
+            screencapture -v -V 5 "$ROOT/evidence/$MODE.mov" >"$ROOT/evidence/$MODE.capture.log" 2>&1 &
+            CAPTURE=$!
+            sleep 1
+            open -W -n "$APP" --args "$ROOT" "$MODE"
+            wait "$CAPTURE" || true
+            codesign --verify --deep --strict "$APP"
+            cat "$ROOT/evidence/$MODE.log"
+          done
+          echo "LIMITS: no user Mac, no production app; time begins at Swift main, not before LaunchServices; no guaranteed absence of pre-process default Dock tile."
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cold-icon-${{ matrix.os }}
+          path: ${{ env.PROBE_EVIDENCE }}
