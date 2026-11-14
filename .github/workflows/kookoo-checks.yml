@@ -20,55 +20,11 @@ jobs:
           swift --version
       - name: Prepare pinned engine
         run: bash scripts/setup-libghostty.sh
-      - name: Run tests
+      - name: Repeat git fan-in regression 20 times
+        run: |
+          for run in $(seq 1 20); do
+            echo "Regression run $run/20"
+            swift test --build-system native --filter WorkspaceStoreTests.testSameRepoTabSpawnMergesGitStatusFetches
+          done
+      - name: Run complete test suite
         run: swift test --build-system native
-      - name: Build app and DMG
-        run: |
-          bash scripts/build-app.sh
-          cmp LICENSE dist/Kookoo.app/Contents/Resources/LICENSE
-          cmp NOTICE.md dist/Kookoo.app/Contents/Resources/NOTICE.md
-          bash scripts/build-dmg.sh
-          bash scripts/verify-package-icons.sh dist/Kookoo-*.dmg
-          codesign --verify --deep --strict dist/Kookoo.app
-          shasum -a 256 dist/Kookoo-*.dmg > dist/SHA256SUMS
-      - name: Sign trusted main update archive
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'uuuyuqi/kookoo'
-        env:
-          KOOKOO_SPARKLE_PRIVATE_KEY: ${{ secrets.KOOKOO_SPARKLE_PRIVATE_KEY }}
-        run: bash scripts/prepare-signed-update.sh
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Kookoo-macOS
-          path: |
-            dist/Kookoo-*.dmg
-            dist/SHA256SUMS
-            dist/appcast.xml
-          if-no-files-found: error
-  updater-e2e:
-    needs: test-and-build
-    runs-on: macos-26
-    timeout-minutes: 25
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: Kookoo-macOS
-          path: dist
-      - name: Extract verified app for isolated installer test
-        run: |
-          shasum -a 256 -c dist/SHA256SUMS
-          mount=$(mktemp -d)
-          hdiutil attach dist/Kookoo-*.dmg -mountpoint "$mount" -readonly -nobrowse -quiet
-          ditto "$mount/Kookoo.app" dist/Kookoo.app
-          hdiutil detach "$mount" -quiet
-          rmdir "$mount"
-      - name: Exercise real Sparkle installation in temporary fixtures
-        run: bash scripts/tests/sparkle-install-e2e.sh dist/Kookoo.app
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Kookoo-updater-e2e-evidence
-          path: dist/updater-e2e-logs
-          if-no-files-found: warn

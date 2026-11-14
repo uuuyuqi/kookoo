@@ -2830,9 +2830,20 @@ extension WorkspaceStoreTests {
 
         XCTAssertEqual(store.gitStatusDispatchCount, baseline,
                        "the shared repo refresh should remain queued while tabs join")
-        try await Task.sleep(for: .milliseconds(180))
+        // The refresh Task starts its debounce only after MainActor gets
+        // to run it. A fixed sleep races that task on a busy CI runner;
+        // this test checks fan-in, not scheduler latency. Wait boundedly
+        // for admission, retaining the exact one-batch assertion below.
+        let deadline = ContinuousClock.now + .seconds(5)
+        while store.gitStatusDispatchCount == baseline, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
         XCTAssertEqual(store.gitStatusDispatchCount, baseline + 1,
                        "three same-repo tabs must dispatch one shared git status batch")
+        // Also catch a duplicate batch queued behind the first dispatch.
+        try await Task.sleep(for: .milliseconds(180))
+        XCTAssertEqual(store.gitStatusDispatchCount, baseline + 1,
+                       "joining tabs must not queue a second git status batch")
     }
 
     func testDiffSnapshotInvalidatesOnlyTheClickedSessionLane() throws {
