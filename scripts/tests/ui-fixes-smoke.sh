@@ -36,7 +36,7 @@ let app=AXUIElementCreateApplication(pid)
 NSRunningApplication(processIdentifier:pid)?.activate(options:[.activateIgnoringOtherApps])
 Thread.sleep(forTimeInterval:1)
 let menu=value(app,kAXMenuBarAttribute) as! AXUIElement
-guard let cycle=find(menu,"循环切换侧边栏"), value(cycle,kAXMenuItemCmdCharAttribute) as? String == "b" else { dump(app);fatalError("Missing Command+B cycle menu") }
+guard let cycle=find(menu,"循环切换侧边栏"), (value(cycle,kAXMenuItemCmdCharAttribute) as? String)?.lowercased() == "b" else { dump(app);fatalError("Missing Command+B cycle menu") }
 capture("sidebar-full")
 for name in ["sidebar-compact","sidebar-hidden","sidebar-restored"] {
  let down=CGEvent(keyboardEventSource:nil,virtualKey:11,keyDown:true)!;down.flags = .maskCommand
