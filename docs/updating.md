@@ -39,3 +39,17 @@ old-to-new installation have actually been verified.
 
 References: https://sparkle-project.org/documentation/ and
 https://sparkle-project.org/documentation/publishing/.
+
+## Current production trust and recovery limit
+
+The approved private key is stored only in this repository's encrypted GitHub
+Actions secret `KOOKOO_SPARKLE_PRIVATE_KEY`; public key is in
+`config/sparkle-public-key.txt`. There is no independent backup, and GitHub does
+not provide secret-value readback. Do not delete or replace the secret casually.
+No additional private-key store or export is authorized by this setup.
+
+If this key becomes unavailable, these ad-hoc-signed builds have no Developer ID
+identity to rely on for seamless key rotation. Existing installs may require a
+manual, explicitly verified reinstall to acquire a new update trust anchor.
+Plan a separately approved encrypted backup/recovery process before broad
+production distribution. Never recover by disabling archive verification.
