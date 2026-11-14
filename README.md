@@ -36,7 +36,7 @@ Six of the 20 built-in alternative icons, from soft pastels to neon and minimal 
 - Native split terminals, multiple workspaces and the existing agent launcher.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
 - Kookoo app icon and in-app branding.
-- **⌘B** narrows or expands the left sidebar. **⌃⌘S** retains the original full/compact/hidden cycle.
+- **⌘B** cycles the left sidebar through expanded → icons only → hidden → expanded. **⌃⌘S** performs the same cycle.
 - Workspace names edit directly in the sidebar: Enter saves, Escape cancels, and leaving the field saves.
 - Separate application identity and data paths; existing Kooky installations are not overwritten or automatically migrated.
 
