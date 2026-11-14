@@ -1,0 +1,45 @@
+name: Verify engine license entry (no release)
+on:
+  push:
+    branches: [fork/engine-about-verification]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  about:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 6cfee9be49f8f49386a1ea451d7b1637ddd7cac9
+          path: app-source
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: independent-engine-candidate
+          run-id: 43598330698
+          github-token: ${{ github.token }}
+          path: app-source/dist/reviewed-engine
+      - name: Build same reviewed application and notices
+        working-directory: app-source
+        run: |
+          echo '6bada6f5bf2e2105a1a5069dd705a1eafd6300a88fc19827e4b1fc53b0a58a10  dist/reviewed-engine/GhosttyKit.xcframework.tar.gz' | shasum -a 256 -c -
+          mkdir -p Vendor
+          tar -xzf dist/reviewed-engine/GhosttyKit.xcframework.tar.gz -C Vendor
+          KOOKOO_ENGINE_COMPLIANCE_DIR=dist/reviewed-engine/EngineCompliance bash scripts/build-app.sh
+          codesign --verify --deep --strict dist/Kookoo.app
+      - name: Verify actual About menu and notice click
+        working-directory: app-source
+        run: bash "$GITHUB_WORKSPACE/scripts/tests/engine-about-smoke.sh" dist/Kookoo.app
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: engine-about-verification
+          path: app-source/dist/engine-about-evidence
+          if-no-files-found: error

@@ -25,9 +25,17 @@ func value(_ e: AXUIElement, _ key: String) -> AnyObject? {
     return AXUIElementCopyAttributeValue(e, key as CFString, &v) == .success ? v : nil
 }
 func title(_ e: AXUIElement) -> String { value(e, kAXTitleAttribute) as? String ?? "" }
+func labels(_ e: AXUIElement) -> [String] {
+    [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute].compactMap { value(e, $0) as? String }
+}
+func dump(_ e: AXUIElement, _ depth: Int = 0) {
+    guard depth < 12 else { return }
+    print(String(repeating: " ", count: depth), value(e, kAXRoleAttribute) ?? "", labels(e))
+    for child in children(e) { dump(child, depth + 1) }
+}
 func children(_ e: AXUIElement) -> [AXUIElement] { value(e, kAXChildrenAttribute) as? [AXUIElement] ?? [] }
 func find(_ e: AXUIElement, _ name: String, _ depth: Int = 0) -> AXUIElement? {
-    if title(e) == name { return e }
+    if labels(e).contains(name) { return e }
     if depth > 12 { return nil }
     for c in children(e) { if let found = find(c, name, depth + 1) { return found } }
     return nil
@@ -38,8 +46,12 @@ let menu = bar as! AXUIElement
 guard let item = find(menu, "About Kookoo") else { fatalError("Missing About Kookoo menu item") }
 guard AXUIElementPerformAction(item, kAXPressAction as CFString) == .success else { fatalError("About action failed") }
 Thread.sleep(forTimeInterval: 2)
-guard let link = find(app, "Third-party licenses ↗") else { fatalError("Missing visible third-party licenses button") }
-guard AXUIElementPerformAction(link, kAXPressAction as CFString) == .success else { fatalError("License button action failed") }
+dump(app)
+guard var link = find(app, "Third-party licenses ↗") else { print("FAIL: Missing licenses AX element"); exit(1) }
+if value(link, kAXRoleAttribute) as? String != kAXButtonRole,
+   let parent = value(link, kAXParentAttribute) { link = parent as! AXUIElement }
+guard AXUIElementPerformAction(link, kAXPressAction as CFString) == .success else { print("FAIL: License button action failed"); exit(1) }
+Thread.sleep(forTimeInterval: 3)
 print("PASS: actual About menu opened; visible Third-party licenses button found and pressed through Accessibility.")
 SWIFT
 set +e
