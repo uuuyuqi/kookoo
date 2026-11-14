@@ -109,3 +109,34 @@ corresponding source/relink materials at the durable binary release location.
 The explicit notice bundle still requires review against the shipped inventory,
 and the modified-libintl relink route must be actually exercised before being
 called verified. No production engine pin or configuration behavior is changed.
+
+## Completed material and recipient verification (2026-11-14)
+
+The complete license/source candidate passed:
+https://github.com/uuuyuqi/kookoo/actions/runs/43592553561
+
+- Framework archive SHA256:
+  `2c1428e1dbbe25a688b6ea633631f21d86ff57467161a0996b3ef9db2398bff4`.
+- Artifact `14113498517` includes actual patched engine/dependency sources,
+  Kookoo corresponding sources, Zig runtime sources, explicit notices and
+  manifests. All downloaded checksum entries verified independently.
+- Core tests: 3336 passed, 16 skipped. Kookoo: 1109 tests, 6 skipped, no failures.
+- Candidate app contains the explicit notices and passes signature verification.
+
+The exact framework passed GUI/shell probing in
+https://github.com/uuuyuqi/kookoo/actions/runs/43594876014 . Screenshot review
+confirmed visible ANSI/CJK/emoji output. Eight brief IP-socket samples of the
+app process observed no connections; this is not comprehensive traffic capture
+or a statement about agent subprocesses or later updater activity.
+
+The actual corresponding-source replacement route passed in
+https://github.com/uuuyuqi/kookoo/actions/runs/43594815367 . A modified libintl
+local-source dependency rebuilt successfully (207/207 steps); a linked program
+executed its added function and returned 42. Kookoo then relinked against the
+modified framework and passed ad-hoc code-sign verification without a maintainer
+key. Modified test binaries were not published. This closes the previously
+unverified technical relink step, not a blanket legal certification.
+
+No engine release, production pin switch, main-branch change or appcast change
+has occurred. Promotion still requires durable source/binary publication and
+final distribution review. The untested human/hardware scenarios above remain.
