@@ -8,7 +8,8 @@ OUT="$ROOT/dist/engine-gui-evidence"
 mkdir -p "$OUT"
 WORK=$(mktemp -d "${RUNNER_TEMP:-/tmp}/kookoo-engine-gui.XXXXXX")
 PID=''
-cleanup() { [[ -z "$PID" ]] || kill "$PID" 2>/dev/null || true; rm -rf "$WORK"; }
+SAMPLER=''
+cleanup() { [[ -z "$SAMPLER" ]] || kill "$SAMPLER" 2>/dev/null || true; [[ -z "$PID" ]] || kill "$PID" 2>/dev/null || true; rm -rf "$WORK"; }
 trap cleanup EXIT
 # Fresh ephemeral runner and isolated app/shell homes. No personal sessions.
 export HOME="$WORK/home" CFFIXED_USER_HOME="$WORK/home" XDG_CONFIG_HOME="$WORK/home/.config"
@@ -31,6 +32,15 @@ printf 'PASS\n' > "$1"
 sleep 90
 PROBE
 "$APP/Contents/MacOS/Kookoo" > "$OUT/app.log" 2>&1 & PID=$!
+# Observe only this disposable app process's socket metadata, never payloads.
+(
+  for _ in $(seq 1 60); do
+    kill -0 "$PID" 2>/dev/null || exit 0
+    date -u '+%FT%TZ'
+    /usr/sbin/lsof -nP -a -p "$PID" -i 2>/dev/null || echo 'No IP sockets observed in this sample.'
+    sleep 1
+  done
+) > "$OUT/app-network-samples.txt" & SAMPLER=$!
 CLI="$APP/Contents/MacOS/kookoo-cli"
 for _ in $(seq 1 40); do
   if "$CLI" status --json > "$OUT/status.json" 2>/dev/null; then break; fi
@@ -60,6 +70,7 @@ PASS: app stayed alive; CLI connected; real terminal executed a shell command;
 ANSI + alternate-screen output + 5000-line scrollback completed; OSC title
 propagated to app session state. This is NOT proof of human IME composition,
 keyboard interaction, pane resizing or graphical pixel correctness.
+Socket samples are brief process-only observations, not a complete traffic audit.
 $(cat "$OUT/screenshot-status.txt")
 RESULT
 cat "$OUT/RESULT.txt"
