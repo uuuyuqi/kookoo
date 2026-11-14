@@ -31,6 +31,14 @@ jobs:
           bash scripts/verify-package-icons.sh dist/Kookoo-*.dmg
           codesign --verify --deep --strict dist/Kookoo.app
           shasum -a 256 dist/Kookoo-*.dmg > dist/SHA256SUMS
+      - name: Verify native UI changes
+        run: bash scripts/tests/ui-fixes-smoke.sh dist/Kookoo.app
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Kookoo-UI-evidence
+          path: dist/ui-fixes-evidence
+          if-no-files-found: warn
       - name: Sign trusted main update archive
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'uuuyuqi/kookoo'
         env:

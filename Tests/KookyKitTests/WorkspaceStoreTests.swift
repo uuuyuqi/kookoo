@@ -4,11 +4,13 @@ import XCTest
 
 @MainActor
 final class WorkspaceStoreTests: XCTestCase {
-    func testCompactSidebarShortcutToggle() {
-        XCTAssertEqual(SidebarMode.full.toggledCompact, .compact)
-        XCTAssertEqual(SidebarMode.compact.toggledCompact, .full)
-        XCTAssertEqual(SidebarMode.hidden.toggledCompact, .full)
-        XCTAssertEqual(SidebarMode.full.toggledCompact.toggledCompact, .full)
+    func testSidebarShortcutCyclesExpandedCompactHidden() {
+        XCTAssertEqual(SidebarMode.full.next, .compact)
+        XCTAssertEqual(SidebarMode.compact.next, .hidden)
+        XCTAssertEqual(SidebarMode.hidden.next, .full)
+        XCTAssertEqual(SidebarMode.full.next.next.next, .full)
+        XCTAssertEqual(SidebarMode.compact.next.next.next, .compact)
+        XCTAssertEqual(SidebarMode.hidden.next.next.next, .hidden)
     }
 
     private let projectA = URL(fileURLWithPath: "/tmp/projectA")

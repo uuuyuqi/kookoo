@@ -86,9 +86,6 @@ enum SidebarMode: String, Codable, Equatable, Sendable {
     case compact
     case hidden
 
-    /// Command-B narrows the sidebar without hiding it.
-    var toggledCompact: SidebarMode { self == .full ? .compact : .full }
-
     var next: SidebarMode {
         switch self {
         case .full: return .compact

@@ -2,6 +2,13 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.9 — 2026-11-14
+
+- Command+B now cycles expanded → icons only → hidden → expanded.
+- Double-clicking unused sidebar workspace-list space creates one workspace, matching the + button. Existing rows, footer and file browser keep their own behavior.
+- Chinese mode now shows Chinese names for all 20 app icon styles and localized icon confirmation/error text. Removed the two permanent explanatory paragraphs; the switch-time risk confirmation remains.
+- Engine, security settings and update-feed host are unchanged.
+
 ## v0.1.8 — 2026-11-14
 
 - Added 20 built-in Kookoo app icon styles in Settings → Appearance, plus restoration of this version's original icon. The saved selection is applied early at launch without restarting terminal sessions.
