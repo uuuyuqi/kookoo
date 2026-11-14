@@ -58,8 +58,8 @@ press(settings)
 guard let appearance=find(app,"外观") else { dump(app);fatalError("Missing appearance") }
 press(appearance)
 dump(app)
-guard find(app,"应用图标") != nil, find(app,"珍珠") != nil,find(app,"棉花糖") != nil else { fatalError("Chinese icon names missing") }
-guard find(app,"App Icon") == nil, find(app,"Pearl") == nil else {fatalError("English icon labels leaked")}
+guard find(app,"应用图标") != nil, find(app,"珍珠图标") != nil,find(app,"棉花糖图标") != nil else { fatalError("Chinese icon names missing") }
+guard find(app,"App Icon") == nil, find(app,"Pearl app icon") == nil else {fatalError("English icon labels leaked")}
 capture("chinese-icons")
 guard let pearl=find(app,"珍珠图标") ?? find(app,"珍珠") else {fatalError("Missing pearl")}
 press(pearl)
@@ -78,6 +78,7 @@ set +e
 swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" > "$OUT/RESULT.txt" 2>&1
 rc=$?
 set -e
+if [[ "$rc" != 0 ]]; then /usr/sbin/screencapture -x "$OUT/failure.png" || true; fi
 cat "$OUT/RESULT.txt"
 [[ "$rc" == 0 ]] && codesign --verify --deep --strict "$APP"
 exit "$rc"
