@@ -29,14 +29,24 @@ mkdir -p "$STAGING"
 cp -R "$APP" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
 
-echo "==> Creating ${DMG}"
-# UDZO = zlib-compressed read-only — standard format for distribution.
-hdiutil create \
-    -volname "Kookoo" \
-    -srcfolder "$STAGING" \
-    -ov \
-    -format UDZO \
-    "$DMG" >/dev/null
+echo "==> Creating ${DMG} with a custom volume icon"
+ICON="${APP}/Contents/Resources/AppIcon.icns"
+[ -s "$ICON" ] || { echo "missing app icon: $ICON" >&2; exit 1; }
+RW="dist/Kookoo-staging.dmg"
+MOUNT="$(mktemp -d)"
+cleanup() {
+    hdiutil detach "$MOUNT" -quiet 2>/dev/null || true
+    rmdir "$MOUNT" 2>/dev/null || true
+    rm -f "$RW"
+}
+trap cleanup EXIT
+hdiutil create -volname "Kookoo" -srcfolder "$STAGING" -ov -format UDRW "$RW" >/dev/null
+hdiutil attach "$RW" -mountpoint "$MOUNT" -nobrowse -quiet
+cp "$ICON" "$MOUNT/.VolumeIcon.icns"
+xcrun SetFile -a V "$MOUNT/.VolumeIcon.icns"
+xcrun SetFile -a C "$MOUNT"
+hdiutil detach "$MOUNT" -quiet
+hdiutil convert "$RW" -format UDZO -o "$DMG" >/dev/null
 
 # Ad-hoc signing provides an integrity signature, not Developer ID trust
 # or notarization. Managed devices and Gatekeeper may still block the image.

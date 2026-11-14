@@ -73,6 +73,7 @@ cp -R .build/release/Kooky_KookyKit.bundle "${APP}/Contents/Resources/"
 # Pick the largest available source from branding/icons/ — asset catalog
 # format names the 1024px slot `icon-512@2x.png`. Fall back to a flat
 # `icon-1024.png` (older convention) then to legacy `branding/AppIcon.png`.
+ICON_SOURCE=""
 for cand in branding/icons/icon-512@2x.png branding/icons/icon-1024.png branding/AppIcon.png; do
     if [ -f "$cand" ]; then
         ICON_SOURCE="$cand"
@@ -99,13 +100,12 @@ if [ -f "$ICON_SOURCE" ]; then
     rm -rf "$(dirname "$ICONSET")"
     APPLE_ICON_PLIST_KEYS=$(cat <<'KEYS'
     <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIconName</key>
-    <string>AppIcon</string>
+    <string>AppIcon.icns</string>
 KEYS
     )
 else
-    APPLE_ICON_PLIST_KEYS=""
+    echo "missing required Kookoo app icon" >&2
+    exit 1
 fi
 
 # SPM ships the resource bundle as a flat directory, but its `.bundle` suffix

@@ -5,7 +5,7 @@ import Foundation
 /// About panel matches the latest CHANGELOG `vX.Y` tag.
 enum KookyApp {
     static let name = "Kookoo"
-    static let displayVersion = "0.1.0"
+    static let displayVersion = "0.1.1"
     static let tagline = "A minimal modern terminal for AI coding"
     static let author = "uuuyuqi · based on Kooky by Corey Chiu"
     static let authorURL = URL(string: "https://github.com/uuuyuqi/kookoo")!
