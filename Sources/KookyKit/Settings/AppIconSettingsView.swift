@@ -41,13 +41,13 @@ struct AppIconSettingsView: View {
         .padding(20)
         .alert("Change installed app icon?", isPresented: Binding(
             get: { pending != nil }, set: { if !$0 { pending = nil } }
-        )) {
+        ), presenting: pending) { choice in
             Button("Cancel", role: .cancel) { pending = nil }
             Button("Change Icon") {
-                if let choice = pending { controller.select(choice.id) }
+                controller.select(choice.id)
                 pending = nil
             }
-        } message: {
+        } message: { _ in
             Text("This changes AppIcon.icns and invalidates the app’s signature integrity. It may affect launching or updates under macOS or your organization’s security policy. Your terminal sessions will not be restarted.")
         }
     }
