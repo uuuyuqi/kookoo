@@ -28,7 +28,16 @@ func dump(_ e: AXUIElement, _ d: Int = 0) { guard d < 18 else { return }; print(
 func press(_ e: AXUIElement) {
  var target=e
  if value(e,kAXRoleAttribute) as? String == kAXStaticTextRole, let p=value(e,kAXParentAttribute) { target=p as! AXUIElement }
- guard AXUIElementPerformAction(target,kAXPressAction as CFString) == .success else { fatalError("AX press failed: \(labels(e))") }
+ if AXUIElementPerformAction(target,kAXPressAction as CFString) != .success {
+  // SwiftUI List rows are selectable but do not expose AXPress. Click the
+  // actual element center obtained from Accessibility, never guessed pixels.
+  guard let pv=value(e,kAXPositionAttribute),let sv=value(e,kAXSizeAttribute) else {fatalError("Missing element geometry")}
+  var point=CGPoint.zero;var size=CGSize.zero
+  guard AXValueGetValue(pv as! AXValue,.cgPoint,&point),AXValueGetValue(sv as! AXValue,.cgSize,&size) else {fatalError("Invalid element geometry")}
+  let center=CGPoint(x:point.x+size.width/2,y:point.y+size.height/2)
+  CGEvent(mouseEventSource:nil,mouseType:.leftMouseDown,mouseCursorPosition:center,mouseButton:.left)!.post(tap:.cghidEventTap)
+  CGEvent(mouseEventSource:nil,mouseType:.leftMouseUp,mouseCursorPosition:center,mouseButton:.left)!.post(tap:.cghidEventTap)
+ }
  Thread.sleep(forTimeInterval:1)
 }
 func capture(_ name:String) { let p=Process();p.executableURL=URL(fileURLWithPath:"/usr/sbin/screencapture");p.arguments=["-x",out+"/"+name+".png"];try! p.run();p.waitUntilExit();guard p.terminationStatus==0 else {fatalError("screenshot failed")}}
