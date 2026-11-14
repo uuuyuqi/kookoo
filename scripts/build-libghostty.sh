@@ -45,9 +45,9 @@ export PATH="$TMP/zig:$PATH"
 export ZIG_GLOBAL_CACHE_DIR="$TMP/zig-cache"
 (
   cd "$TMP/source"
-  "$TMP/zig/zig" build test --summary all -Doptimize=ReleaseSafe -Dapp-runtime=none \
+  "$TMP/zig/zig" build test --summary all -Doptimize=ReleaseSafe -Dapp-runtime=none -Dsentry=false \
     -Demit-macos-app=false -Demit-xcframework=false
-  "$TMP/zig/zig" build -Doptimize=ReleaseFast -Demit-xcframework=true \
+  "$TMP/zig/zig" build -Doptimize=ReleaseFast -Dsentry=false -Demit-xcframework=true \
     -Dxcframework-target=native -Demit-macos-app=false -Demit-docs=false
 )
 [[ -d "$TMP/source/macos/GhosttyKit.xcframework" ]]
@@ -76,7 +76,7 @@ Source archive SHA256: $SOURCE_SHA256
 Patch SHA256: $PATCH_SHA256
 Zig: $ZIG_URL
 Zig archive SHA256: $ZIG_SHA256
-Target: native Apple silicon macOS; ReleaseFast engine; ReleaseSafe upstream tests.
+Target: native Apple silicon macOS; ReleaseFast engine; ReleaseSafe upstream tests; sentry=false (matches original archive dependency inventory).
 Dependency content hashes: dependencies.zon
 Build host: $(sw_vers -productVersion)
 Xcode: $(xcodebuild -version | tr '\n' ' ')

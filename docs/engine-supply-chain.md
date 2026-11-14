@@ -140,3 +140,22 @@ unverified technical relink step, not a blanket legal certification.
 No engine release, production pin switch, main-branch change or appcast change
 has occurred. Promotion still requires durable source/binary publication and
 final distribution review. The untested human/hardware scenarios above remain.
+
+## Promotion hold: baseline comparison found a build-flag difference
+
+The original release archive was downloaded and matched its pinned SHA256.
+Both archives have identical public headers/modulemap, the same 145 exported
+`ghostty_*` symbols, arm64 architecture and macOS 13 minimum. They are NOT binary
+identical: original archive has 226 members, while the earlier source-built
+candidate has 277. The 51 additional objects are Sentry/Breakpad crash capture.
+The original archive contains no Sentry transport objects. This makes the prior
+candidate unsuitable as a minimal behavioral replacement, even though its
+Sentry transport was local-only and tests passed.
+
+The builder now explicitly sets `-Dsentry=false` for engine and core tests,
+and the candidate workflow rejects crash-SDK archive members. The original
+vendor's precise build command is not yet established solely by this comparison;
+we are aligning observable binary dependency inventory, not claiming a complete
+reproduction of their build environment. All previously recorded candidate hashes
+remain historical evidence, NOT approved production pins. Rebuild, inventory,
+license/source, GUI and relink evidence must be refreshed for the aligned binary.

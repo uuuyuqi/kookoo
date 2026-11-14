@@ -30,8 +30,7 @@ jobs:
           mkdir -p Vendor
           tar -xzf dist/engine-candidate/GhosttyKit.xcframework.tar.gz -C Vendor
           ar -t Vendor/GhosttyKit.xcframework/macos-arm64/libghostty-internal.a > dist/engine-candidate/archive-members.txt
-          grep -q sentry_transport_none.o dist/engine-candidate/archive-members.txt
-          if grep -Eq "sentry_transport_(curl|winhttp)" dist/engine-candidate/archive-members.txt; then exit 1; fi
+          if grep -Eq "(sentry_|breakpad_|minidump_|crash_generation_client|exception_handler)" dist/engine-candidate/archive-members.txt; then echo "Unexpected crash SDK object; original engine did not include it" >&2; exit 1; fi
           swift test --build-system native
           bash scripts/build-app.sh
           cp -R dist/engine-candidate/EngineCompliance/licenses dist/Kookoo.app/Contents/Resources/EngineLicenses
