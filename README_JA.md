@@ -6,6 +6,8 @@
 
 上のリリース一覧で最新の **Pre-release** を選び、`.dmg` をダウンロードしてください。プレビュー版は安定版ではありません。
 
+**Ghostty を別途インストールする必要はありません。** 配布される Kookoo アプリには libghostty ターミナルエンジンが組み込まれています。Ghostty.app やエンジンを別途インストールせずに使用できます。Codex や Claude Code などのエージェント CLI は、別途インストールとログインが必要です。
+
 **インストール済みの場合：** アプリの **Help → Check for Updates** から更新できます。再起動するとターミナルのタスクが停止します。[更新検証と復旧の制限](docs/updating.md)も参照してください。
 
 > **未公証：** 現在のビルドは ad-hoc 署名で、Apple Developer ID 署名や Apple の公証はありません。macOS や会社のセキュリティポリシーによってインストールできない場合があります。保護を無効化・回避せず、必要に応じて端末管理者に相談してください。
@@ -31,6 +33,21 @@ AI コーディングのために作られた、ミニマルでモダンな macO
 **[プレビュー版（Preview）をダウンロード](https://github.com/uuuyuqi/kookoo/releases)**  ·  [変更履歴](CHANGELOG.md)
 
 ---
+
+## お気に入りのアイコンを
+
+柔らかなパステル、ネオン、レトロ、ミニマルなど、20 種類の内蔵アイコンから 6 種類を紹介します。**設定 → 外観 → アプリアイコン** から選べます。
+
+<table>
+  <tr>
+    <td align="center"><img src="img/icon-styles/01-pearl.png" width="100" alt="パール"><br>パール</td>
+    <td align="center"><img src="img/icon-styles/02-marshmallow.png" width="100" alt="マシュマロ"><br>マシュマロ</td>
+    <td align="center"><img src="img/icon-styles/03-neon.png" width="100" alt="ネオン"><br>ネオン</td>
+    <td align="center"><img src="img/icon-styles/04-retro.png" width="100" alt="レトロ"><br>レトロ</td>
+    <td align="center"><img src="img/icon-styles/11-porcelain.png" width="100" alt="磁器"><br>磁器</td>
+    <td align="center"><img src="img/icon-styles/17-bauhaus.png" width="100" alt="バウハウス"><br>バウハウス</td>
+  </tr>
+</table>
 
 ## 機能
 
@@ -174,6 +191,8 @@ swift test                           # 1000+ 個のユニットテスト
 ./scripts/build-app.sh               # dist/Kookoo.app を出力
 ./scripts/build-dmg.sh --build       # dist/Kookoo-vX.Y.Z.dmg を出力
 ```
+
+ソースからビルドする際は、[`scripts/setup-libghostty.sh`](scripts/setup-libghostty.sh) が [Kooky v0.50.5](https://github.com/iAmCorey/kooky/releases/tag/v0.50.5) のパッチ済み GhosttyKit を取得し、固定の SHA-256 で検証します。これはビルド依存関係であり、Ghostty.app のインストールは不要です。Kookoo 独自のエンジン配布にはまだ切り替えていません。
 
 `Vendor/` と `dist/` は `.gitignore` 済みです。libghostty の setup スクリプトは冪等で、SHA に変更がなければスキップされます。
 

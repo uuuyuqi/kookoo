@@ -6,6 +6,8 @@
 
 Open the release list above, choose the newest **Pre-release**, and download its `.dmg` asset. Preview builds are not stable releases.
 
+**No separate Ghostty installation needed.** The downloaded Kookoo app includes the libghostty terminal engine. You do not need Ghostty.app or a separate engine installation to run it. Agent CLIs (such as Codex or Claude Code) still need to be installed and signed in separately.
+
 **Already installed?** Use **Help → Check for Updates**. Restarting stops terminal tasks; see [update verification and recovery limits](docs/updating.md).
 
 > **Not notarized:** current builds use ad-hoc signing, not Apple Developer ID signing or notarization. macOS or company security policies may block installation. Do not disable or bypass those protections; contact your device administrator if needed.
@@ -13,6 +15,21 @@ Open the release list above, choose the newest **Pre-release**, and download its
 ---
 
 A native macOS terminal for working with AI coding agents. Independently maintained, derived from [Kooky](https://github.com/iAmCorey/kooky) v0.51.12. Original Git history, copyright, MIT license and third-party notices are retained.
+
+## Make it yours
+
+Six of the 20 built-in alternative icons, from soft pastels to neon and minimal geometry. Choose one in **Settings → Appearance → App Icon**.
+
+<table>
+  <tr>
+    <td align="center"><img src="img/icon-styles/01-pearl.png" width="100" alt="Pearl"><br>Pearl</td>
+    <td align="center"><img src="img/icon-styles/02-marshmallow.png" width="100" alt="Marshmallow"><br>Marshmallow</td>
+    <td align="center"><img src="img/icon-styles/03-neon.png" width="100" alt="Neon"><br>Neon</td>
+    <td align="center"><img src="img/icon-styles/04-retro.png" width="100" alt="Retro"><br>Retro</td>
+    <td align="center"><img src="img/icon-styles/11-porcelain.png" width="100" alt="Porcelain"><br>Porcelain</td>
+    <td align="center"><img src="img/icon-styles/17-bauhaus.png" width="100" alt="Bauhaus"><br>Bauhaus</td>
+  </tr>
+</table>
 
 ## Features
 
@@ -35,6 +52,8 @@ swift test --build-system native
 bash scripts/build-app.sh
 bash scripts/build-dmg.sh
 ```
+
+For source builds, [`scripts/setup-libghostty.sh`](scripts/setup-libghostty.sh) downloads the SHA-256-pinned, patched GhosttyKit archive from [Kooky v0.50.5](https://github.com/iAmCorey/kooky/releases/tag/v0.50.5). This is a build dependency, not an installed Ghostty.app dependency; Kookoo does not yet publish its own engine build.
 
 The Ghostty engine download is pinned by SHA-256. An optional `KOOKOO_SDK=/absolute/path/to/MacOSX.sdk` selects a compatible installed SDK for app builds without changing system settings.
 

@@ -6,6 +6,8 @@
 
 打开上方发布列表，选择最新的 **Pre-release**，下载其 `.dmg` 安装包。预览版不等于稳定版。
 
+**不需要另外安装 Ghostty。** 下载的 Kookoo 应用已内嵌 libghostty 终端引擎，安装后即可运行，无需先安装 Ghostty.app 或单独安装引擎。Codex、Claude Code 等智能体命令行工具仍需自行安装并登录。
+
 **已经安装？** 在应用内选择 **Help → Check for Updates**。重启会停止终端任务，详见[更新验证和恢复限制](docs/updating.md)。
 
 > **尚未公证：** 当前构建使用 ad-hoc 签名，不是 Apple Developer ID 签名，也未经 Apple 公证。macOS 或公司安全策略可能阻止安装。不要关闭或绕过这些保护；必要时联系设备管理员。
@@ -31,6 +33,21 @@
 **[下载预览版（Preview）](https://github.com/uuuyuqi/kookoo/releases)**  ·  [更新日志](CHANGELOG.md)
 
 ---
+
+## 挑一个喜欢的图标
+
+从柔和可爱、霓虹赛博到复古与极简，以下是 20 款内置备选图标中的 6 款。在 **设置 → 外观 → 应用图标** 中选择。
+
+<table>
+  <tr>
+    <td align="center"><img src="img/icon-styles/01-pearl.png" width="100" alt="珍珠"><br>珍珠</td>
+    <td align="center"><img src="img/icon-styles/02-marshmallow.png" width="100" alt="棉花糖"><br>棉花糖</td>
+    <td align="center"><img src="img/icon-styles/03-neon.png" width="100" alt="霓虹"><br>霓虹</td>
+    <td align="center"><img src="img/icon-styles/04-retro.png" width="100" alt="复古"><br>复古</td>
+    <td align="center"><img src="img/icon-styles/11-porcelain.png" width="100" alt="瓷器"><br>瓷器</td>
+    <td align="center"><img src="img/icon-styles/17-bauhaus.png" width="100" alt="包豪斯"><br>包豪斯</td>
+  </tr>
+</table>
 
 ## 功能
 
@@ -174,6 +191,8 @@ swift test                           # 1000+ 个单测
 ./scripts/build-app.sh               # 产出 dist/Kookoo.app
 ./scripts/build-dmg.sh --build       # 产出 dist/Kookoo-vX.Y.Z.dmg
 ```
+
+从源码构建时，[`scripts/setup-libghostty.sh`](scripts/setup-libghostty.sh) 会下载 [Kooky v0.50.5](https://github.com/iAmCorey/kooky/releases/tag/v0.50.5) 提供的带补丁 GhosttyKit，并校验固定的 SHA-256。这是构建依赖，不是要求用户安装 Ghostty.app；目前尚未切换到 Kookoo 自行发布的引擎构建。
 
 `Vendor/` 和 `dist/` 都在 `.gitignore` 里。libghostty 的 setup 脚本可以反复跑；SHA 没变时会直接跳过。
 
