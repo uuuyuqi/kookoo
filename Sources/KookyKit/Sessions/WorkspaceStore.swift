@@ -86,9 +86,6 @@ enum SidebarMode: String, Codable, Equatable, Sendable {
     case compact
     case hidden
 
-    /// Command-B hides the entire sidebar, including the compact icon rail.
-    var toggledVisibility: SidebarMode { self == .hidden ? .full : .hidden }
-
     var next: SidebarMode {
         switch self {
         case .full: return .compact
