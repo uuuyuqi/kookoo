@@ -61,9 +61,10 @@ SOFTWARE.
 - File: `Sources/KookyKit/Resources/Icons/droid.png`
 
 ### Oh My Pi logo (brand PNG)
-- Source: <https://omp.sh> (site favicon)
+- Source: <https://omp.sh/favicon.svg> (site favicon, retrieved 2026-11-14)
 - Owner: <https://github.com/can1357/oh-my-pi> — MIT
-- File: `Sources/KookyKit/Resources/Icons/omp.png`
+- File: `Sources/KookyKit/Resources/Icons/omp.png`; editable source: `branding/agents/omp-white.svg`
+- Kookoo adaptation: only the rounded background is changed from dark to white. The original glyph and gradient are retained. This is not an official white-background variant, and no endorsement or trademark rights are implied.
 
 ### Reasonix logo (brand PNG)
 - Source: <https://reasonix.io> (site favicon)
