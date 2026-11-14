@@ -1,0 +1,42 @@
+name: Publish validated Kookoo 0.1.0
+on:
+  push:
+    paths: ['.github/workflows/publish-initial.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/kookoo'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: uuuyuqi/kookoo
+      SOURCE_SHA: d6467f61cf312dcaa09323d1f6425fb7baf999d0
+      VERIFIED_RUN: '43572463806'
+    steps:
+      - name: Verify source run and fetch its exact artifact
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.head_sha')" = "$SOURCE_SHA"
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.conclusion')" = success
+          mkdir dist
+          gh run download "$VERIFIED_RUN" --repo "$GH_REPO" --name Kookoo-macOS --dir dist
+          sha256sum -c dist/SHA256SUMS
+      - name: Publish preview without replacing existing releases
+        run: |
+          cat > notes.md <<'NOTES'
+          First independently maintained Kookoo preview, based on Kooky with original history and MIT attribution retained.
+
+          Includes the split-collapse blank-terminal fix, approved Kookoo icon and independent app/data namespace, Command-B compact sidebar, inline workspace rename, and separate Qoder international/China/legacy CLI launchers. Qoder CLI must already be installed; no automatic cross-region fallback.
+
+          Validation: macOS 26 / Xcode 26.5 CI ran 1,090 tests: 0 failures, 6 skipped; release App and DMG build and strict bundle-signature verification passed. Assets come from that exact successful run, not a separate rebuild.
+
+          Limitations: Apple silicon, macOS 14+. Ad-hoc signed, NOT Developer ID signed or Apple-notarized. Gatekeeper or enterprise endpoint protection may block execution; do not bypass those controls. Interactive UI and real provider login sessions have not been manually validated. Legacy Qoder is launch-only. Qoder branding remains its owner's property; see NOTICE.md.
+
+          The original Kooky app and data are not replaced or migrated. Existing shell/agent integration is retained under Kookoo names; the optional privileged closed-lid helper is unchanged from upstream and outside the coexistence guarantee.
+
+          This is a pre-release for evaluation, not a fully signed production distribution.
+          NOTES
+          gh release create v0.1.0 --repo "$GH_REPO" --target "$SOURCE_SHA" --title "Kookoo 0.1.0 Preview" --prerelease --notes-file notes.md dist/Kookoo-v0.1.0.dmg dist/SHA256SUMS
