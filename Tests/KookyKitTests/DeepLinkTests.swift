@@ -35,7 +35,7 @@ final class DeepLinkTests: XCTestCase {
 
     func testSchemeHostAndAgentAreCaseNormalized() {
         XCTAssertEqual(
-            KookyDeepLink.parse(URL(string: "KOOKY://Resume?agent=Codex&id=aBc")!),
+            KookyDeepLink.parse(URL(string: "KOOKOO://Resume?agent=Codex&id=aBc")!),
             .resumeSession(agentId: "codex", conversationId: "aBc", cwd: nil)
         )
     }

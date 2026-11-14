@@ -70,27 +70,27 @@ final class KookySettingsModelTests: XCTestCase {
         let chineseBundle = KookyAppLanguage.simplifiedChinese.previewBundle
         XCTAssertEqual(
             String(
-                localized: "Changes take effect after restarting Kooky.",
+                localized: "Changes take effect after restarting Kookoo.",
                 bundle: chineseBundle
             ),
-            "更改将在重启 Kooky 后生效。"
+            "更改将在重启 Kookoo 后生效。"
         )
         XCTAssertEqual(
-            String(localized: "Restart Kooky", bundle: chineseBundle),
-            "重启 Kooky"
+            String(localized: "Restart Kookoo", bundle: chineseBundle),
+            "重启 Kookoo"
         )
 
         let englishBundle = KookyAppLanguage.english.previewBundle
         XCTAssertEqual(
             String(
-                localized: "Changes take effect after restarting Kooky.",
+                localized: "Changes take effect after restarting Kookoo.",
                 bundle: englishBundle
             ),
-            "Changes take effect after restarting Kooky."
+            "Changes take effect after restarting Kookoo."
         )
         XCTAssertEqual(
-            String(localized: "Restart Kooky", bundle: englishBundle),
-            "Restart Kooky"
+            String(localized: "Restart Kookoo", bundle: englishBundle),
+            "Restart Kookoo"
         )
     }
 
@@ -273,10 +273,10 @@ final class KookySettingsModelTests: XCTestCase {
         XCTAssertFalse(menu.items.contains(where: \.isSectionHeader))
         XCTAssertEqual(menu.items[0].title, "No agents running")
         XCTAssertTrue(menu.items[1].isSeparatorItem)
-        XCTAssertEqual(menu.items[2].title, "Open Kooky")
+        XCTAssertEqual(menu.items[2].title, "Open Kookoo")
         XCTAssertEqual(menu.items[3].title, "Settings…")
         XCTAssertEqual(menu.items[4].title, "Keep Awake")
-        XCTAssertEqual(menu.items[5].title, "Quit Kooky")
+        XCTAssertEqual(menu.items[5].title, "Quit Kookoo")
         for item in menu.items where !item.isSeparatorItem {
             XCTAssertNil(item.image, "\(item.title) must remain text-only")
         }

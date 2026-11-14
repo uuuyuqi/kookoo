@@ -48,7 +48,15 @@ final class AgentTemplateTests: XCTestCase {
     }
 
     func testTerminalTemplateUsesUserDefaultShell() {
-        let expected = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+        let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+        // Bash intentionally launches through a script so Ghostty preserves
+        // interactive rcfile semantics; other shells use their executable.
+        let expected: String
+        if KookyShellIntegration.detectedUserShell == .bash {
+            expected = KookyShellIntegration.bashLauncherPath ?? shell
+        } else {
+            expected = shell
+        }
         XCTAssertEqual(AgentTemplate.terminal.makeSessionConfig().command, expected)
     }
 
@@ -326,9 +334,10 @@ final class AgentTemplateTests: XCTestCase {
         }
     }
 
-    func testEveryBuiltinAgentSupportsResume() {
+    func testBuiltinResumeSupportMatchesVerifiedCLIContracts() {
         XCTAssertFalse(AgentTemplate.terminal.supportsResume)
-        for template in AgentTemplate.builtin where !template.isShell {
+        XCTAssertFalse(AgentTemplate.qoderLegacy.supportsResume)
+        for template in AgentTemplate.builtin where !template.isShell && template.id != "qoder-legacy" {
             XCTAssertTrue(template.supportsResume, "\(template.id) must declare a resume strategy")
         }
     }
