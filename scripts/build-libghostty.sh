@@ -41,6 +41,7 @@ verify "$TMP/zig.tar.xz" "$ZIG_SHA256"
 mkdir "$TMP/zig"
 tar -xJf "$TMP/zig.tar.xz" -C "$TMP/zig" --strip-components=1
 [[ "$("$TMP/zig/zig" version)" == "$ZIG_VERSION" ]]
+export PATH="$TMP/zig:$PATH"
 export ZIG_GLOBAL_CACHE_DIR="$TMP/zig-cache"
 (
   cd "$TMP/source"

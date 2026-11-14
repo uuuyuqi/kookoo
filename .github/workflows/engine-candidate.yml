@@ -16,7 +16,9 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Build exact pinned source and run upstream tests
         run: bash scripts/build-libghostty.sh
       - name: Test Kookoo with candidate (isolated runner only)
@@ -32,7 +34,7 @@ jobs:
           swift test --build-system native
           bash scripts/build-app.sh
           codesign --verify --deep --strict dist/Kookoo.app
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: independent-engine-candidate
