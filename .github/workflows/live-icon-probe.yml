@@ -1,0 +1,102 @@
+name: Isolated Live Icon Mutation
+on:
+  push:
+    branches: [research/icon-switch-safety-20261114]
+    paths: [.github/workflows/live-icon-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: macos-26
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Real release live mutation and minimal self-write
+        shell: bash
+        run: |
+          set -eu
+          ROOT="$(mktemp -d)"
+          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
+          mkdir -p "$ROOT/evidence" "$ROOT/mount"
+          exec > >(tee "$ROOT/evidence/probe.log") 2>&1
+          sw_vers
+          gh release download v0.1.7 --repo uuuyuqi/kookoo --pattern '*.dmg' --dir "$ROOT"
+          hdiutil attach "$ROOT/"*.dmg -readonly -nobrowse -mountpoint "$ROOT/mount" -quiet
+          ditto "$ROOT/mount/Kookoo.app" "$ROOT/Kookoo.app"
+          hdiutil detach "$ROOT/mount" -quiet
+          APP="$ROOT/Kookoo.app"
+          cp "$APP/Contents/Resources/AppIcon.icns" "$ROOT/default.icns"
+          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns "$ROOT/alternative.icns"
+          codesign --verify --deep --strict "$APP"
+          open -n "$APP" --args -SUEnableAutomaticChecks NO
+          sleep 5
+          PID="$(pgrep -f "^$APP/Contents/MacOS/Kookoo$" | head -1)"
+          test -n "$PID"
+          echo "LIVE_PID=$PID"
+          cp "$ROOT/alternative.icns" "$APP/Contents/Resources/AppIcon.icns"
+          sleep 10
+          kill -0 "$PID"
+          echo "REAL_LIVE_MUTATION_SURVIVED_10S=YES"
+          screencapture -x "$ROOT/evidence/live-after-mutation.png"
+          set +e
+          codesign --verify --deep --strict "$APP"
+          echo "REAL_MUTATED_STRICT=$?"
+          set -e
+          cp "$ROOT/default.icns" "$APP/Contents/Resources/AppIcon.icns"
+          codesign --verify --deep --strict "$APP"
+          kill -0 "$PID"
+          echo "REAL_LIVE_RESTORE_SURVIVED=YES"
+          osascript -e "tell application \"$APP\" to quit" || true
+          # Minimal ad-hoc app exercises self-writing Foundation API, not Kookoo code.
+          MINI="$ROOT/SelfWrite.app"
+          mkdir -p "$MINI/Contents/MacOS" "$MINI/Contents/Resources"
+          cp "$ROOT/default.icns" "$MINI/Contents/Resources/AppIcon.icns"
+          cp "$ROOT/alternative.icns" "$MINI/Contents/Resources/Choice.icns"
+          cat > "$MINI/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>test.kookoo.selfwrite</string><key>CFBundleExecutable</key><string>SelfWrite</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>
+          PLIST
+          cat > "$ROOT/self.swift" <<'SWIFT'
+          import AppKit
+          let app = NSApplication.shared
+          let resources = Bundle.main.bundleURL.appendingPathComponent("Contents/Resources")
+          let target = resources.appendingPathComponent("AppIcon.icns")
+          let marker = URL(fileURLWithPath: ProcessInfo.processInfo.environment["MARKER"]!)
+          var output = ""
+          do {
+              let bytes = try Data(contentsOf: resources.appendingPathComponent("Choice.icns"))
+              try bytes.write(to: target, options: .atomic)
+              output = "SELF_WRITE_SUCCEEDED\n"
+          } catch {
+              output = "SELF_WRITE_FAILED: \(error)\n"
+          }
+          try! output.write(to: marker, atomically: true, encoding: .utf8)
+          DispatchQueue.main.asyncAfter(deadline:.now()+4) {
+              try! (output + "SURVIVED_MAIN_LOOP_4S\n").write(to: marker,atomically:true,encoding:.utf8)
+              app.terminate(nil)
+          }
+          app.run()
+          SWIFT
+          swiftc "$ROOT/self.swift" -o "$MINI/Contents/MacOS/SelfWrite"
+          codesign --force --sign - "$MINI"
+          MARKER="$ROOT/evidence/self-write.txt" "$MINI/Contents/MacOS/SelfWrite"
+          cat "$ROOT/evidence/self-write.txt"
+          set +e
+          codesign --verify --deep --strict "$MINI"
+          echo "SELF_MUTATED_STRICT=$?"
+          set -e
+          # Locked temporary resource file only: denial path; restore afterwards.
+          cp "$ROOT/default.icns" "$MINI/Contents/Resources/AppIcon.icns"
+          codesign --force --sign - "$MINI"
+          chflags uchg "$MINI/Contents/Resources/AppIcon.icns"
+          MARKER="$ROOT/evidence/self-write-denied.txt" "$MINI/Contents/MacOS/SelfWrite"
+          cat "$ROOT/evidence/self-write-denied.txt"
+          chflags nouchg "$MINI/Contents/Resources/AppIcon.icns"
+          codesign --verify --deep --strict "$MINI"
+          echo "DENIED_WRITE_LEFT_BUNDLE_VALID=YES"
+          echo "LIMITS ad-hoc unquarantined CI only; no Developer ID or enterprise protection. No Gatekeeper bypass."
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-icon-probe
+          path: ${{ env.ROOT }}/evidence
