@@ -2,6 +2,13 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.8 — 2026-11-14
+
+- Added 20 built-in Kookoo app icon styles in Settings → Appearance, plus restoration of this version's original icon. The saved selection is applied early at launch without restarting terminal sessions.
+- Custom icons replace the installed `AppIcon.icns`, invalidating the app's code-signature integrity. macOS or enterprise policies may block the modified app. Finder and pinned Dock caches can refresh at different times. Default restoration uses the current release's bundled canonical icon, never an old-version backup.
+- Icon writes are atomic. A failed write leaves the saved preference unchanged and reports the error; no elevation, system-protection changes, or asset-catalog mutation occurs.
+- The original update feed is unchanged. Networks that cannot reach raw.githubusercontent.com may still require a manual download/install; this release does not claim to fix that connectivity issue.
+
 ## v0.1.7 — 2026-11-14
 
 - Added a one-time sidebar greeting with native rounded lettering: a small collision, brief pink/violet hold, then a gentle return to the theme foreground. A 10% launch-only “cool cool” variant settles back to Kookoo.
