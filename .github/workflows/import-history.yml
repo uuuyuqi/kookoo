@@ -1,0 +1,21 @@
+name: Import original history
+on:
+  push:
+    paths: ['.github/workflows/import-history.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.repository == 'uuuyuqi/kookoo'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Import preserved public history into a new branch
+        run: |
+          git remote add source https://github.com/uuuyuqi/kooky.git
+          git fetch source fix/preserve-terminal-after-pane-close
+          test "$(git rev-parse FETCH_HEAD)" = "68bcb327cf9d3660cdf198604fd3f65b97e48f01"
+          git push origin FETCH_HEAD:refs/heads/import/kooky-history
