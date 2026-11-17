@@ -176,6 +176,13 @@ print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded wid
 // Multiple real workspace rows, including a harness-status icon. Emit only
 // the documented OSC status marker in an isolated shell; do not run an agent.
 func typeShell(_ text:String) {
+ // Return keyboard focus to the terminal after the inline rename editor.
+ let w=rect(window),e=edge()
+ let point=CGPoint(x:(e.maxX+w.maxX)/2,y:w.midY)
+ for type in [CGEventType.leftMouseDown,.leftMouseUp] {
+  CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
+ }
+ Thread.sleep(forTimeInterval:0.3)
  let chars=Array(text.utf16)
  for down in [true,false] {
   let e=CGEvent(keyboardEventSource:nil,virtualKey:0,keyDown:down)!
@@ -188,7 +195,7 @@ func addNamedWorkspace(_ name:String) {
  press(item);key(15,flags:[.maskCommand,.maskShift]);replaceDraft(name);key(36)
 }
 addNamedWorkspace("Harness fixture")
-typeShell("printf '\\033]0;kookoo-agent:codex:running\\007'; sleep 90")
+typeShell("printf '\\033]2;kookoo-agent:codex:running\\007'; sleep 90")
 Thread.sleep(forTimeInterval:1)
 addNamedWorkspace("Another terminal")
 func matching(_ e:AXUIElement,_ predicate:(AXUIElement)->Bool) -> [AXUIElement] {

@@ -197,7 +197,7 @@ struct SidebarView: View {
     }
 
     private func contents(isCompact: Bool) -> some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             brand(isCompact: isCompact)
             if fileTreeIsMounted {
                 FileTreeView(store: store, model: store.fileTree)
@@ -205,9 +205,12 @@ struct SidebarView: View {
                 ScrollViewReader { proxy in
                     list(isCompact: isCompact, proxy: proxy)
                 }
+                .frame(width: Self.cardContentWidth(outerWidth: outerWidth))
             }
             Spacer(minLength: 0)
             footer()
+                .frame(width: Self.cardContentWidth(outerWidth: outerWidth), alignment: .leading)
+                .clipped()
                 .opacity(expansion)
                 .allowsHitTesting(expansion > 0.5)
                 .accessibilityHidden(expansion <= 0.5)
