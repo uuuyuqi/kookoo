@@ -2,6 +2,10 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.12 — 2026-11-17
+
+- Sidebar resizing now tracks the pointer continuously from 52 to 480 points instead of snapping between layouts. Expanded and icon content crossfade with width; intermediate widths remain unchanged on release and restore after relaunch.
+
 ## v0.1.11 — 2026-11-17
 
 - Drag the workspace sidebar inward to snap to the 52-point icon rail, then drag its edge outward to expand again. Command+B keeps the same three-state cycle and restores the pre-collapse expanded width. Interactive resizing does not move or grow the window.

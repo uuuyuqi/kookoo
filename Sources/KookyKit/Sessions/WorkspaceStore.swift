@@ -219,9 +219,8 @@ final class WorkspaceStore {
     }
 
     /// Full-mode sidebar width, user-draggable from the trailing edge.
-    /// `SidebarView.fullWidth` is the floor (the design width — the sidebar
-    /// can only grow); compact stays fixed at `compactWidth` and hidden is
-    /// hidden, so this only applies while expanded. Persisted per window.
+    /// Widths between the icon rail and the default expanded design persist
+    /// exactly. At compact, this remembers the pre-collapse expanded width.
     var sidebarWidth: CGFloat = SidebarView.fullWidth
 
     /// Full-mode right panel (Agent Panel) width, user-draggable from its
@@ -246,13 +245,14 @@ final class WorkspaceStore {
     /// owns the engine suspension for the entire drag, including mode changes.
     func resizeSidebar(to proposedWidth: CGFloat, preservingExpandedWidth: CGFloat? = nil) {
         guard sidebarMode != .hidden else { return }
-        if proposedWidth < SidebarView.compactDragThreshold {
+        let width = SidebarView.clampWidth(proposedWidth)
+        if width <= SidebarView.compactWidth {
             if let preservingExpandedWidth {
                 sidebarWidth = SidebarView.clampWidth(preservingExpandedWidth)
             }
             sidebarMode = .compact
         } else {
-            sidebarWidth = SidebarView.clampWidth(proposedWidth)
+            sidebarWidth = width
             sidebarMode = .full
         }
         scheduleSave()
@@ -360,7 +360,8 @@ final class WorkspaceStore {
 
     func requestRenameWorkspace(_ workspace: Workspace) {
         guard workspaces.contains(where: { $0.id == workspace.id }) else { return }
-        // An icon-only sidebar has no title field to edit.
+        // Ensure the title field is readable, including persisted narrow widths.
+        if sidebarWidth < SidebarView.fullWidth { sidebarWidth = SidebarView.fullWidth }
         if sidebarMode != .full { setSidebarMode(.full) }
         if sidebarContent == .files { setSidebarContent(.workspaces) }
         pendingRenameWorkspace = workspace

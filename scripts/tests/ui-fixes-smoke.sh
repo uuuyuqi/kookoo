@@ -133,7 +133,11 @@ func dragEdge(by delta:CGFloat) {
  for n in 1...24 {
   let p=CGPoint(x:start.x+delta*CGFloat(n)/24,y:start.y)
   CGEvent(mouseEventSource:nil,mouseType:.leftMouseDragged,mouseCursorPosition:p,mouseButton:.left)!.post(tap:.cghidEventTap)
-  Thread.sleep(forTimeInterval:0.035)
+  Thread.sleep(forTimeInterval:0.08)
+  if n % 4 == 0 {
+   let expected=max(originalEdge-168,min(originalEdge+260,p.x))
+   guard abs(edge().midX-expected)<3 else {dump(app);fatalError("Sidebar skipped intermediate drag width: expected \(expected), actual \(edge().midX)")}
+  }
  }
  let end=CGPoint(x:start.x+delta,y:start.y)
  CGEvent(mouseEventSource:nil,mouseType:.leftMouseUp,mouseCursorPosition:end,mouseButton:.left)!.post(tap:.cghidEventTap)
@@ -157,6 +161,17 @@ dragEdge(by:48);dragEdge(by:-270)
 key(11,flags:.maskCommand);key(11,flags:.maskCommand)
 guard find(app,"Saved on blur") != nil,abs(edge().midX-wideEdge)<3 else {fatalError("Command+B lost expanded width after drag")}
 guard rect(window)==windowBefore else {fatalError("Sidebar drag moved/resized window")}
+// Stop at intermediate widths in each direction, checking both live tracking
+// (inside dragEdge) and the settled edge after mouse-up. No end-of-drag snap.
+var currentWidth:CGFloat=320
+for target:CGFloat in [200,160,120,80,52,80,120,160,200,320] {
+ dragEdge(by:target-currentWidth)
+ guard abs(edge().midX-(originalEdge+target-220))<3 else {fatalError("Sidebar snapped on mouse-up at \(target)")}
+ currentWidth=target
+ if target==120 {capture("sidebar-continuous-120")}
+}
+guard rect(window)==windowBefore else {fatalError("Continuous sidebar drag moved/resized window")}
+print("PASS: intermediate widths track pointer continuously and remain unchanged on release in both directions")
 print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded width, Command+B compatibility and stable window geometry")
 guard let settings=find(menu,"设置…") ?? find(menu,"Settings…") else { dump(menu);fatalError("Missing settings") }
 press(settings)

@@ -370,6 +370,9 @@ struct SidebarWorkspaceRow: View {
 
     /// Both the menu command and row context menu arrive through this flag.
     private func consumeRenameRequest() {
+        // During the width crossfade both presentations exist, but only the
+        // expanded row owns the editor and may consume the shared request.
+        guard !isCompact else { return }
         workspace.renameRequested = false
         beginRename()
     }

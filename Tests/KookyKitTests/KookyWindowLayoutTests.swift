@@ -4,6 +4,15 @@ import XCTest
 
 @MainActor
 final class KookyWindowLayoutTests: XCTestCase {
+    func testIntermediateSidebarWidthUsesSameWindowMinimumAsRenderedGeometry() {
+        for width: CGFloat in [52, 80, 120, 160, 200, 220] {
+            XCTAssertEqual(KookyWindowLayout.minimumWindowWidth(
+                leftMode: .full, expandedLeftWidth: width,
+                rightMode: .hidden, expandedRightWidth: 0, terminalWidth: 1000
+            ), width + KookyWindowLayout.separatorWidth + 1000)
+        }
+    }
+
     func testSidebarLeadingAxisCentersCompactRail() {
         XCTAssertEqual(
             Theme.sidebarLeadingIconCenterX,

@@ -1364,11 +1364,10 @@ final class WorkspaceStoreTests: XCTestCase {
         let restored = makeStore(initial: persistence.saved)
         XCTAssertEqual(restored.sidebarWidth, 320)
 
-        // A hand-edited / stale width restores clamped to the floor — the
-        // design width is the minimum, the sidebar only grows.
+        // Intermediate widths now restore exactly rather than snapping to 220.
         var narrow = persistence.saved!
         narrow.sidebarWidth = 80
-        XCTAssertEqual(makeStore(initial: narrow).sidebarWidth, SidebarView.fullWidth)
+        XCTAssertEqual(makeStore(initial: narrow).sidebarWidth, 80)
 
         // Pre-resizable-sidebar state files (no key) restore the default.
         var legacy = persistence.saved!
@@ -1376,26 +1375,48 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(makeStore(initial: legacy).sidebarWidth, SidebarView.fullWidth)
     }
 
-    func testSidebarDragSnapsToIconRailAndBack() {
+    func testSidebarDragContinuouslyReachesIconRailAndBack() {
         let store = makeStore()
         store.sidebarWidth = 320
         store.beginSidebarResize()
         store.resizeSidebar(to: 220, preservingExpandedWidth: 320)
-        store.resizeSidebar(to: SidebarView.compactDragThreshold - 1, preservingExpandedWidth: 320)
+        store.resizeSidebar(to: SidebarView.compactWidth, preservingExpandedWidth: 320)
         XCTAssertEqual(store.sidebarMode, .compact)
         XCTAssertEqual(store.sidebarWidth, 320) // compact does not corrupt expanded width
         XCTAssertTrue(store.isSidebarResizing)
         store.resizeSidebar(to: -500)
         XCTAssertEqual(store.sidebarMode, .compact)
-        store.resizeSidebar(to: SidebarView.compactDragThreshold)
+        store.resizeSidebar(to: 80)
         XCTAssertEqual(store.sidebarMode, .full)
-        XCTAssertEqual(store.sidebarWidth, SidebarView.fullWidth)
+        XCTAssertEqual(store.sidebarWidth, 80)
+        for width in [200.0, 160, 120, 80, 53, 80, 120, 160, 200] {
+            store.resizeSidebar(to: width)
+            XCTAssertEqual(store.sidebarWidth, width)
+            XCTAssertEqual(store.sidebarMode, .full)
+        }
         store.resizeSidebar(to: 351.7)
         XCTAssertEqual(store.sidebarWidth, 352)
         store.resizeSidebar(to: 999)
         XCTAssertEqual(store.sidebarWidth, SidebarView.maxWidth)
         store.endSidebarResize()
         XCTAssertFalse(store.isSidebarResizing)
+    }
+
+    func testIntermediateSidebarWidthPersistsWithoutSnap() {
+        for width in [80.0, 120, 160, 200] {
+            let persistence = InMemoryPersistence()
+            let store = WorkspaceStore(persistence: persistence, engineFactory: { TestEngine() })
+            store.beginSidebarResize()
+            store.resizeSidebar(to: width)
+            store.endSidebarResize()
+            store.flushPersistence()
+            let restored = makeStore(initial: persistence.saved)
+            XCTAssertEqual(restored.sidebarWidth, width)
+            XCTAssertEqual(restored.sidebarMode, .full)
+            XCTAssertEqual(SidebarView.expansionProgress(for: width), (width - 52) / 168, accuracy: 0.0001)
+        }
+        XCTAssertEqual(SidebarView.expansionProgress(for: 52), 0)
+        XCTAssertEqual(SidebarView.expansionProgress(for: 220), 1)
     }
 
     func testDraggedCompactSidebarPersistsAndHiddenDoesNotReopen() {

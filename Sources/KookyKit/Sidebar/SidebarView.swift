@@ -63,26 +63,27 @@ private struct FirstGlyphCenteredLayout: Layout {
 struct SidebarView: View {
     static let fullWidth: CGFloat = 220
     static let compactWidth: CGFloat = 52
-    /// Ceiling for the user-draggable full-mode width (`fullWidth` is the
-    /// floor — the sidebar only grows from its design width).
+    /// Continuous drag range: icon rail through fully expanded content.
     static let maxWidth: CGFloat = 480
 
     static func cardContentWidth(outerWidth: CGFloat) -> CGFloat {
         outerWidth - 2 * PaneCardStyle.inset
     }
 
-    /// Single source for the width policy — floor `fullWidth`, ceiling
+    /// Single source for the width policy — floor `compactWidth`, ceiling
     /// `maxWidth`, and whole points (fractional widths land row text on
     /// per-frame-shifting sub-pixel boundaries → the mono diff badges
     /// visibly shimmer during a drag). Shared by the drag gesture and the
     /// state.json restore path so the two can't diverge.
     static func clampWidth(_ width: CGFloat) -> CGFloat {
-        min(max(width, fullWidth), maxWidth).rounded()
+        min(max(width, compactWidth), maxWidth).rounded()
     }
 
-    /// Dragging below the midpoint snaps to the existing icon rail. Expanded
-    /// content keeps its readable minimum instead of being squeezed/clipped.
-    static let compactDragThreshold = (fullWidth + compactWidth) / 2
+    /// Progress is a function of geometry, not a threshold or timed animation.
+    /// It stays put if the user releases halfway and reverses with the pointer.
+    static func expansionProgress(for width: CGFloat) -> Double {
+        Double(min(1, max(0, (width - compactWidth) / (fullWidth - compactWidth))))
+    }
 
     // Trailing-edge resize drag (full and compact modes). Mirrors the split
     // divider's suspend pattern: begin once per drag (gated), capture the
@@ -103,7 +104,8 @@ struct SidebarView: View {
     /// on drop. Lets each row compute whether the drag origin is above or
     /// below it so the drop indicator can flip edges.
     @State private var draggingWorkspaceId: UUID?
-    @State private var workspaceRowsHeight: CGFloat = 0
+    @State private var fullWorkspaceRowsHeight: CGFloat = 0
+    @State private var compactWorkspaceRowsHeight: CGFloat = 0
     /// True while a Finder folder drag is hovering the sidebar — gates the
     /// drop-zone outline so the user sees that releasing here opens a new
     /// workspace.
@@ -184,17 +186,20 @@ struct SidebarView: View {
     /// Single source for the body's content switch and the folder-drop
     /// rejection below: the drop zone must reject exactly while the tree —
     /// whose rows vend `public.file-url` drags — is what's on screen.
-    private var fileTreeIsMounted: Bool {
-        store.sidebarContent == .files && mode != .compact
+    private var outerWidth: CGFloat {
+        mode == .compact ? Self.compactWidth : store.sidebarWidth
     }
 
-    var body: some View {
-        let isCompact = mode == .compact
+    private var expansion: Double { Self.expansionProgress(for: outerWidth) }
+
+    private var fileTreeIsMounted: Bool {
+        store.sidebarContent == .files && expansion > 0
+    }
+
+    private func contents(isCompact: Bool) -> some View {
         VStack(spacing: 0) {
             brand(isCompact: isCompact)
-            // Compact can't fit a tree in 52pt, so it always shows the icon
-            // list; the file tree (and its footer toggle) are full-mode only.
-            if fileTreeIsMounted {
+            if store.sidebarContent == .files && !isCompact {
                 FileTreeView(store: store, model: store.fileTree)
             } else {
                 ScrollViewReader { proxy in
@@ -204,9 +209,30 @@ struct SidebarView: View {
             Spacer(minLength: 0)
             if !isCompact { footer() }
         }
-        // Keep the outer layout width unchanged in full/compact modes.
-        // Symmetric inset preserves the compact rail/traffic-light axis.
-        .frame(width: Self.cardContentWidth(outerWidth: isCompact ? Self.compactWidth : store.sidebarWidth))
+    }
+
+    var body: some View {
+        // Keep both presentations left-aligned while crossfading. Expanded
+        // text keeps a readable layout width and clips behind the moving edge;
+        // the outer card and terminal always follow the exact pointer width.
+        ZStack(alignment: .topLeading) {
+            if expansion > 0 {
+                contents(isCompact: false)
+                    .frame(width: Self.cardContentWidth(outerWidth: max(Self.fullWidth, outerWidth)))
+                    .opacity(expansion)
+                    .allowsHitTesting(expansion >= 0.5)
+                    .accessibilityHidden(expansion < 0.5)
+            }
+            if expansion < 1 {
+                contents(isCompact: true)
+                    .frame(width: Self.cardContentWidth(outerWidth: Self.compactWidth))
+                    .opacity(1 - expansion)
+                    .allowsHitTesting(expansion < 0.5)
+                    .accessibilityHidden(expansion >= 0.5)
+            }
+        }
+        .frame(width: Self.cardContentWidth(outerWidth: outerWidth), alignment: .leading)
+        .clipped()
         .glassChromeBackground()
         .modifier(PaneCardChrome(isFocused: false, fillsTerminalSurface: false))
         .overlay(alignment: .trailing) {
@@ -562,14 +588,15 @@ struct SidebarView: View {
                     .padding(.horizontal, Theme.space2)
                     .padding(.bottom, Theme.space2)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-                        workspaceRowsHeight = $0
+                        if isCompact { compactWorkspaceRowsHeight = $0 }
+                        else { fullWorkspaceRowsHeight = $0 }
                     }
 
                     // Only the unused list area creates a workspace. Keeping the
                     // gesture off the ScrollView/rows preserves rename, selection,
                     // context menus and drag-reordering on existing workspaces.
                     Color.clear
-                        .frame(height: max(0, viewport.size.height - workspaceRowsHeight))
+                        .frame(height: max(0, viewport.size.height - (isCompact ? compactWorkspaceRowsHeight : fullWorkspaceRowsHeight)))
                         .contentShape(Rectangle())
                         .onTapGesture(count: 2) { store.addWorkspace() }
                         .accessibilityIdentifier("sidebar-new-workspace-area")
@@ -582,9 +609,9 @@ struct SidebarView: View {
         // while the sidebar is up; onAppear catches one parked while the
         // sidebar was hidden (SidebarView mounts only after the reveal).
         .onChange(of: store.pendingRenameWorkspace?.id) { _, _ in
-            revealWorkspaceForRename(using: proxy)
+            if !isCompact { revealWorkspaceForRename(using: proxy) }
         }
-        .onAppear { revealWorkspaceForRename(using: proxy) }
+        .onAppear { if !isCompact { revealWorkspaceForRename(using: proxy) } }
         // Keyboard / palette / inbox selection can land on a row that's
         // scrolled away or folded under a collapsed source — bring it on
         // screen, including when the list remounts (sidebar shown again,
