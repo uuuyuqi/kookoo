@@ -13,6 +13,17 @@ final class KookyWindowLayoutTests: XCTestCase {
         }
     }
 
+    func testAdaptiveSidebarIconRemainsInsideCompactRowAndOnRailAxis() {
+        let rowWidth = SidebarView.cardContentWidth(outerWidth: SidebarView.compactWidth) - 2 * Theme.space2
+        let x = SidebarWorkspaceRow.adaptiveIconLeading(rowWidth: rowWidth)
+        XCTAssertGreaterThanOrEqual(x, 0)
+        XCTAssertLessThanOrEqual(x + 20, rowWidth)
+        XCTAssertEqual(PaneCardStyle.inset + Theme.space2 + x + 10, SidebarView.compactWidth / 2)
+        for width: CGFloat in [30, 58, 98, 138, 198, 298] {
+            XCTAssertEqual(SidebarWorkspaceRow.adaptiveIconLeading(rowWidth: width), 5)
+        }
+    }
+
     func testSidebarLeadingAxisCentersCompactRail() {
         XCTAssertEqual(
             Theme.sidebarLeadingIconCenterX,

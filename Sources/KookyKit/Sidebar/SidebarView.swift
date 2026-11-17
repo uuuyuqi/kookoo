@@ -504,7 +504,7 @@ struct SidebarView: View {
         GeometryReader { viewport in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    LazyVStack(spacing: 3) {
+                    LazyVStack(alignment: .leading, spacing: 3) {
                         if isCompact {
                             // 52pt-wide sidebar can't fit a disclosure triangle next
                             // to a 28pt icon — fall back to a flat list. The order
@@ -549,6 +549,7 @@ struct SidebarView: View {
                     // content inset then places the 20pt mark at x = 16...36. The
                     // 40pt header already owns the vertical separation above the
                     // source list, so don't double that gap with extra top padding.
+                    .frame(width: max(0, viewport.size.width - 2 * Theme.space2), alignment: .leading)
                     .padding(.horizontal, Theme.space2)
                     .padding(.bottom, Theme.space2)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
@@ -566,6 +567,7 @@ struct SidebarView: View {
                         .accessibilityIdentifier("sidebar-new-workspace-area")
                         .help(String(localized: "Double-click to create a workspace", bundle: .kookyResources))
                 }
+                .frame(width: viewport.size.width, alignment: .leading)
             }
         }
         // ⌘⇧R parks the active workspace on the store; reveal its row so the

@@ -265,16 +265,15 @@ struct SidebarWorkspaceRow: View {
         let dotColor = Self.activityDotColor(state: readout.state, hasFailure: readout.hasCommandFailure)
         Group {
             if let presentationWidth {
-                fullBody(agents: readout.agents, dotColor: dotColor)
-                    .frame(width: max(196, presentationWidth))
-                    .frame(width: presentationWidth, alignment: .leading)
-                    .clipped()
+                adaptiveBody(width: presentationWidth, agents: readout.agents, dotColor: dotColor)
             } else if isCompact {
                 compactBody(agents: readout.agents, dotColor: dotColor)
             } else {
                 fullBody(agents: readout.agents, dotColor: dotColor)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("workspace-row-\(workspace.id)")
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous))
         .overlay {
@@ -434,10 +433,44 @@ struct SidebarWorkspaceRow: View {
         }
     }
 
+    /// The icon is laid out independently from the (possibly very wide) text.
+    /// No full-width row participates in the narrow list's intrinsic sizing.
+    static func adaptiveIconLeading(rowWidth: CGFloat) -> CGFloat {
+        min(5, max(0, (rowWidth - 20) / 2))
+    }
+
+    private func adaptiveBody(width: CGFloat, agents: [AgentTemplate], dotColor: Color?) -> some View {
+        let leading = Self.adaptiveIconLeading(rowWidth: width)
+        let textLeading = leading + 31
+        return ZStack(alignment: .leading) {
+            rowDetails(dotColor: dotColor)
+                .frame(width: max(0, width - textLeading - 8), alignment: .leading)
+                .clipped()
+                .offset(x: textLeading)
+            agentIcons(agents: agents)
+                .frame(width: 20, height: 20)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Workspace icon: \(workspace.title)")
+                .accessibilityValue(agents.first?.id ?? AgentTemplate.terminal.id)
+                .offset(x: leading)
+        }
+        .frame(width: width, height: Theme.workspaceRowMinimumHeight, alignment: .leading)
+        .clipped()
+    }
+
     private func fullBody(agents: [AgentTemplate], dotColor: Color?) -> some View {
         HStack(spacing: Theme.space2) {
-            agentIcons(agents: agents)
-                .padding(.trailing, 3)
+            agentIcons(agents: agents).padding(.trailing, 3)
+            rowDetails(dotColor: dotColor)
+        }
+        .padding(.leading, Theme.sidebarContentLeadingX - Theme.space2)
+        .padding(.trailing, Theme.space3)
+        .padding(.vertical, Theme.workspaceRowVerticalPadding)
+        .frame(minHeight: Theme.workspaceRowMinimumHeight)
+    }
+
+    private func rowDetails(dotColor: Color?) -> some View {
+        HStack(spacing: Theme.space2) {
             VStack(alignment: .leading, spacing: 2) {
                 workspaceTitle
                 subtitleRow
@@ -493,13 +526,6 @@ struct SidebarWorkspaceRow: View {
             .allowsHitTesting(detailsOpacity > 0.5)
             .accessibilityHidden(detailsOpacity <= 0.5)
         }
-        // The list's 8pt row inset plus this 8pt content inset creates the
-        // shared 16pt sidebar gutter without letting the hover fill touch the
-        // window edge.
-        .padding(.leading, Theme.sidebarContentLeadingX - Theme.space2)
-        .padding(.trailing, Theme.space3)
-        .padding(.vertical, Theme.workspaceRowVerticalPadding)
-        .frame(minHeight: Theme.workspaceRowMinimumHeight)
     }
 
     private func compactBody(agents: [AgentTemplate], dotColor: Color?) -> some View {

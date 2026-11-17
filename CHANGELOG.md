@@ -2,6 +2,10 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.13 — 2026-11-17
+
+- Keep workspace cards and terminal/harness icons fully inside the narrow sidebar. Icons use a fixed leading axis independent of title width; continuous resizing and saved widths are unchanged.
+
 ## v0.1.12 — 2026-11-17
 
 - Sidebar resizing now tracks the pointer continuously from 52 to 480 points instead of snapping between layouts. Icons stay fixed while titles and auxiliary controls fade with width; intermediate widths remain unchanged on release and restore after relaunch.

@@ -173,6 +173,53 @@ for target:CGFloat in [200,160,120,80,52,80,120,160,200,320] {
 guard rect(window)==windowBefore else {fatalError("Continuous sidebar drag moved/resized window")}
 print("PASS: intermediate widths track pointer continuously and remain unchanged on release in both directions")
 print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded width, Command+B compatibility and stable window geometry")
+// Multiple real workspace rows, including a harness-status icon. Emit only
+// the documented OSC status marker in an isolated shell; do not run an agent.
+func typeShell(_ text:String) {
+ let chars=Array(text.utf16)
+ for down in [true,false] {
+  let e=CGEvent(keyboardEventSource:nil,virtualKey:0,keyDown:down)!
+  e.keyboardSetUnicodeString(stringLength:chars.count,unicodeString:chars);e.postToPid(pid)
+ }
+ key(36)
+}
+func addNamedWorkspace(_ name:String) {
+ guard let item=find(menu,"新建工作区") else {fatalError("Missing new workspace menu")}
+ press(item);key(15,flags:[.maskCommand,.maskShift]);replaceDraft(name);key(36)
+}
+addNamedWorkspace("Harness fixture")
+typeShell("printf '\\033]0;kookoo-agent:codex:running\\007'; sleep 90")
+Thread.sleep(forTimeInterval:1)
+addNamedWorkspace("Another terminal")
+func matching(_ e:AXUIElement,_ predicate:(AXUIElement)->Bool) -> [AXUIElement] {
+ var result=predicate(e) ? [e] : []
+ for c in children(e) {result += matching(c,predicate)}
+ return result
+}
+func checkCompactIcons() {
+ let left=windowBefore.minX
+ for name in ["Saved on blur","Harness fixture","Another terminal"] {
+  guard let icon=find(app,"Workspace icon: "+name) else {dump(app);fatalError("Missing icon "+name)}
+  let r=rect(icon)
+  guard abs(r.midX-(left+26))<1.5,r.minX>=left+3,r.maxX<=left+49 else {dump(app);fatalError("Off-center/clipped icon "+name+" "+String(describing:r))}
+  if name=="Harness fixture" {
+   guard (value(icon,kAXValueAttribute) as? String)=="codex" else {dump(app);fatalError("Harness status icon missing")}
+  }
+ }
+ let rows=matching(app) { (value($0,kAXIdentifierAttribute) as? String)?.hasPrefix("workspace-row-")==true }
+ guard rows.count>=3 else {dump(app);fatalError("Missing workspace row geometry")}
+ for row in rows {
+  let r=rect(row)
+  guard r.minX>=left+3,r.maxX<=left+49 else {fatalError("Compact card clipped: "+String(describing:r))}
+ }
+}
+for round in 1...2 {
+ dragEdge(by:-268);checkCompactIcons();capture("compact-multi-harness-\(round)")
+ dragEdge(by:268)
+}
+key(11,flags:.maskCommand);checkCompactIcons();capture("compact-multi-harness-keyboard")
+key(11,flags:.maskCommand);key(11,flags:.maskCommand)
+print("PASS: multiple compact workspace cards and terminal/harness icons fully visible and centered after bidirectional drag and keyboard cycling")
 guard let settings=find(menu,"设置…") ?? find(menu,"Settings…") else { dump(menu);fatalError("Missing settings") }
 press(settings)
 guard let appearance=find(app,"外观") else { dump(app);fatalError("Missing appearance") }
