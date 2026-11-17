@@ -452,6 +452,7 @@ struct SidebarWorkspaceRow: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Workspace icon: \(workspace.title)")
                 .accessibilityValue(agents.first?.id ?? AgentTemplate.terminal.id)
+                .accessibilityIdentifier("workspace-icon-\(agents.first?.id ?? AgentTemplate.terminal.id)")
                 .offset(x: leading)
         }
         .frame(width: width, height: Theme.workspaceRowMinimumHeight, alignment: .leading)

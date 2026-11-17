@@ -183,11 +183,18 @@ func typeShell(_ text:String) {
   CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
  }
  Thread.sleep(forTimeInterval:0.3)
+ // CGEvent Unicode payloads are bounded: send small chunks so a long
+ // printf command is not silently truncated before the OSC marker closes.
  let chars=Array(text.utf16)
- for down in [true,false] {
-  let e=CGEvent(keyboardEventSource:nil,virtualKey:0,keyDown:down)!
-  e.keyboardSetUnicodeString(stringLength:chars.count,unicodeString:chars);e.postToPid(pid)
+ for start in stride(from:0,to:chars.count,by:8) {
+  let chunk=Array(chars[start..<min(start+8,chars.count)])
+  for down in [true,false] {
+   let e=CGEvent(keyboardEventSource:nil,virtualKey:0,keyDown:down)!
+   e.keyboardSetUnicodeString(stringLength:chunk.count,unicodeString:chunk);e.postToPid(pid)
+  }
+  Thread.sleep(forTimeInterval:0.08)
  }
+ capture("harness-command-before-return")
  key(36)
 }
 func addNamedWorkspace(_ name:String) {
@@ -197,6 +204,7 @@ func addNamedWorkspace(_ name:String) {
 addNamedWorkspace("Harness fixture")
 typeShell("printf '\\033]2;kookoo-agent:codex:running\\007'; sleep 90")
 Thread.sleep(forTimeInterval:1)
+capture("harness-command-after-return")
 addNamedWorkspace("Another terminal")
 func matching(_ e:AXUIElement,_ predicate:(AXUIElement)->Bool) -> [AXUIElement] {
  var result=predicate(e) ? [e] : []
@@ -210,7 +218,7 @@ func checkCompactIcons() {
   let r=rect(icon)
   guard abs(r.midX-(left+26))<1.5,r.minX>=left+3,r.maxX<=left+49 else {dump(app);fatalError("Off-center/clipped icon "+name+" "+String(describing:r))}
   if name=="Harness fixture" {
-   guard (value(icon,kAXValueAttribute) as? String)=="codex" else {dump(app);fatalError("Harness status icon missing")}
+   guard (value(icon,kAXIdentifierAttribute) as? String)=="workspace-icon-codex" else {dump(app);fatalError("Harness status icon missing")}
   }
  }
  let rows=matching(app) { (value($0,kAXIdentifierAttribute) as? String)?.hasPrefix("workspace-row-")==true }
