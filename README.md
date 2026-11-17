@@ -37,7 +37,7 @@ Six of the 20 built-in alternative icons, from soft pastels to neon and minimal 
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
 - Kookoo app icon and in-app branding.
 - **⌘B** cycles the left sidebar through expanded → icons only → hidden → expanded. **⌃⌘S** performs the same cycle.
-- Workspace names edit directly in the sidebar: Enter saves, Escape cancels, and leaving the field saves.
+- Double-click a workspace title to edit it directly in the sidebar: Enter saves, Escape cancels, and leaving the field saves.
 - Separate application identity and data paths; existing Kooky installations are not overwritten or automatically migrated.
 
 This project is maintained independently. There is no automatic upstream synchronization.

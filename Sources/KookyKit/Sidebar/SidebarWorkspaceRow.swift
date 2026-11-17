@@ -404,6 +404,10 @@ struct SidebarWorkspaceRow: View {
                 .font(Theme.display(13, weight: isActive ? .medium : .regular))
                 .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.78))
                 .lineLimit(1)
+                .contentShape(Rectangle())
+                // Only the title starts editing. Icons, disclosure/close
+                // controls and unused list space keep their own gestures.
+                .onTapGesture(count: 2) { beginRename() }
         }
     }
 

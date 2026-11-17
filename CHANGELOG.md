@@ -2,6 +2,10 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.10 — 2026-11-17
+
+- Double-click a workspace title in the sidebar to edit it in place. Enter saves, Escape cancels, and leaving the field saves. Existing keyboard/menu rename and empty-space double-click behavior remain unchanged.
+
 ## v0.1.9 — 2026-11-14
 
 - Command+B now cycles expanded → icons only → hidden → expanded.
