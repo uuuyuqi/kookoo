@@ -193,7 +193,7 @@ struct SidebarView: View {
     private var expansion: Double { Self.expansionProgress(for: outerWidth) }
 
     private var fileTreeIsMounted: Bool {
-        store.sidebarContent == .files && expansion > 0
+        store.sidebarContent == .files && expansion >= 0.5
     }
 
     private func contents(isCompact: Bool) -> some View {
@@ -207,30 +207,18 @@ struct SidebarView: View {
                 }
             }
             Spacer(minLength: 0)
-            if !isCompact { footer() }
+            footer()
+                .opacity(expansion)
+                .allowsHitTesting(expansion > 0.5)
+                .accessibilityHidden(expansion <= 0.5)
         }
     }
 
     var body: some View {
-        // Keep both presentations left-aligned while crossfading. Expanded
-        // text keeps a readable layout width and clips behind the moving edge;
-        // the outer card and terminal always follow the exact pointer width.
-        ZStack(alignment: .topLeading) {
-            if expansion > 0 {
-                contents(isCompact: false)
-                    .frame(width: Self.cardContentWidth(outerWidth: max(Self.fullWidth, outerWidth)))
-                    .opacity(expansion)
-                    .allowsHitTesting(expansion >= 0.5)
-                    .accessibilityHidden(expansion < 0.5)
-            }
-            if expansion < 1 {
-                contents(isCompact: true)
-                    .frame(width: Self.cardContentWidth(outerWidth: Self.compactWidth))
-                    .opacity(1 - expansion)
-                    .allowsHitTesting(expansion < 0.5)
-                    .accessibilityHidden(expansion >= 0.5)
-            }
-        }
+        // One list and one icon per workspace: only title/detail opacity changes.
+        // The row's leading icon stays stationary as the card follows the pointer.
+        contents(isCompact: mode == .compact)
+        .environment(\.sidebarRowPresentationWidth, max(0, Self.cardContentWidth(outerWidth: outerWidth) - 2 * Theme.space2))
         .frame(width: Self.cardContentWidth(outerWidth: outerWidth), alignment: .leading)
         .clipped()
         .glassChromeBackground()
@@ -461,48 +449,24 @@ struct SidebarView: View {
 
     @ViewBuilder
     private func brand(isCompact: Bool) -> some View {
-        Group {
-            if isCompact {
-                HoverableIconButton(
-                    systemName: "plus",
-                    fontSize: 12,
-                    size: Theme.chromeToolbarButtonSize,
-                    help: "New workspace"
-                ) {
-                    store.addWorkspace()
-                }
-            } else {
-                HStack(spacing: 0) {
-                    FirstGlyphCenteredLayout(axisX: Theme.sidebarLeadingIconCenterX) {
-                        LaunchWordmark()
-                        Text("K")
-                            .font(LaunchWordmark.font)
-                            .hidden()
-                            .accessibilityHidden(true)
-                    }
-                    .fixedSize()
-                    Spacer()
-                    HoverableIconButton(
-                        systemName: "plus",
-                        fontSize: 12,
-                        size: Theme.chromeToolbarButtonSize,
-                        help: "New workspace"
-                    ) {
-                        store.addWorkspace()
-                    }
-                }
-                // The layout owns the leading space required to centre its
-                // measured first glyph; the trailing action keeps the regular
-                // 16pt content gutter.
-                .padding(.trailing, Theme.sidebarContentLeadingX)
+        ZStack(alignment: .leading) {
+            FirstGlyphCenteredLayout(axisX: Theme.sidebarLeadingIconCenterX) {
+                LaunchWordmark()
+                Text("K").font(LaunchWordmark.font).hidden().accessibilityHidden(true)
             }
+            .fixedSize()
+            .opacity(expansion)
+            .accessibilityHidden(expansion <= 0.5)
+            HoverableIconButton(
+                systemName: "plus", fontSize: 12,
+                size: Theme.chromeToolbarButtonSize, help: "New workspace"
+            ) { store.addWorkspace() }
+            // The one + button travels continuously from the trailing edge to
+            // the icon axis. Avoid overlaying a second + on the fading wordmark.
+            .offset(x: max(0, outerWidth - Self.compactWidth) + 8)
         }
-        // A source-list title sits on the lower side of its 40pt header: the
-        // first row's own vertical inset otherwise makes a geometrically
-        // centred title read too high. Keep the whole title/action group on
-        // the 4pt spacing grid instead of applying a text-only pixel offset.
         .padding(.bottom, Theme.space1)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: Theme.contentHeaderHeight, alignment: .bottom)
     }
 

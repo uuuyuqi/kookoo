@@ -4,7 +4,7 @@ Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
 ## v0.1.12 — 2026-11-17
 
-- Sidebar resizing now tracks the pointer continuously from 52 to 480 points instead of snapping between layouts. Expanded and icon content crossfade with width; intermediate widths remain unchanged on release and restore after relaunch.
+- Sidebar resizing now tracks the pointer continuously from 52 to 480 points instead of snapping between layouts. Icons stay fixed while titles and auxiliary controls fade with width; intermediate widths remain unchanged on release and restore after relaunch.
 
 ## v0.1.11 — 2026-11-17
 

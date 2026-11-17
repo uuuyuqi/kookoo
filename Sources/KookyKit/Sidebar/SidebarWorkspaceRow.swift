@@ -1,5 +1,15 @@
 import SwiftUI
 
+private struct SidebarRowPresentationWidthKey: EnvironmentKey {
+    static let defaultValue: CGFloat? = nil
+}
+extension EnvironmentValues {
+    var sidebarRowPresentationWidth: CGFloat? {
+        get { self[SidebarRowPresentationWidthKey.self] }
+        set { self[SidebarRowPresentationWidthKey.self] = newValue }
+    }
+}
+
 /// Single edit transaction: a duplicate request cannot erase a draft, and
 /// blur after Enter/Escape cannot submit the same edit a second time.
 struct InlineWorkspaceRenameState {
@@ -242,6 +252,10 @@ struct SidebarWorkspaceRow: View {
     @State private var isHovered = false
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var isContextMenuOpen = false
+    @Environment(\.sidebarRowPresentationWidth) private var presentationWidth
+    private var detailsOpacity: Double {
+        presentationWidth.map { SidebarView.expansionProgress(for: $0 + 24) } ?? 1
+    }
     @State private var rename = InlineWorkspaceRenameState()
     @FocusState private var renameFocused: Bool
     @State private var tagEditorSeed: PopoverPresentation<WorkspaceTag?>?
@@ -250,7 +264,12 @@ struct SidebarWorkspaceRow: View {
         let readout = workspace.sidebarReadout
         let dotColor = Self.activityDotColor(state: readout.state, hasFailure: readout.hasCommandFailure)
         Group {
-            if isCompact {
+            if let presentationWidth {
+                fullBody(agents: readout.agents, dotColor: dotColor)
+                    .frame(width: max(196, presentationWidth))
+                    .frame(width: presentationWidth, alignment: .leading)
+                    .clipped()
+            } else if isCompact {
                 compactBody(agents: readout.agents, dotColor: dotColor)
             } else {
                 fullBody(agents: readout.agents, dotColor: dotColor)
@@ -370,9 +389,9 @@ struct SidebarWorkspaceRow: View {
 
     /// Both the menu command and row context menu arrive through this flag.
     private func consumeRenameRequest() {
-        // During the width crossfade both presentations exist, but only the
-        // expanded row owns the editor and may consume the shared request.
-        guard !isCompact else { return }
+        // Adaptive narrow rows retain the same editor owner. Legacy compact
+        // presentations without an adaptive width do not contain a text field.
+        guard !isCompact || presentationWidth != nil else { return }
         workspace.renameRequested = false
         beginRename()
     }
@@ -423,6 +442,9 @@ struct SidebarWorkspaceRow: View {
                 workspaceTitle
                 subtitleRow
             }
+            .opacity(detailsOpacity)
+            .allowsHitTesting(detailsOpacity > 0.5)
+            .accessibilityHidden(detailsOpacity <= 0.5)
             Spacer(minLength: 0)
             // Activity dot lives at the trailing edge — visible at all times
             // when not idle, eats the close-button slot only on hover.
@@ -467,6 +489,9 @@ struct SidebarWorkspaceRow: View {
                 .frame(width: 20, alignment: .trailing)
             }
             .frame(minWidth: trailingHoverMinWidth, alignment: .trailing)
+            .opacity(detailsOpacity)
+            .allowsHitTesting(detailsOpacity > 0.5)
+            .accessibilityHidden(detailsOpacity <= 0.5)
         }
         // The list's 8pt row inset plus this 8pt content inset creates the
         // shared 16pt sidebar gutter without letting the hover fill touch the

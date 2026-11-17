@@ -1402,6 +1402,18 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertFalse(store.isSidebarResizing)
     }
 
+    func testNarrowSidebarExpandsForExplicitFileAndRenameActions() {
+        let store = makeStore()
+        store.resizeSidebar(to: 80)
+        store.revealFileTree()
+        XCTAssertEqual(store.sidebarWidth, SidebarView.fullWidth)
+        XCTAssertEqual(store.sidebarContent, .files)
+        store.resizeSidebar(to: 80)
+        store.requestRenameActiveWorkspace()
+        XCTAssertEqual(store.sidebarWidth, SidebarView.fullWidth)
+        XCTAssertEqual(store.sidebarContent, .workspaces)
+    }
+
     func testIntermediateSidebarWidthPersistsWithoutSnap() {
         for width in [80.0, 120, 160, 200] {
             let persistence = InMemoryPersistence()

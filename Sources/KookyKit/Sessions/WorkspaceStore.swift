@@ -371,6 +371,7 @@ final class WorkspaceStore {
     /// mode, first promoting a hidden/compact sidebar to full — the tree
     /// only mounts in the full sidebar (`SidebarView.fileTreeIsMounted`).
     func revealFileTree(root: URL? = nil) {
+        if sidebarWidth < SidebarView.fullWidth { sidebarWidth = SidebarView.fullWidth }
         if let root, let workspace = active, let session = workspace.activeSession {
             fileTreeRootOverride = FileTreeRootOverride(
                 workspaceId: workspace.id,

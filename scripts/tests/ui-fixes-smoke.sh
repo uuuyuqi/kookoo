@@ -168,7 +168,7 @@ for target:CGFloat in [200,160,120,80,52,80,120,160,200,320] {
  dragEdge(by:target-currentWidth)
  guard abs(edge().midX-(originalEdge+target-220))<3 else {fatalError("Sidebar snapped on mouse-up at \(target)")}
  currentWidth=target
- if target==120 {capture("sidebar-continuous-120")}
+ if [80,120,160].contains(target) {capture("sidebar-continuous-\(Int(target))")}
 }
 guard rect(window)==windowBefore else {fatalError("Continuous sidebar drag moved/resized window")}
 print("PASS: intermediate widths track pointer continuously and remain unchanged on release in both directions")
