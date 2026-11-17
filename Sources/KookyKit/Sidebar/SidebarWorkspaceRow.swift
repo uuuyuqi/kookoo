@@ -355,9 +355,10 @@ struct SidebarWorkspaceRow: View {
             if compact { finishRename(commit: true) }
         }
         .onDisappear {
-            // A removed/virtualized row must not retain an editor or later
-            // submit into a workspace that no longer exists.
-            finishRename(commit: false)
+            // Collapsing/hiding the sidebar can replace this row before its
+            // focus/isCompact observers fire. Treat that as leaving the field,
+            // not Escape. The store ignores saves for a deleted workspace.
+            finishRename(commit: true)
         }
         .onAppear {
             // ⌘⇧R may reveal a hidden sidebar; this row then mounts with the
