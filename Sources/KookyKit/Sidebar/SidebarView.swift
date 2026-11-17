@@ -193,13 +193,13 @@ struct SidebarView: View {
     private var expansion: Double { Self.expansionProgress(for: outerWidth) }
 
     private var fileTreeIsMounted: Bool {
-        store.sidebarContent == .files && expansion >= 0.5
+        store.sidebarContent == .files && mode != .compact
     }
 
     private func contents(isCompact: Bool) -> some View {
         VStack(spacing: 0) {
             brand(isCompact: isCompact)
-            if store.sidebarContent == .files && !isCompact {
+            if fileTreeIsMounted {
                 FileTreeView(store: store, model: store.fileTree)
             } else {
                 ScrollViewReader { proxy in
@@ -455,8 +455,8 @@ struct SidebarView: View {
                 Text("K").font(LaunchWordmark.font).hidden().accessibilityHidden(true)
             }
             .fixedSize()
-            .opacity(expansion)
-            .accessibilityHidden(expansion <= 0.5)
+            .opacity(max(0, min(1, (outerWidth - 120) / 100)))
+            .accessibilityHidden(outerWidth < 170)
             HoverableIconButton(
                 systemName: "plus", fontSize: 12,
                 size: Theme.chromeToolbarButtonSize, help: "New workspace"
