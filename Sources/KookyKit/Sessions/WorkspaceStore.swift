@@ -241,6 +241,23 @@ final class WorkspaceStore {
         scheduleSave()
     }
 
+    /// Interactive resize uses the same full/compact modes as Command+B,
+    /// without starting an animation for each pointer movement. The caller
+    /// owns the engine suspension for the entire drag, including mode changes.
+    func resizeSidebar(to proposedWidth: CGFloat, preservingExpandedWidth: CGFloat? = nil) {
+        guard sidebarMode != .hidden else { return }
+        if proposedWidth < SidebarView.compactDragThreshold {
+            if let preservingExpandedWidth {
+                sidebarWidth = SidebarView.clampWidth(preservingExpandedWidth)
+            }
+            sidebarMode = .compact
+        } else {
+            sidebarWidth = SidebarView.clampWidth(proposedWidth)
+            sidebarMode = .full
+        }
+        scheduleSave()
+    }
+
     func endSidebarResize() {
         isSidebarResizing = false
         scheduleSave()

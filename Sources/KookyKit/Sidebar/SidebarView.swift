@@ -80,10 +80,15 @@ struct SidebarView: View {
         min(max(width, fullWidth), maxWidth).rounded()
     }
 
-    // Trailing-edge resize drag (full mode only). Mirrors the split
+    /// Dragging below the midpoint snaps to the existing icon rail. Expanded
+    /// content keeps its readable minimum instead of being squeezed/clipped.
+    static let compactDragThreshold = (fullWidth + compactWidth) / 2
+
+    // Trailing-edge resize drag (full and compact modes). Mirrors the split
     // divider's suspend pattern: begin once per drag (gated), capture the
     // engines so onEnded / the handle's onDisappear end the SAME set.
     @State private var resizeDragStartWidth: CGFloat?
+    @State private var resizeDragExpandedWidth: CGFloat?
     @State private var sidebarResizeSuspended = false
     @State private var sidebarSuspendedEngines: [any TerminalEngine] = []
     @Bindable var store: WorkspaceStore
@@ -113,19 +118,22 @@ struct SidebarView: View {
     /// watches `store.pendingRemovalRequest` for ⌘⇧W routed via AppDelegate.
     @State private var sheet: SidebarSheet?
 
-    /// Invisible trailing-edge strip that widens the sidebar by drag —
-    /// full mode only (compact is fixed, hidden is hidden). A width drag
+    /// Invisible trailing-edge strip in both visible modes, so the icon rail
+    /// can also be dragged open. A width drag
     /// re-frames every libghostty NSView per frame → SIGWINCH storm (conda
     /// scrollback-wipe, issue #29) without the divider-style suspension.
     private var resizeHandle: some View {
         DividerHandle(orientation: .horizontal)
             .frame(width: 7)
+            .accessibilityElement()
+            .accessibilityLabel("Resize workspace sidebar")
             .gesture(resizeGesture)
             .onDisappear {
                 // Backstop: ⌘⌃S mid-drag unmounts the handle before onEnded
                 // can fire — end the captured engines so the suspension
                 // refcount stays balanced (mirrors the split divider).
                 resizeDragStartWidth = nil
+                resizeDragExpandedWidth = nil
                 if sidebarResizeSuspended {
                     sidebarResizeSuspended = false
                     for engine in sidebarSuspendedEngines { engine.endSizePropagationSuspension() }
@@ -139,21 +147,22 @@ struct SidebarView: View {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { value in
                 if resizeDragStartWidth == nil {
-                    resizeDragStartWidth = store.sidebarWidth
+                    resizeDragStartWidth = mode == .compact ? Self.compactWidth : store.sidebarWidth
+                    resizeDragExpandedWidth = store.sidebarWidth
                     store.beginSidebarResize()
                 }
                 let proposed = (resizeDragStartWidth ?? store.sidebarWidth) + value.translation.width
-                let clamped = Self.clampWidth(proposed)
-                guard abs(clamped - store.sidebarWidth) > .ulpOfOne else { return }
+                guard store.sidebarMode != .hidden else { return }
                 if !sidebarResizeSuspended {
                     sidebarResizeSuspended = true
                     sidebarSuspendedEngines = store.active?.root.allEngines ?? []
                     for engine in sidebarSuspendedEngines { engine.beginSizePropagationSuspension() }
                 }
-                store.sidebarWidth = clamped
+                store.resizeSidebar(to: proposed, preservingExpandedWidth: resizeDragExpandedWidth)
             }
             .onEnded { _ in
                 resizeDragStartWidth = nil
+                resizeDragExpandedWidth = nil
                 // End + flush once — only when the engine's refcount hits 0
                 // (a concurrent zoom / status-bar suspension flushes on ITS
                 // own release).
@@ -201,7 +210,7 @@ struct SidebarView: View {
         .glassChromeBackground()
         .modifier(PaneCardChrome(isFocused: false, fillsTerminalSurface: false))
         .overlay(alignment: .trailing) {
-            if !isCompact { resizeHandle }
+            resizeHandle
         }
         .overlay {
             // Drop affordance: tinted fill + hairline stroke, inset from the

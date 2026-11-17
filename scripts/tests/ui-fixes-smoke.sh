@@ -115,6 +115,49 @@ press(cycle);press(cycle)
 guard find(app,"Saved on blur") != nil,editor(app) == nil else {dump(app);fatalError("Blur did not save")}
 capture("workspace-rename-blur-saved")
 print("PASS: real title double-click, Chinese rename, Enter save, Escape cancel, repeated edits and sidebar-collapse commit")
+// Drag the real accessibility-labelled edge across the full/compact threshold
+// in both directions. Keep the window geometry unchanged throughout.
+func rect(_ e:AXUIElement) -> CGRect {
+ guard let pv=value(e,kAXPositionAttribute),let sv=value(e,kAXSizeAttribute) else {fatalError("Missing geometry")}
+ var p=CGPoint.zero;var z=CGSize.zero
+ guard AXValueGetValue(pv as! AXValue,.cgPoint,&p),AXValueGetValue(sv as! AXValue,.cgSize,&z) else {fatalError("Invalid geometry")}
+ return CGRect(origin:p,size:z)
+}
+func edge() -> CGRect {
+ guard let e=find(app,"Resize workspace sidebar") else {dump(app);fatalError("Missing sidebar resize handle")}
+ return rect(e)
+}
+func dragEdge(by delta:CGFloat) {
+ let r=edge();let start=CGPoint(x:r.midX,y:r.midY)
+ CGEvent(mouseEventSource:nil,mouseType:.leftMouseDown,mouseCursorPosition:start,mouseButton:.left)!.post(tap:.cghidEventTap)
+ for n in 1...24 {
+  let p=CGPoint(x:start.x+delta*CGFloat(n)/24,y:start.y)
+  CGEvent(mouseEventSource:nil,mouseType:.leftMouseDragged,mouseCursorPosition:p,mouseButton:.left)!.post(tap:.cghidEventTap)
+  Thread.sleep(forTimeInterval:0.035)
+ }
+ let end=CGPoint(x:start.x+delta,y:start.y)
+ CGEvent(mouseEventSource:nil,mouseType:.leftMouseUp,mouseCursorPosition:end,mouseButton:.left)!.post(tap:.cghidEventTap)
+ Thread.sleep(forTimeInterval:0.8)
+}
+guard let windows=value(app,kAXWindowsAttribute) as? [AXUIElement],let window=windows.first else {fatalError("Missing app window")}
+let windowBefore=rect(window)
+let originalEdge=edge().midX
+dragEdge(by:100)
+let wideEdge=edge().midX
+guard abs(wideEdge-originalEdge-100)<3 else {fatalError("Failed to widen sidebar")}
+dragEdge(by:-270)
+guard find(app,"Saved on blur") == nil,abs(edge().midX-originalEdge+168)<3 else {dump(app);fatalError("Drag did not reach 52pt icon rail")}
+capture("sidebar-drag-compact")
+// The icon rail remains draggable and the same gesture crosses the threshold.
+dragEdge(by:220)
+guard find(app,"Saved on blur") != nil,abs(edge().midX-originalEdge-52)<3 else {fatalError("Cannot drag icon rail open")}
+capture("sidebar-drag-expanded")
+// Widen to 320 again, then shrink: Command+B must recover that saved width.
+dragEdge(by:48);dragEdge(by:-270)
+key(11,flags:.maskCommand);key(11,flags:.maskCommand)
+guard find(app,"Saved on blur") != nil,abs(edge().midX-wideEdge)<3 else {fatalError("Command+B lost expanded width after drag")}
+guard rect(window)==windowBefore else {fatalError("Sidebar drag moved/resized window")}
+print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded width, Command+B compatibility and stable window geometry")
 guard let settings=find(menu,"设置…") ?? find(menu,"Settings…") else { dump(menu);fatalError("Missing settings") }
 press(settings)
 guard let appearance=find(app,"外观") else { dump(app);fatalError("Missing appearance") }

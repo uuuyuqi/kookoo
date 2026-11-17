@@ -51,7 +51,8 @@ struct ContentView: View {
         .preferredColorScheme(Theme.chromeColorScheme)
         .ignoresSafeArea(.all)
         .onChange(of: store.sidebarMode) { _, _ in
-            onWindowLayoutChange(true, true)
+            // Dragging across the compact threshold must not grow/move the window.
+            onWindowLayoutChange(!store.isSidebarResizing, !store.isSidebarResizing)
         }
         .onChange(of: store.rightSidebarMode) { _, _ in
             onWindowLayoutChange(true, true)

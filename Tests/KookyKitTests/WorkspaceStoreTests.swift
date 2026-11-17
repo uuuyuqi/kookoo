@@ -1376,6 +1376,43 @@ final class WorkspaceStoreTests: XCTestCase {
         XCTAssertEqual(makeStore(initial: legacy).sidebarWidth, SidebarView.fullWidth)
     }
 
+    func testSidebarDragSnapsToIconRailAndBack() {
+        let store = makeStore()
+        store.sidebarWidth = 320
+        store.beginSidebarResize()
+        store.resizeSidebar(to: 220, preservingExpandedWidth: 320)
+        store.resizeSidebar(to: SidebarView.compactDragThreshold - 1, preservingExpandedWidth: 320)
+        XCTAssertEqual(store.sidebarMode, .compact)
+        XCTAssertEqual(store.sidebarWidth, 320) // compact does not corrupt expanded width
+        XCTAssertTrue(store.isSidebarResizing)
+        store.resizeSidebar(to: -500)
+        XCTAssertEqual(store.sidebarMode, .compact)
+        store.resizeSidebar(to: SidebarView.compactDragThreshold)
+        XCTAssertEqual(store.sidebarMode, .full)
+        XCTAssertEqual(store.sidebarWidth, SidebarView.fullWidth)
+        store.resizeSidebar(to: 351.7)
+        XCTAssertEqual(store.sidebarWidth, 352)
+        store.resizeSidebar(to: 999)
+        XCTAssertEqual(store.sidebarWidth, SidebarView.maxWidth)
+        store.endSidebarResize()
+        XCTAssertFalse(store.isSidebarResizing)
+    }
+
+    func testDraggedCompactSidebarPersistsAndHiddenDoesNotReopen() {
+        let persistence = InMemoryPersistence()
+        let store = WorkspaceStore(persistence: persistence, engineFactory: { TestEngine() })
+        store.sidebarWidth = 320
+        store.resizeSidebar(to: 52)
+        store.flushPersistence()
+        let restored = makeStore(initial: persistence.saved)
+        XCTAssertEqual(restored.sidebarMode, .compact)
+        XCTAssertEqual(restored.sidebarWidth, 320)
+        restored.setSidebarMode(.hidden)
+        restored.resizeSidebar(to: 300)
+        XCTAssertEqual(restored.sidebarMode, .hidden)
+        XCTAssertEqual(restored.sidebarWidth, 320)
+    }
+
     func testRightSidebarWidthPersistsAndRestoresClamped() throws {
         let persistence = InMemoryPersistence()
         let store = WorkspaceStore(persistence: persistence, engineFactory: { TestEngine() })

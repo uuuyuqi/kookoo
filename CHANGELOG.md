@@ -2,6 +2,10 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.11 — 2026-11-17
+
+- Drag the workspace sidebar inward to snap to the 52-point icon rail, then drag its edge outward to expand again. Command+B keeps the same three-state cycle and restores the pre-collapse expanded width. Interactive resizing does not move or grow the window.
+
 ## v0.1.10 — 2026-11-17
 
 - Double-click a workspace title in the sidebar to edit it in place. Enter saves, Escape cancels, and leaving the field saves. Existing keyboard/menu rename and empty-space double-click behavior remain unchanged.
