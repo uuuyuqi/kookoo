@@ -2,6 +2,11 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.14 — 2026-11-20
+
+- The active terminal tab uses the terminal surface color and joins the pane below without a divider beneath the selection.
+- The new-tab launcher uses a softer hover tint that follows the system accent color.
+
 ## v0.1.13 — 2026-11-17
 
 - Keep workspace cards and terminal/harness icons fully inside the narrow sidebar. Icons use a fixed leading axis independent of title width; continuous resizing and saved widths are unchanged.
