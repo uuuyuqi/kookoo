@@ -25,12 +25,6 @@ extension View {
         opacity(visible ? 1 : 0).allowsHitTesting(visible)
     }
 
-    /// Menu rows are single-state: hover === selected, so they use the active
-    /// theme token instead of the quieter row-hover token.
-    func menuRowHover(_ isHovered: Bool) -> some View {
-        background(isHovered ? Theme.chromeActive : Color.clear)
-    }
-
     /// Balanced AppKit cursor ownership for SwiftUI hover regions. A view can
     /// disappear while still hovered (closing a popover, deleting a row), in
     /// which case `onHover(false)` is not guaranteed; `onDisappear` releases
@@ -70,10 +64,16 @@ private struct HoverCursorModifier: ViewModifier {
 /// Optional `shortcut` renders right-aligned in the same monospace style
 /// AppKit uses for native NSMenuItem key equivalents (e.g. "⌘W", "⌘⇧D").
 struct KookyMenuRow<Leading: View>: View {
+    enum Highlight {
+        case standard
+        case launcher
+    }
+
     let title: String
     let localizesTitle: Bool
     let shortcut: String?
     let isDisabled: Bool
+    let highlight: Highlight
     /// nil = the standard foreground. Set for rows whose next click is
     /// destructive (an armed "Confirm Kill") so the state change is visible
     /// before the damage, not after.
@@ -81,6 +81,7 @@ struct KookyMenuRow<Leading: View>: View {
     let leading: Leading
     let action: () -> Void
 
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var isHovered = false
 
     init(
@@ -88,6 +89,7 @@ struct KookyMenuRow<Leading: View>: View {
         localizesTitle: Bool = true,
         shortcut: String? = nil,
         isDisabled: Bool = false,
+        highlight: Highlight = .standard,
         titleColor: Color? = nil,
         @ViewBuilder leading: () -> Leading,
         action: @escaping () -> Void
@@ -96,6 +98,7 @@ struct KookyMenuRow<Leading: View>: View {
         self.localizesTitle = localizesTitle
         self.shortcut = shortcut
         self.isDisabled = isDisabled
+        self.highlight = highlight
         self.titleColor = titleColor
         self.leading = leading()
         self.action = action
@@ -129,13 +132,32 @@ struct KookyMenuRow<Leading: View>: View {
             .padding(.horizontal, Theme.space2 + 2)
             .padding(.vertical, 7)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .menuRowHover(isHovered && !isDisabled)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .background { rowHighlight }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .onHover { isHovered = $0 && !isDisabled }
+    }
+
+    @ViewBuilder
+    private var rowHighlight: some View {
+        if isHovered && !isDisabled {
+            switch highlight {
+            case .standard:
+                RoundedRectangle(cornerRadius: 5).fill(Theme.chromeActive)
+            case .launcher:
+                // Tint only the surface; preserve theme label contrast and provider marks.
+                let accent = Color(nsColor: .controlAccentColor)
+                let isDark = Theme.chromeColorScheme == .dark
+                let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
+                shape
+                    .fill(accent.opacity(isDark ? 0.23 : 0.14))
+                    .overlay {
+                        shape.strokeBorder(accent.opacity(contrast == .increased ? 0.75 : 0.24))
+                    }
+            }
+        }
     }
 }
 

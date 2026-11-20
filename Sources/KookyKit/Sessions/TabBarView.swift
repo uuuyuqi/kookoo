@@ -39,9 +39,12 @@ struct TabBarView: View {
 
             // Split controls pinned to the trailing edge — outside the
             // ScrollView so they stay put while the tabs scroll.
-            splitButtons
+            splitButtons.padding(.bottom, Theme.paneTabSeparatorHeight)
         }
-        .frame(height: Theme.paneTabBarHeight)
+        .frame(height: Theme.paneTabBarHeight + Theme.paneTabSeparatorHeight)
+        .background(alignment: .bottom) {
+            Rectangle().fill(Theme.chromeSeparator).frame(height: Theme.paneTabSeparatorHeight)
+        }
 
     }
 
@@ -212,7 +215,8 @@ private struct AddTabButton: View {
                 ForEach(AgentTemplate.visibleOrdered(model: KookySettingsModel.shared)) { template in
                     KookyMenuRow(
                         title: template.title + sshSuffix,
-                        localizesTitle: false
+                        localizesTitle: false,
+                        highlight: .launcher
                     ) {
                         AgentIconView(asset: template.iconAsset, fallbackSymbol: template.symbol, size: 16)
                     } action: {

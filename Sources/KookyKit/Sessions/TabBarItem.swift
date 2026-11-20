@@ -37,8 +37,29 @@ struct TabBarItem: View {
         .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.62))
         .padding(.horizontal, 11)
         .padding(.vertical, Theme.paneTabVerticalPadding)
-        .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous))
+        .background {
+            if !isActive && isHovered {
+                RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous)
+                    .fill(Theme.chromeHover)
+            }
+        }
+        // Keep labels centered in the original header; only the selected
+        // decoration reaches into the former standalone separator row.
+        .frame(height: Theme.paneTabBarHeight)
+        .padding(.bottom, Theme.paneTabSeparatorHeight)
+        .background {
+            if isActive {
+                let outline = AttachedTabOutline(cornerRadius: Theme.chromeSelectionCornerRadius)
+                outline
+                    .fill(Color(nsColor: Theme.terminalSurface))
+                    .overlay {
+                        outline.stroke(Theme.chromeSeparator, lineWidth: Theme.paneTabSeparatorHeight)
+                    }
+                    .padding(.top, Theme.space1)
+                    .padding(.horizontal, Theme.paneTabSeparatorHeight / 2)
+                    .allowsHitTesting(false)
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onActivate)
         .onHover { isHovered = $0 }
@@ -124,12 +145,6 @@ struct TabBarItem: View {
         }
     }
 
-    private var rowBackground: Color {
-        if isActive { return Theme.chromeSelection }
-        if isHovered { return Theme.chromeHover }
-        return .clear
-    }
-
     /// Shows only on non-zero exit. Successful runs intentionally leave the
     /// row clean — a green dot on every command would dominate the chrome.
     @ViewBuilder
@@ -166,5 +181,29 @@ struct TabBarItem: View {
         let minutes = Int(seconds / 60)
         let rem = Int(seconds.truncatingRemainder(dividingBy: 60).rounded())
         return "\(minutes)m \(rem)s"
+    }
+}
+
+/// Draws just the sides and rounded top. The fill closes at the bottom
+/// implicitly; the stroke stays open so no line crosses into the terminal.
+private struct AttachedTabOutline: Shape {
+    let cornerRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let radius = min(cornerRadius, min(rect.width / 2, rect.height))
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + radius))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + radius, y: rect.minY),
+            control: CGPoint(x: rect.minX, y: rect.minY)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX - radius, y: rect.minY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.minY + radius),
+            control: CGPoint(x: rect.maxX, y: rect.minY)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        return path
     }
 }

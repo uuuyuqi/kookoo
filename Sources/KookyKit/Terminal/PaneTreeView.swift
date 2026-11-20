@@ -76,7 +76,6 @@ private struct PaneView: View {
         let paneOpacity = isFocused ? 1.0 : Self.inactivePaneOpacity
         VStack(spacing: 0) {
             TabBarView(pane: pane, workspace: workspace, store: store)
-            Rectangle().fill(Theme.chromeSeparator).frame(height: 1)
             if let active = pane.activeTab {
                 TerminalTabHost(
                     tabs: pane.tabs,
