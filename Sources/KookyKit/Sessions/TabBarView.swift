@@ -226,7 +226,9 @@ private struct AddTabButton: View {
                     }
                 }
             }
-            .padding(Theme.space1)
+            // Leave enough inset that the first hover outline clears the
+            // native popover's rounded top corners.
+            .padding(Theme.space2)
             .frame(minWidth: 220)
             .background(Theme.chromeBackground)
         }

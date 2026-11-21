@@ -147,14 +147,13 @@ struct KookyMenuRow<Leading: View>: View {
             case .standard:
                 RoundedRectangle(cornerRadius: 5).fill(Theme.chromeActive)
             case .launcher:
-                // Tint only the surface; preserve theme label contrast and provider marks.
-                let accent = Color(nsColor: .controlAccentColor)
-                let isDark = Theme.chromeColorScheme == .dark
+                // Use the app's chrome colors instead of following the system
+                // accent. Keep a visible edge in Increased Contrast mode.
                 let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
                 shape
-                    .fill(accent.opacity(isDark ? 0.23 : 0.14))
+                    .fill(Theme.chromeSelection)
                     .overlay {
-                        shape.strokeBorder(accent.opacity(contrast == .increased ? 0.75 : 0.24))
+                        shape.strokeBorder(Theme.chromeForeground.opacity(contrast == .increased ? 0.6 : 0.12))
                     }
             }
         }
