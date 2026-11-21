@@ -443,6 +443,7 @@
 "Unknown icon." = "未知图标。";
 "The bundled icon is missing or invalid." = "内置图标缺失或无效。";
 "The app icon is not a regular file." = "应用图标不是普通文件。";
+"Kookoo (Default)" = "Kookoo（默认）";
 "Pearl" = "珍珠";
 "Marshmallow" = "棉花糖";
 "Neon" = "霓虹";
@@ -463,6 +464,48 @@
 "Peach" = "蜜桃";
 "Graphite" = "石墨";
 "Prism" = "棱镜";
+
+/* Reviewed app icons */
+"Ivory K" = "象牙字标";
+"Brushed Titanium" = "拉丝钛";
+"Burgundy Lacquer" = "酒红漆";
+"Blue Porcelain" = "青花瓷";
+"Saddle Leather" = "鞍棕皮革";
+"Cobalt Origami" = "蓝白折纸";
+"Scarlet Cursor" = "釉红光标";
+"Pistachio" = "开心果绿";
+"Black & Gold" = "黑金双线";
+"Midnight Pearl" = "深海贝母";
+"Jelly Cat" = "果冻猫";
+"Yuzu Smile" = "柚子笑脸";
+"Ice Keycap" = "冰蓝键帽";
+"Pixel Cat" = "像素猫";
+"Neon Stickers" = "荧光贴纸";
+"Acid Lightning" = "酸绿闪电";
+"Orange Balloon" = "橙气球";
+"Milk Carton" = "牛奶盒";
+"Holo Alien" = "镭射外星人";
+"Violet Comet" = "紫色彗星";
+"Cyanotype Fern" = "蓝晒蕨叶";
+"Inkbrush K" = "墨笔字标";
+"Printed Sunset" = "版印落日";
+"Vermilion Seal" = "朱印";
+"Woodcut Trail" = "木刻山径";
+"Misty Moon" = "雾紫月亮";
+"Paper Fan" = "黑纸折扇";
+"Jade Sunrise" = "翡翠晨光";
+"Terracotta Cursor" = "赤陶光标";
+"Inkfish" = "蓝墨游鱼";
+"Oscilloscope" = "电波示波器";
+"Green Screen" = "绿屏终端";
+"Split Flap" = "机械翻牌";
+"Amber CRT" = "琥珀荧屏";
+"Orange Terminal" = "橙透终端";
+"Mixtape" = "复古磁带";
+"Blueprint" = "深蓝图纸";
+"Prism K" = "折光字标";
+"Pocket Pixels" = "像素掌机";
+"Obsidian Armor" = "黑曜机甲";
 "Cancel" = "取消";
 
 "Double-click to create a workspace" = "双击新建工作区";

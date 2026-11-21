@@ -9,15 +9,17 @@ final class AppIconControllerTests: XCTestCase {
     private var suite: String!
     private var pearl: Data!
     private var neon: Data!
+    private static let alternates = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("branding/alternates")
 
     override func setUp() async throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("IconChoices"), withIntermediateDirectories: true)
         suite = "kookoo.icon-tests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)!
-        let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        pearl = try Data(contentsOf: repository.appendingPathComponent("branding/alternates/01-pearl.icns"))
-        neon = try Data(contentsOf: repository.appendingPathComponent("branding/alternates/03-neon.icns"))
+        pearl = try Data(contentsOf: Self.alternates.appendingPathComponent("01-pearl.icns"))
+        neon = try Data(contentsOf: Self.alternates.appendingPathComponent("03-neon.icns"))
         try pearl.write(to: root.appendingPathComponent("IconChoices/01-pearl.icns"))
         try neon.write(to: root.appendingPathComponent("IconChoices/default.icns"))
         try neon.write(to: root.appendingPathComponent("AppIcon.icns"))
@@ -28,10 +30,46 @@ final class AppIconControllerTests: XCTestCase {
         try FileManager.default.removeItem(at: root)
     }
 
-    func testCatalogHasTwentyUniqueAlternatesAndDefault() {
-        XCTAssertEqual(AppIconChoice.all.count, 21)
-        XCTAssertEqual(Set(AppIconChoice.all.map(\.id)).count, 21)
+    func testCatalogHasSixtyUniqueAlternatesAndDefault() throws {
+        let ids = AppIconChoice.all.map(\.id)
+        XCTAssertEqual(ids.count, 61)
+        XCTAssertEqual(Set(ids).count, 61)
         XCTAssertEqual(AppIconChoice.all.first?.id, "default")
+
+        let icnsFilenames = try FileManager.default.contentsOfDirectory(atPath: Self.alternates.path)
+            .filter { $0.hasSuffix(".icns") }
+        XCTAssertEqual(Set(icnsFilenames), Set(ids.dropFirst().map { "\($0).icns" }))
+    }
+
+    func testEveryReviewedIconDecodesInAppKit() throws {
+        for number in 1...40 {
+            let id = String(format: "review-%02d", number)
+            let url = Self.alternates.appendingPathComponent("\(id).icns")
+            let data = try Data(contentsOf: url)
+            XCTAssertTrue(data.starts(with: Data("icns".utf8)), id)
+            let image = try XCTUnwrap(NSImage(data: data), id)
+            XCTAssertTrue(image.isValid, id)
+            var previewRect = CGRect(x: 0, y: 0, width: 48, height: 48)
+            XCTAssertNotNil(image.cgImage(forProposedRect: &previewRect, context: nil, hints: nil), id)
+        }
+    }
+
+    func testReviewedChoicePersistsAndReappliesItsIdentifier() throws {
+        let id = "review-40"
+        let filename = "\(id).icns"
+        let icon = try Data(contentsOf: Self.alternates.appendingPathComponent(filename))
+        try icon.write(to: root.appendingPathComponent("IconChoices/\(filename)"))
+        let controller = AppIconController(resources: root, defaults: defaults, display: { _ in })
+        XCTAssertNotNil(controller.image(for: id))
+        XCTAssertTrue(controller.select(id))
+        XCTAssertEqual(defaults.string(forKey: AppIconController.preferenceKey), id)
+        XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent("AppIcon.icns")), icon)
+
+        try neon.write(to: root.appendingPathComponent("AppIcon.icns"))
+        let relaunched = AppIconController(resources: root, defaults: defaults, display: { _ in })
+        XCTAssertEqual(relaunched.selectedID, id)
+        relaunched.restoreAtLaunch()
+        XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent("AppIcon.icns")), icon)
     }
 
     func testSelectPersistsOnlyAfterWriteAndUpdatesDock() throws {

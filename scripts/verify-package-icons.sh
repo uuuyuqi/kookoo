@@ -13,8 +13,22 @@ if plutil -extract CFBundleIconName raw "$PLIST" >/dev/null 2>&1; then
     echo 'Unexpected asset-catalog icon key in standalone-ICNS app' >&2; exit 1
 fi
 test -s "$APP/Contents/Resources/AppIcon.icns"
-cmp "$APP/Contents/Resources/AppIcon.icns" "$APP/Contents/Resources/IconChoices/default.icns"
-test "$(find "$APP/Contents/Resources/IconChoices" -name '*.icns' | wc -l | tr -d ' ')" = 21
+CHOICES="$APP/Contents/Resources/IconChoices"
+cmp "$APP/Contents/Resources/AppIcon.icns" "$CHOICES/default.icns"
+EXPECTED_IDS=(
+    default 01-pearl 02-marshmallow 03-neon 04-retro 05-ink 06-jelly 07-chrome 08-pixel 09-hacker 10-swiss
+    11-porcelain 12-sunset 13-velvet 14-space 15-noir 16-ocean 17-bauhaus 18-peach 19-graphite 20-prism
+)
+for ((number=1; number<=40; number++)); do
+    EXPECTED_IDS+=("$(printf 'review-%02d' "$number")")
+done
+if ! diff -u <(printf './%s.icns\n' "${EXPECTED_IDS[@]}" | LC_ALL=C sort) \
+    <(cd "$CHOICES" && find . -type f -name '*.icns' -print | LC_ALL=C sort); then
+    echo 'Incorrect mounted app icon filenames' >&2; exit 1
+fi
+for id in "${EXPECTED_IDS[@]}"; do
+    test -s "$CHOICES/$id.icns" || { echo "Empty mounted icon: $id.icns" >&2; exit 1; }
+done
 test -s "$MOUNT/.VolumeIcon.icns"
 cmp "$APP/Contents/Resources/AppIcon.icns" "$MOUNT/.VolumeIcon.icns"
 ATTRS="$(xcrun GetFileInfo -a "$MOUNT")"

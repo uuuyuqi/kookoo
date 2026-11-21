@@ -6,7 +6,7 @@ struct AppIconSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(String(localized: "App Icon", bundle: .kookyResources)).font(.headline)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 76))], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 10)], spacing: 8) {
                 ForEach(AppIconChoice.all) { choice in
                     Button {
                         controller.select(choice.id)
@@ -17,7 +17,10 @@ struct AppIconSettingsView: View {
                             } else {
                                 Image(systemName: "app.dashed").frame(width: 48, height: 48)
                             }
-                            Text(choice.localizedName).font(.caption2).lineLimit(1)
+                            Text(choice.localizedName)
+                                .font(.caption2)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2, reservesSpace: true)
                         }
                         .frame(maxWidth: .infinity).padding(6)
                         .background(controller.selectedID == choice.id ? Color.accentColor.opacity(0.15) : .clear,

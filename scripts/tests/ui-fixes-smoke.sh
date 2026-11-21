@@ -251,7 +251,7 @@ guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/01-pearl.icns") else {
 capture("chinese-pearl-selected")
 press(find(app,"珍珠图标") ?? find(app,"珍珠")!)
 guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/01-pearl.icns") else {fatalError("Repeat selection failed")}
-guard let original=find(app,"Kookoo图标") else {dump(app);fatalError("Missing original icon")}
+guard let original=find(app,"Kookoo（默认）图标") else {dump(app);fatalError("Missing localized default icon")}
 press(original)
 guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {fatalError("Default restoration failed")}
 print("PASS: Chinese icon settings, immediate selection, repeat selection and current-default restoration verified; Command+B sent three times with screenshots for visual state verification.")
