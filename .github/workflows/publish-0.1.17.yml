@@ -1,0 +1,75 @@
+name: Publish signed Kookoo 0.1.17
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-0.1.17.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/kookoo' && github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: uuuyuqi/kookoo
+      SOURCE_SHA: 00b6f10a844f20dbc198a7d0271140c85236966b
+      VERIFIED_RUN: '44889752988'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact tested and signed artifacts
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.head_sha')" = "$SOURCE_SHA"
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.conclusion')" = success
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.head_branch')" = main
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.event')" = push
+          test "$(gh api repos/$GH_REPO/actions/runs/$VERIFIED_RUN --jq '.path')" = .github/workflows/kookoo-checks.yml
+          test "$(gh api repos/$GH_REPO/branches/main --jq '.commit.parents[0].sha')" = "$SOURCE_SHA"
+          mkdir -p dist
+          gh run download "$VERIFIED_RUN" --repo "$GH_REPO" --name Kookoo-macOS --dir dist
+          shasum -a 256 -c dist/SHA256SUMS
+          signature=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("dist/appcast.xml").find(".//enclosure").attrib["{http://www.andymatuschak.org/xml-namespaces/sparkle}edSignature"])')
+          swift scripts/verify-update-signature.swift dist/Kookoo-v0.1.17.dmg "$(cat config/sparkle-public-key.txt)" "$signature"
+      - name: Publish preview archive without replacing previous releases
+        run: |
+          cat > notes.md <<'NOTES'
+          Kookoo 0.1.17 Preview adds pagination to the app icon picker in Settings.
+
+          - Browse 61 app and Dock icons across four pages, with up to 16 icons per page.
+          - Moving between pages does not change the selected icon.
+          - This release does not change the terminal tab appearance.
+
+          The existing raw.githubusercontent.com update feed is unchanged. If it is unreachable, download this DMG manually.
+
+          Save terminal work before update/restart. Apple silicon/macOS 14+. Ad-hoc signed, not Apple-notarized; Gatekeeper and enterprise policy can still block execution.
+          NOTES
+          gh release create v0.1.17 --repo "$GH_REPO" --target "$SOURCE_SHA" --title "Kookoo 0.1.17 Preview" --prerelease --notes-file notes.md dist/Kookoo-v0.1.17.dmg dist/SHA256SUMS dist/appcast.xml
+      - name: Verify uploaded asset and activate public update feed
+        run: |
+          mkdir downloaded
+          gh release download v0.1.17 --repo "$GH_REPO" --dir downloaded
+          cmp dist/Kookoo-v0.1.17.dmg downloaded/Kookoo-v0.1.17.dmg
+          cmp dist/appcast.xml downloaded/appcast.xml
+          test "$(gh api repos/$GH_REPO/branches/main --jq '.commit.parents[0].sha')" = "$SOURCE_SHA"
+          python3 - <<'PY' > feed-request.json
+          import base64,json,pathlib,subprocess
+          data={"message":"Publish verified 0.1.17 signed update feed","content":base64.b64encode(pathlib.Path("dist/appcast.xml").read_bytes()).decode(),"branch":"main"}
+          p=subprocess.run(["gh","api","repos/uuuyuqi/kookoo/contents/appcast.xml"],capture_output=True,text=True)
+          if p.returncode==0:data["sha"]=json.loads(p.stdout)["sha"]
+          print(json.dumps(data))
+          PY
+          gh api --method PUT repos/$GH_REPO/contents/appcast.xml --input feed-request.json --silent
+          for i in {1..24}; do
+            if curl -fsSL https://raw.githubusercontent.com/uuuyuqi/kookoo/main/appcast.xml -o public-appcast.xml && cmp -s dist/appcast.xml public-appcast.xml; then break; fi
+            sleep 5
+          done
+          cmp dist/appcast.xml public-appcast.xml
+      - name: Verify real published feed can install its signed archive
+        run: |
+          mkdir previous
+          gh release download v0.1.16 --repo "$GH_REPO" --pattern Kookoo-v0.1.16.dmg --dir previous
+          bash scripts/tests/sparkle-production-feed-smoke.sh downloaded/Kookoo-v0.1.17.dmg 0.1.17 previous/Kookoo-v0.1.16.dmg
