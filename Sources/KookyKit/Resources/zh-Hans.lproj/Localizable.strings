@@ -438,6 +438,9 @@
 "Cycle Sidebar" = "循环切换侧边栏";
 /* App icon selection */
 "App Icon" = "应用图标";
+"Previous icon page" = "上一页图标";
+"Next icon page" = "下一页图标";
+"Icon page %lld of %lld" = "第 %lld 页，共 %lld 页";
 "%@ app icon" = "%@图标";
 "Could not change the app icon: %@ Your saved preference was not changed; the selected icon could not be applied. Install Kookoo in a writable Applications folder; no administrator access is requested." = "无法更改应用图标：%@ 已保存的偏好设置未更改，所选图标未能应用。请将 Kookoo 安装到可写入的“应用程序”文件夹；此操作不会请求管理员权限。";
 "Unknown icon." = "未知图标。";

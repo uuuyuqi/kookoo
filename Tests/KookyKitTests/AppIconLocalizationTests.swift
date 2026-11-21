@@ -60,6 +60,15 @@ final class AppIconLocalizationTests: XCTestCase {
         XCTAssertEqual(AppIconChoice.all.map { $0.localizedName(in: english) }, expectedEnglish)
     }
 
+    func testChinesePaginationControlsAndAnnouncement() throws {
+        let path = try XCTUnwrap(Bundle.kookyResources.path(forResource: "zh-Hans", ofType: "lproj") ?? Bundle.kookyResources.path(forResource: "zh-hans", ofType: "lproj"))
+        let chinese = try XCTUnwrap(Bundle(path: path))
+        XCTAssertEqual(chinese.localizedString(forKey: "Previous icon page", value: nil, table: nil), "上一页图标")
+        XCTAssertEqual(chinese.localizedString(forKey: "Next icon page", value: nil, table: nil), "下一页图标")
+        let format = chinese.localizedString(forKey: "Icon page %lld of %lld", value: nil, table: nil)
+        XCTAssertEqual(String(format: format, 2, 4), "第 2 页，共 4 页")
+    }
+
     func testFailureMessagesAreTranslated() throws {
         let path = try XCTUnwrap(Bundle.kookyResources.path(forResource: "zh-Hans", ofType: "lproj") ?? Bundle.kookyResources.path(forResource: "zh-hans", ofType: "lproj"))
         let chinese = try XCTUnwrap(Bundle(path: path))

@@ -2,12 +2,20 @@ import SwiftUI
 
 struct AppIconSettingsView: View {
     @State private var controller = AppIconController.shared
+    @State private var pagination = AppIconPagination(
+        choiceCount: AppIconChoice.all.count,
+        selectedIndex: AppIconChoice.all.firstIndex { $0.id == AppIconController.shared.selectedID }
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "App Icon", bundle: .kookyResources)).font(.headline)
+            HStack {
+                Text(String(localized: "App Icon", bundle: .kookyResources)).font(.headline)
+                Spacer(minLength: 8)
+                if pagination.pageCount > 1 { pageControls }
+            }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 10)], spacing: 8) {
-                ForEach(AppIconChoice.all) { choice in
+                ForEach(AppIconChoice.all[pagination.visibleRange]) { choice in
                     Button {
                         controller.select(choice.id)
                     } label: {
@@ -36,5 +44,38 @@ struct AppIconSettingsView: View {
             }
         }
         .padding(20)
+    }
+
+    private var pageControls: some View {
+        HStack(spacing: 8) {
+            Button {
+                pagination.goBack()
+            } label: {
+                Image(systemName: "chevron.backward").frame(width: 14)
+            }
+            .disabled(!pagination.canGoBack)
+            .accessibilityLabel(String(localized: "Previous icon page", bundle: .kookyResources))
+            .help(String(localized: "Previous icon page", bundle: .kookyResources))
+
+            Text(verbatim: "\(pagination.pageNumber) / \(pagination.pageCount)")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 38)
+                .accessibilityLabel(String(
+                    format: String(localized: "Icon page %lld of %lld", bundle: .kookyResources),
+                    pagination.pageNumber, pagination.pageCount
+                ))
+
+            Button {
+                pagination.goForward()
+            } label: {
+                Image(systemName: "chevron.forward").frame(width: 14)
+            }
+            .disabled(!pagination.canGoForward)
+            .accessibilityLabel(String(localized: "Next icon page", bundle: .kookyResources))
+            .help(String(localized: "Next icon page", bundle: .kookyResources))
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
     }
 }

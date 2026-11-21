@@ -254,7 +254,19 @@ guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/01-pearl.icns") else {
 guard let original=find(app,"Kookoo（默认）图标") else {dump(app);fatalError("Missing localized default icon")}
 press(original)
 guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {fatalError("Default restoration failed")}
-print("PASS: Chinese icon settings, immediate selection, repeat selection and current-default restoration verified; Command+B sent three times with screenshots for visual state verification.")
+guard find(app,"第 1 页，共 4 页") != nil || find(app,"1 / 4") != nil else {dump(app);fatalError("Missing first icon page indicator")}
+guard let nextIconPage=find(app,"下一页图标") else {dump(app);fatalError("Missing next icon page")}
+press(nextIconPage)
+guard (find(app,"第 2 页，共 4 页") != nil || find(app,"2 / 4") != nil),
+      find(app,"海洋图标") != nil, find(app,"珍珠图标") == nil else {dump(app);fatalError("Icon page 2 did not replace page 1")}
+guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {fatalError("Paging changed the applied icon")}
+capture("chinese-icons-page-2")
+guard let previousIconPage=find(app,"上一页图标") else {dump(app);fatalError("Missing previous icon page")}
+press(previousIconPage)
+guard (find(app,"第 1 页，共 4 页") != nil || find(app,"1 / 4") != nil),
+      find(app,"Kookoo（默认）图标") != nil, find(app,"海洋图标") == nil else {dump(app);fatalError("Could not return to icon page 1")}
+guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {fatalError("Returning to page 1 changed the applied icon")}
+print("PASS: Chinese icon settings, repeated selection, default restoration and icon pagination without selection changes verified; Command+B sent three times with screenshots for visual state verification.")
 SWIFT
 set +e
 swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" > "$OUT/RESULT.txt" 2>&1
