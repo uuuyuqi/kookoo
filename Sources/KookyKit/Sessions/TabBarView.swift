@@ -27,7 +27,8 @@ struct TabBarView: View {
                     }
                     addButton
                 }
-                .padding(.horizontal, 10)
+                .padding(.leading, Theme.paneTabLeadingInset)
+                .padding(.trailing, 10)
             }
             // Window zoom belongs to the tab area, not the pane/split
             // controls. A double-click on pane zoom must never zoom the window.
@@ -266,6 +267,7 @@ private struct DraggableTabRow: View {
         TabBarItem(
             tab: tab,
             isActive: pane.activeTabId == tab.id,
+            isLeadingTab: myIndex == 0,
             canCloseToRight: canCloseToRight,
             onActivate: { store.activateTab(tab, in: workspace) },
             onClose: { ConfirmCloseTab.request(tab, in: workspace, store: store) },

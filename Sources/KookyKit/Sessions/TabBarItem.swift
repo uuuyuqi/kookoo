@@ -3,6 +3,7 @@ import SwiftUI
 struct TabBarItem: View {
     @Bindable var tab: Session
     let isActive: Bool
+    let isLeadingTab: Bool
     let canCloseToRight: Bool
     let onActivate: () -> Void
     let onClose: () -> Void
@@ -49,14 +50,23 @@ struct TabBarItem: View {
         .padding(.bottom, Theme.paneTabSeparatorHeight)
         .background {
             if isActive {
-                let outline = AttachedTabOutline(cornerRadius: Theme.chromeSelectionCornerRadius)
-                outline
+                // Only paint outside the row. The tab contents, hit area,
+                // and spacing do not shift when selection changes.
+                let foot = Theme.paneTabFootRadius
+                let outline = AttachedTabOutline(
+                    flushLeading: isLeadingTab,
+                    foot: foot,
+                    cornerRadius: Theme.chromeSelectionCornerRadius,
+                    lineWidth: Theme.paneTabSeparatorHeight
+                )
+                outline.fillShape
                     .fill(Color(nsColor: Theme.terminalSurface))
                     .overlay {
                         outline.stroke(Theme.chromeSeparator, lineWidth: Theme.paneTabSeparatorHeight)
                     }
                     .padding(.top, Theme.space1)
-                    .padding(.horizontal, Theme.paneTabSeparatorHeight / 2)
+                    .padding(.leading, -(isLeadingTab ? Theme.paneTabLeadingInset : foot))
+                    .padding(.trailing, -foot)
                     .allowsHitTesting(false)
             }
         }
@@ -184,26 +194,70 @@ struct TabBarItem: View {
     }
 }
 
-/// Draws just the sides and rounded top. The fill closes at the bottom
-/// implicitly; the stroke stays open so no line crosses into the terminal.
-private struct AttachedTabOutline: Shape {
+/// The open stroke follows the top and sides, then turns outward into the
+/// divider. The fill extends through the divider's lower half so a seam
+/// cannot peek through under the selected tab.
+struct AttachedTabOutline: Shape {
+    let flushLeading: Bool
+    let foot: CGFloat
     let cornerRadius: CGFloat
+    let lineWidth: CGFloat
+    private var fillsToBottom = false
+
+    init(flushLeading: Bool, foot: CGFloat, cornerRadius: CGFloat, lineWidth: CGFloat) {
+        self.flushLeading = flushLeading
+        self.foot = foot
+        self.cornerRadius = cornerRadius
+        self.lineWidth = lineWidth
+    }
+
+    var fillShape: Self {
+        var copy = self
+        copy.fillsToBottom = true
+        return copy
+    }
 
     func path(in rect: CGRect) -> Path {
-        let radius = min(cornerRadius, min(rect.width / 2, rect.height))
+        let halfLine = lineWidth / 2
+        let outerLeft = flushLeading ? rect.minX : rect.minX + halfLine
+        let outerRight = rect.maxX - halfLine
+        let left = flushLeading ? outerLeft : outerLeft + foot
+        let right = outerRight - foot
+        let top = rect.minY + halfLine
+        let baseline = rect.maxY - halfLine
+        let radius = min(cornerRadius, (right - left) / 2)
+
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + radius))
+        if flushLeading {
+            // The pane card supplies the left outline; don't double it.
+            path.move(to: CGPoint(x: outerLeft, y: top))
+        } else {
+            path.move(to: CGPoint(x: outerLeft, y: baseline))
+            path.addQuadCurve(
+                to: CGPoint(x: left, y: baseline - foot),
+                control: CGPoint(x: left, y: baseline)
+            )
+            path.addLine(to: CGPoint(x: left, y: top + radius))
+            path.addQuadCurve(
+                to: CGPoint(x: left + radius, y: top),
+                control: CGPoint(x: left, y: top)
+            )
+        }
+        path.addLine(to: CGPoint(x: right - radius, y: top))
         path.addQuadCurve(
-            to: CGPoint(x: rect.minX + radius, y: rect.minY),
-            control: CGPoint(x: rect.minX, y: rect.minY)
+            to: CGPoint(x: right, y: top + radius),
+            control: CGPoint(x: right, y: top)
         )
-        path.addLine(to: CGPoint(x: rect.maxX - radius, y: rect.minY))
+        path.addLine(to: CGPoint(x: right, y: baseline - foot))
         path.addQuadCurve(
-            to: CGPoint(x: rect.maxX, y: rect.minY + radius),
-            control: CGPoint(x: rect.maxX, y: rect.minY)
+            to: CGPoint(x: outerRight, y: baseline),
+            control: CGPoint(x: right, y: baseline)
         )
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        if fillsToBottom {
+            path.addLine(to: CGPoint(x: outerRight, y: rect.maxY))
+            path.addLine(to: CGPoint(x: outerLeft, y: rect.maxY))
+            path.closeSubpath()
+        }
         return path
     }
 }

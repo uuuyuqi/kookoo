@@ -409,6 +409,8 @@ enum Theme {
     /// 28pt add/split controls with 3pt clearance above and below.
     static let paneTabBarHeight: CGFloat = 34
     static let paneTabSeparatorHeight: CGFloat = 1
+    static let paneTabLeadingInset: CGFloat = 10
+    static let paneTabFootRadius = space1
     static let paneTabVerticalPadding: CGFloat = 4
     static let paneTabCloseButtonSize: CGFloat = 20
 
