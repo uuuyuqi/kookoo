@@ -147,14 +147,18 @@ struct KookyMenuRow<Leading: View>: View {
             case .standard:
                 RoundedRectangle(cornerRadius: 5).fill(Theme.chromeActive)
             case .launcher:
-                // Use the app's chrome colors instead of following the system
-                // accent. Keep a visible edge in Increased Contrast mode.
-                let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
+                // Match the selected workspace card in both appearances.
+                let shape = RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous)
                 shape
-                    .fill(Theme.chromeSelection)
+                    .fill(Theme.workspaceSelectionSurface)
                     .overlay {
-                        shape.strokeBorder(Theme.chromeForeground.opacity(contrast == .increased ? 0.6 : 0.12))
+                        shape.strokeBorder(
+                            Theme.chromeForeground.opacity(contrast == .increased ? 0.60 : 0.12),
+                            lineWidth: contrast == .increased ? 1.5 : 0.75
+                        )
                     }
+                    .shadow(color: .black.opacity(0.045), radius: 2, x: 0, y: 1)
+                    .allowsHitTesting(false)
             }
         }
     }
