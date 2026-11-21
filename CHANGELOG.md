@@ -2,6 +2,11 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.16 — 2026-11-21
+
+- Added 40 app and Dock icons to Settings, retaining the original 20 alternatives and default icon.
+- Icon names follow the app language in English and Simplified Chinese. Longer names have two lines in the picker.
+
 ## v0.1.15 — 2026-11-21
 
 - The new-tab launcher highlight matches the selected workspace card, with more space beneath the popover’s upper corners.
