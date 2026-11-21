@@ -2,6 +2,11 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.17 — 2026-11-21
+
+- The app icon picker shows up to 16 icons per page, with previous and next buttons and a page counter.
+- Browsing pages leaves the selected app icon unchanged.
+
 ## v0.1.16 — 2026-11-21
 
 - Added 40 app and Dock icons to Settings, retaining the original 20 alternatives and default icon.
