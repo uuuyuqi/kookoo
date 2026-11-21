@@ -2,6 +2,11 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.15 — 2026-11-21
+
+- The new-tab launcher highlight matches the selected workspace card, with more space beneath the popover’s upper corners.
+- The first selected terminal tab aligns with the left edge of the pane, and the selected tab joins the divider with a smooth lower corner.
+
 ## v0.1.14 — 2026-11-20
 
 - The active terminal tab uses the terminal surface color and joins the pane below without a divider beneath the selection.
