@@ -424,10 +424,11 @@ enum Theme {
     static let paneTabSelectionRadius: CGFloat = 5
     static let paneTabHorizontalInset: CGFloat = 8
     static let paneTabMinimumWidth: CGFloat = 128
+    static let paneTabMaximumWidth: CGFloat = 196
     static let paneTabCloseButtonSize: CGFloat = 20
 
     static func paneTabWidth(available: CGFloat, count: Int) -> CGFloat {
-        max(paneTabMinimumWidth, available / CGFloat(max(1, count)))
+        min(paneTabMaximumWidth, max(paneTabMinimumWidth, available / CGFloat(max(1, count))))
     }
 
     /// Shared vertical breathing room for the left workspace rows and the

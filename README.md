@@ -34,7 +34,7 @@ Six of the 20 built-in alternative icons, from soft pastels to neon and minimal 
 ## Features
 
 - Native split terminals, multiple workspaces and the existing agent launcher.
-- Ghostty-inspired tab rail with buttons to add a tab, split right, and zoom or restore an existing pane. Split Down remains available with **⌘⇧D** and from the tab menu.
+- Compact tab strip with a separate selected chip and buttons to add a tab, split right, and zoom or restore an existing pane. Split Down remains available with **⌘⇧D** and from the tab menu.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
 - Kookoo app icon and in-app branding.
 - **⌘B** cycles the left sidebar through expanded → icons only → hidden → expanded. **⌃⌘S** performs the same cycle.

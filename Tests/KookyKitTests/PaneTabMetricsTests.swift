@@ -36,9 +36,10 @@ final class PaneTabMetricsTests: XCTestCase {
         XCTAssertTrue(fill.contains(CGPoint(x: frame.midX, y: frame.maxY - 0.5)))
     }
 
-    func testTabsFillAvailableRailOrScrollAtMinimumWidth() {
+    func testTabsStayCompactInWidePanesAndScrollInNarrowPanes() {
         XCTAssertEqual(Theme.paneTabWidth(available: 360, count: 2), 180)
-        XCTAssertEqual(Theme.paneTabWidth(available: 300, count: 1), 300)
+        XCTAssertEqual(Theme.paneTabWidth(available: 300, count: 1), 196)
+        XCTAssertEqual(Theme.paneTabWidth(available: 800, count: 2), 196)
         XCTAssertEqual(Theme.paneTabWidth(available: 219, count: 2), 128)
         XCTAssertEqual(Theme.paneTabWidth(available: 0, count: 0), 128)
     }
