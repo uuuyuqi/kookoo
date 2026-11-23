@@ -22,7 +22,7 @@ codesign --verify --deep --strict "$app"
 version="${DMG##*Kookoo-v}"; version="${version%.dmg}"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" = com.uuuyuqi.kookoo
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = "$version"
-lipo -verify_arch arm64 "$app/Contents/MacOS/Kookoo"
+lipo "$app/Contents/MacOS/Kookoo" -verify_arch arm64
 brew uninstall --cask "kookoo-fixture/local/kookoo"
 test ! -e "$app"
 echo "PASS: exact packaged DMG installed and uninstalled through a temporary Homebrew cask"

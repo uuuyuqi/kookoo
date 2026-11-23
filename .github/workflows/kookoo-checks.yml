@@ -23,6 +23,7 @@ jobs:
       - name: Run tests
         run: swift test --build-system native
       - name: Build app and DMG
+        id: package
         run: |
           bash scripts/build-app.sh
           cmp LICENSE dist/Kookoo.app/Contents/Resources/LICENSE
@@ -37,6 +38,7 @@ jobs:
           ruby -c dist/kookoo.rb
           bash scripts/tests/homebrew-cask-smoke.sh dist/Kookoo-*.dmg
       - name: Verify native UI changes
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         run: bash scripts/tests/ui-fixes-smoke.sh dist/Kookoo.app
       - uses: actions/upload-artifact@v4
         if: always()
