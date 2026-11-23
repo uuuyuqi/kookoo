@@ -52,6 +52,9 @@ jobs:
           KOOKOO_SPARKLE_PRIVATE_KEY: ${{ secrets.KOOKOO_SPARKLE_PRIVATE_KEY }}
         run: bash scripts/prepare-signed-update.sh
       - uses: actions/upload-artifact@v4
+        # Keep the exact test-branch build available for diagnosis when a
+        # separate UI check fails. Main's release artifact remains green-only.
+        if: ${{ !cancelled() && steps.package.outcome == 'success' && (success() || github.ref != 'refs/heads/main') }}
         with:
           name: Kookoo-macOS
           path: |

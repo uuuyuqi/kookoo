@@ -15,6 +15,7 @@ import AppKit
 import ApplicationServices
 let pid = pid_t(CommandLine.arguments[1])!
 let out = CommandLine.arguments[2]
+let fixture = CommandLine.arguments[4]
 let resources = URL(fileURLWithPath: CommandLine.arguments[3]).appendingPathComponent("Contents/Resources")
 guard AXIsProcessTrusted() else { print("BLOCKED: Accessibility unavailable; not requesting permission"); exit(3) }
 func value(_ e: AXUIElement, _ key: String) -> AnyObject? { var v: CFTypeRef?; return AXUIElementCopyAttributeValue(e,key as CFString,&v) == .success ? v : nil }
@@ -248,9 +249,12 @@ func oneToolbar(_ name:String) -> AXUIElement {
  guard buttons.count == 1, let button=buttons.first else {dump(window);fatalError("Expected one visible "+name)}
  return button
 }
+func markerPath(_ name:String) -> String { fixture+"/"+name }
+func shellLiteral(_ path:String) -> String {
+ "'" + path.replacingOccurrences(of:"'",with:"'\\''") + "'"
+}
 func shellMarker(_ name:String) -> String? {
- guard let home=ProcessInfo.processInfo.environment["HOME"] else {fatalError("Missing isolated HOME")}
- let path=home+"/"+name
+ let path=markerPath(name)
  for _ in 0..<20 {
   if let value=try? String(contentsOfFile:path,encoding:.utf8),!value.isEmpty {return value}
   Thread.sleep(forTimeInterval:0.2)
@@ -263,17 +267,18 @@ let restoreName="退出缩放（⌘⇧E）"
 // Cmd+T yields a normal terminal, even when the add button opens a picker.
 key(17,flags:.maskCommand)
 key(18,flags:.maskCommand)
+Thread.sleep(forTimeInterval:0.75)
 capture("ghostty-tab-rail")
-typeShell("tty > \"$HOME/kookoo-pane-before\"")
-guard let originalTTY=shellMarker("kookoo-pane-before") else {fatalError("Original terminal did not accept keyboard input")}
+typeShell("tty > "+shellLiteral(markerPath("before")),screenshot:"ghostty-before-return")
+guard let originalTTY=shellMarker("before") else {fatalError("Original terminal did not accept keyboard input")}
 press(oneToolbar(splitName))
 let splits=toolbar(splitName),zooms=toolbar(zoomName)
 guard splits.count==2, zooms.count==2, rect(splits[0]).midX+40 < rect(splits[1]).midX,
       abs(rect(splits[0]).midY-rect(splits[1]).midY)<3,rect(window)==windowBefore else {
  dump(window);fatalError("Toolbar did not create a right-hand split")
 }
-typeShell("tty > \"$HOME/kookoo-pane-right\"",focus:false)
-guard let rightTTY=shellMarker("kookoo-pane-right"),rightTTY != originalTTY else {
+typeShell("tty > "+shellLiteral(markerPath("right")),screenshot:"ghostty-right-before-return",focus:false)
+guard let rightTTY=shellMarker("right"),rightTTY != originalTTY else {
  dump(window);fatalError("New right terminal was not focused after toolbar split")
 }
 capture("ghostty-pane-split")
@@ -291,8 +296,8 @@ let terminalRight=CGPoint(x:rect(toolbar(splitName)[1]).midX-48,y:rect(window).m
 typeShell("exit",at:terminalRight)
 Thread.sleep(forTimeInterval:1.5)
 _ = oneToolbar(splitName)
-typeShell("tty > \"$HOME/kookoo-pane-after\"")
-guard shellMarker("kookoo-pane-after")==originalTTY else {fatalError("Surviving Ghostty session lost its original tty or keyboard input")}
+typeShell("tty > "+shellLiteral(markerPath("after")),screenshot:"ghostty-restored-before-return")
+guard shellMarker("after")==originalTTY else {fatalError("Surviving Ghostty session lost its original tty or keyboard input")}
 capture("ghostty-pane-restored")
 print("PASS: Ghostty rail; AX-driven right split, focus, pane zoom/restore; original tty survives sibling exit")
 guard let settings=find(menu,"设置…") ?? find(menu,"Settings…") else { dump(menu);fatalError("Missing settings") }
@@ -329,7 +334,7 @@ guard iconBytes("AppIcon.icns") == iconBytes("IconChoices/default.icns") else {f
 print("PASS: Chinese icon settings, repeated selection, default restoration and icon pagination without selection changes verified; Command+B sent three times with screenshots for visual state verification.")
 SWIFT
 set +e
-swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" > "$OUT/RESULT.txt" 2>&1
+swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" "$WORK" > "$OUT/RESULT.txt" 2>&1
 rc=$?
 set -e
 if [[ "$rc" != 0 ]]; then /usr/sbin/screencapture -x "$OUT/failure.png" || true; fi
