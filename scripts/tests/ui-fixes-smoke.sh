@@ -50,15 +50,15 @@ if CommandLine.arguments.last == "--dark" {
  guard let darkWindow=(value(app,kAXWindowsAttribute) as? [AXUIElement])?.first else {fatalError("Missing dark terminal")}
  key(17,flags:.maskCommand)
  key(18,flags:.maskCommand)
- capture("ghostty-attached-dark")
- let image = NSBitmapImageRep(data: try! Data(contentsOf: URL(fileURLWithPath: out+"/ghostty-attached-dark.png")))!
+ capture("ghostty-detached-dark")
+ let image = NSBitmapImageRep(data: try! Data(contentsOf: URL(fileURLWithPath: out+"/ghostty-detached-dark.png")))!
  let bounds = rect(darkWindow)
  let scale = CGFloat(image.pixelsWide) / (NSScreen.main?.frame.width ?? CGFloat(image.pixelsWide))
  let pixel = image.colorAt(x:Int((bounds.midX+50)*scale),y:Int(bounds.midY*scale))?.usingColorSpace(.sRGB)
  guard let pixel,max(pixel.redComponent,pixel.greenComponent,pixel.blueComponent)<0.4 else {
   fatalError("Dark fixture did not render a dark terminal canvas")
  }
- print("PASS: selected tab and terminal share a dark Tokyo Night palette")
+ print("PASS: selected tab screenshot with a dark Tokyo Night canvas")
  exit(0)
 }
 guard let cycle=find(menu,"循环切换侧边栏"), (value(cycle,kAXMenuItemCmdCharAttribute) as? String)?.lowercased() == "b" else { dump(app);fatalError("Missing Command+B cycle menu") }
@@ -285,7 +285,7 @@ key(17,flags:.maskCommand)
 key(17,flags:.maskCommand)
 for (shortcut,name) in [(18,"first"),(19,"middle"),(20,"last")] as [(CGKeyCode,String)] {
  key(shortcut,flags:.maskCommand)
- capture("ghostty-attached-"+name)
+ capture("ghostty-detached-"+name)
 }
 key(18,flags:.maskCommand)
 Thread.sleep(forTimeInterval:0.75)
@@ -306,7 +306,7 @@ capture("ghostty-pane-split")
 let leftPoint=CGPoint(x:rect(splits[0]).midX-130,y:rect(window).midY)
 focusPane(at:leftPoint)
 key(25,flags:.maskCommand) // ⌘9 jumps to the last tab in the narrow scroller.
-capture("ghostty-attached-narrow")
+capture("ghostty-detached-narrow")
 key(18,flags:.maskCommand)
 let originalZoomX=rect(zooms[0]).midX
 press(zooms[0])

@@ -12,7 +12,7 @@ struct TabBarView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(alignment: .top, spacing: Theme.space1) {
+        HStack(spacing: Theme.space1) {
             // Only the tab rail scrolls. Creation and split controls are
             // separate, stable targets even in a narrow pane.
             GeometryReader { geometry in
@@ -43,13 +43,9 @@ struct TabBarView: View {
                     }
                 }
             }
-            .frame(height: Theme.paneTabRailHeight + Theme.paneTabJoinHeight)
-            .background(alignment: .top) {
-                Capsule().fill(Theme.paneTabRail).frame(height: Theme.paneTabRailHeight)
-            }
-            // The capsule only paints the inactive rail; masking the full
-            // scroll host with it would round off the active tab's lower edge.
-            // ScrollView still clips horizontally at the viewport boundaries.
+            .frame(height: Theme.paneTabRailHeight)
+            // The scroller itself has no fill or divider: the selection
+            // chip is visually separate from neighboring tabs and terminal.
             // Window zoom belongs only to the tab rail, never to the pane
             // controls. Keep the existing native window double-click behavior.
             .background {
@@ -62,7 +58,7 @@ struct TabBarView: View {
             splitButtons
         }
         .padding(.horizontal, Theme.paneTabHorizontalInset)
-        .frame(height: Theme.paneTabBarHeight, alignment: .bottom)
+        .frame(height: Theme.paneTabBarHeight)
     }
 
     /// Split Right is side-by-side (.horizontal), as for ⌘D. Split Down
@@ -83,7 +79,7 @@ struct TabBarView: View {
                         store.toggleZoom(in: workspace, paneId: pane.id)
                     }
                 }
-                .background(isZoomed ? Theme.paneTabRail : .clear, in: Capsule())
+                .background(isZoomed ? Theme.paneToolbarTint : .clear, in: Capsule())
                 .accessibilityValue(isZoomed ? "Zoomed" : "Not zoomed")
             }
             HoverableIconButton(
@@ -208,7 +204,7 @@ private struct AddTabButton: View {
                 isMenuOpen.toggle()
             }
         }
-        .background(Theme.paneTabRail, in: Capsule())
+        .background(Theme.paneToolbarTint, in: Capsule())
         // The pinned plus still accepts drops at the end of the tab strip,
         // even while the last tab is scrolled out of view.
         .dropIndicator(active: isTargeted, on: .leading, offset: -3)

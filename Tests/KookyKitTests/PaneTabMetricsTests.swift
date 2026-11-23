@@ -18,17 +18,22 @@ final class PaneTabMetricsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Theme.paneTabHorizontalInset, 8)
     }
 
-    func testSelectedTabHasSmallUpperCornersAndNoLowerSeam() {
-        let height = Theme.paneTabRailHeight + Theme.paneTabJoinHeight
-        let frame = CGRect(x: 0, y: 0, width: Theme.paneTabMinimumWidth, height: height)
-        let fill = PaneTabSelectionShape(radius: Theme.paneTabSelectionRadius).path(in: frame)
-        XCTAssertEqual(Theme.paneTabRailHeight + 2 * Theme.paneTabJoinHeight, Theme.paneTabBarHeight)
-        for x in [CGFloat(0.5), frame.midX, frame.maxX - 0.5] {
-            XCTAssertTrue(fill.contains(CGPoint(x: x, y: height - 0.25)))
+    func testSelectedChipHasFourSmallCornersAndGapFromTerminal() {
+        let gap = (Theme.paneTabBarHeight - Theme.paneTabRailHeight) / 2 + Theme.paneTabChipVerticalInset
+        XCTAssertEqual(gap, 4)
+        let frame = CGRect(
+            x: 0, y: 0,
+            width: Theme.paneTabMinimumWidth - 2 * Theme.paneTabChipHorizontalInset,
+            height: Theme.paneTabRailHeight - 2 * Theme.paneTabChipVerticalInset
+        )
+        let fill = RoundedRectangle(cornerRadius: Theme.paneTabSelectionRadius, style: .circular).path(in: frame)
+        XCTAssertLessThan(Theme.paneTabSelectionRadius, frame.height / 3)
+        for x in [CGFloat(0.5), frame.maxX - 0.5] {
+            XCTAssertFalse(fill.contains(CGPoint(x: x, y: 0.5)))
+            XCTAssertFalse(fill.contains(CGPoint(x: x, y: frame.maxY - 0.5)))
+            XCTAssertTrue(fill.contains(CGPoint(x: x, y: frame.midY)))
         }
-        XCTAssertFalse(fill.contains(CGPoint(x: 0.5, y: 0.5)))
-        XCTAssertFalse(fill.contains(CGPoint(x: frame.maxX - 0.5, y: 0.5)))
-        XCTAssertTrue(fill.contains(CGPoint(x: frame.midX, y: 0.5)))
+        XCTAssertTrue(fill.contains(CGPoint(x: frame.midX, y: frame.maxY - 0.5)))
     }
 
     func testTabsFillAvailableRailOrScrollAtMinimumWidth() {

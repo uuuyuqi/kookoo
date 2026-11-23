@@ -49,10 +49,15 @@ enum Theme {
     /// remain available for compact controls and overlay detail, while the
     /// window skeleton stays deliberately quieter.
     static var chromeSeparator: Color { resolved.chromeSeparator }
-    /// The rail contrasts gently with the terminal, in both light and dark palettes.
-    static var paneTabRail: Color {
+    /// Subtle tint for the standalone pane toolbar buttons.
+    static var paneToolbarTint: Color {
         Color(nsColor: mix(resolved.backgroundColor, resolved.foregroundColor, resolved.isLight ? 0.045 : 0.085))
     }
+    /// A separate tab chip, intentionally not the terminal's canvas color.
+    static var paneTabSelectionSurface: Color {
+        Color(nsColor: mix(resolved.backgroundColor, resolved.foregroundColor, resolved.isLight ? 0.065 : 0.12))
+    }
+
     static var chromeHover: Color { resolved.chromeHover }
     static var chromeActive: Color { resolved.chromeActive }
     /// Stable selected surface for tabs and source-list rows. Keeping this
@@ -413,10 +418,10 @@ enum Theme {
     /// 28pt add/split controls with 3pt clearance above and below.
     static let paneTabBarHeight: CGFloat = 34
     static let paneTabRailHeight: CGFloat = 28
-    /// Leave the outer rail/controls centered; only the selected paint reaches
-    /// down into this bottom clearance and touches the terminal canvas.
-    static let paneTabJoinHeight = (paneTabBarHeight - paneTabRailHeight) / 2
-    static let paneTabSelectionRadius: CGFloat = 6
+    /// Paint inset only: the text and hit targets stay on the same baseline.
+    static let paneTabChipHorizontalInset: CGFloat = 2
+    static let paneTabChipVerticalInset: CGFloat = 1
+    static let paneTabSelectionRadius: CGFloat = 5
     static let paneTabHorizontalInset: CGFloat = 8
     static let paneTabMinimumWidth: CGFloat = 128
     static let paneTabCloseButtonSize: CGFloat = 20
