@@ -175,14 +175,16 @@ print("PASS: intermediate widths track pointer continuously and remain unchanged
 print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded width, Command+B compatibility and stable window geometry")
 // Multiple real workspace rows, including a harness-status icon. Emit only
 // the documented OSC status marker in an isolated shell; do not run an agent.
-func typeShell(_ text:String) {
+func typeShell(_ text:String, at target:CGPoint? = nil, screenshot:String? = nil, focus:Bool = true) {
  // Return keyboard focus to the terminal after the inline rename editor.
  let w=rect(window),e=edge()
- let point=CGPoint(x:(e.maxX+w.maxX)/2,y:w.midY)
- for type in [CGEventType.leftMouseDown,.leftMouseUp] {
-  CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
+ let point=target ?? CGPoint(x:(e.maxX+w.maxX)/2,y:w.midY)
+ if focus {
+  for type in [CGEventType.leftMouseDown,.leftMouseUp] {
+   CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
+  }
+  Thread.sleep(forTimeInterval:0.3)
  }
- Thread.sleep(forTimeInterval:0.3)
  // CGEvent Unicode payloads are bounded: send small chunks so a long
  // printf command is not silently truncated before the OSC marker closes.
  let chars=Array(text.utf16)
@@ -194,7 +196,7 @@ func typeShell(_ text:String) {
   }
   Thread.sleep(forTimeInterval:0.08)
  }
- capture("harness-command-before-return")
+ if let screenshot {capture(screenshot)}
  key(36)
 }
 func addNamedWorkspace(_ name:String) {
@@ -202,7 +204,7 @@ func addNamedWorkspace(_ name:String) {
  press(item);key(15,flags:[.maskCommand,.maskShift]);replaceDraft(name);key(36)
 }
 addNamedWorkspace("Harness fixture")
-typeShell("printf '\\033]2;kookoo-agent:codex:running\\007'; sleep 90")
+typeShell("printf '\\033]2;kookoo-agent:codex:running\\007'; sleep 90", screenshot:"harness-command-before-return")
 Thread.sleep(forTimeInterval:1)
 capture("harness-command-after-return")
 addNamedWorkspace("Another terminal")
@@ -235,6 +237,64 @@ for round in 1...2 {
 key(11,flags:.maskCommand);checkCompactIcons();capture("compact-multi-harness-keyboard")
 key(11,flags:.maskCommand);key(11,flags:.maskCommand)
 print("PASS: multiple compact workspace cards and terminal/harness icons fully visible and centered after bidirectional drag and keyboard cycling")
+// Click actual toolbar controls and use real shell markers to check new-pane
+// focus plus continuity of the original libghostty terminal after collapse.
+func toolbar(_ name:String) -> [AXUIElement] {
+ matching(window) { labels($0).contains(name) && value($0,kAXRoleAttribute) as? String == kAXButtonRole }
+     .sorted { rect($0).midX < rect($1).midX }
+}
+func oneToolbar(_ name:String) -> AXUIElement {
+ let buttons=toolbar(name)
+ guard buttons.count == 1, let button=buttons.first else {dump(window);fatalError("Expected one visible "+name)}
+ return button
+}
+func shellMarker(_ name:String) -> String? {
+ guard let home=ProcessInfo.processInfo.environment["HOME"] else {fatalError("Missing isolated HOME")}
+ let path=home+"/"+name
+ for _ in 0..<20 {
+  if let value=try? String(contentsOfFile:path,encoding:.utf8),!value.isEmpty {return value}
+  Thread.sleep(forTimeInterval:0.2)
+ }
+ return nil
+}
+let splitName="向右拆分（⌘D）"
+let zoomName="缩放窗格（⌘⇧E）"
+let restoreName="退出缩放（⌘⇧E）"
+// Cmd+T yields a normal terminal, even when the add button opens a picker.
+key(17,flags:.maskCommand)
+key(18,flags:.maskCommand)
+capture("ghostty-tab-rail")
+typeShell("tty > \"$HOME/kookoo-pane-before\"")
+guard let originalTTY=shellMarker("kookoo-pane-before") else {fatalError("Original terminal did not accept keyboard input")}
+press(oneToolbar(splitName))
+let splits=toolbar(splitName),zooms=toolbar(zoomName)
+guard splits.count==2, zooms.count==2, rect(splits[0]).midX+40 < rect(splits[1]).midX,
+      abs(rect(splits[0]).midY-rect(splits[1]).midY)<3,rect(window)==windowBefore else {
+ dump(window);fatalError("Toolbar did not create a right-hand split")
+}
+typeShell("tty > \"$HOME/kookoo-pane-right\"",focus:false)
+guard let rightTTY=shellMarker("kookoo-pane-right"),rightTTY != originalTTY else {
+ dump(window);fatalError("New right terminal was not focused after toolbar split")
+}
+capture("ghostty-pane-split")
+let originalZoomX=rect(zooms[0]).midX
+press(zooms[0])
+let restore=oneToolbar(restoreName)
+_ = oneToolbar(splitName)
+guard rect(restore).midX > originalZoomX+40,rect(window)==windowBefore else {
+ fatalError("Zoom did not expand the left pane without resizing the window")
+}
+capture("ghostty-pane-zoomed")
+press(restore)
+guard toolbar(zoomName).count==2,toolbar(splitName).count==2 else {dump(window);fatalError("Restore did not reveal both panes")}
+let terminalRight=CGPoint(x:rect(toolbar(splitName)[1]).midX-48,y:rect(window).midY)
+typeShell("exit",at:terminalRight)
+Thread.sleep(forTimeInterval:1.5)
+_ = oneToolbar(splitName)
+typeShell("tty > \"$HOME/kookoo-pane-after\"")
+guard shellMarker("kookoo-pane-after")==originalTTY else {fatalError("Surviving Ghostty session lost its original tty or keyboard input")}
+capture("ghostty-pane-restored")
+print("PASS: Ghostty rail; AX-driven right split, focus, pane zoom/restore; original tty survives sibling exit")
 guard let settings=find(menu,"设置…") ?? find(menu,"Settings…") else { dump(menu);fatalError("Missing settings") }
 press(settings)
 guard let appearance=find(app,"外观") else { dump(app);fatalError("Missing appearance") }

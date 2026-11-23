@@ -49,6 +49,10 @@ enum Theme {
     /// remain available for compact controls and overlay detail, while the
     /// window skeleton stays deliberately quieter.
     static var chromeSeparator: Color { resolved.chromeSeparator }
+    /// The rail contrasts gently with the terminal, in both light and dark palettes.
+    static var paneTabRail: Color {
+        Color(nsColor: mix(resolved.backgroundColor, resolved.foregroundColor, resolved.isLight ? 0.045 : 0.085))
+    }
     static var chromeHover: Color { resolved.chromeHover }
     static var chromeActive: Color { resolved.chromeActive }
     /// Stable selected surface for tabs and source-list rows. Keeping this
@@ -408,11 +412,14 @@ enum Theme {
     /// Pane tabs are denser than sidebar section titles. Keep the existing
     /// 28pt add/split controls with 3pt clearance above and below.
     static let paneTabBarHeight: CGFloat = 34
-    static let paneTabSeparatorHeight: CGFloat = 1
-    static let paneTabLeadingInset: CGFloat = 10
-    static let paneTabFootRadius = space1
-    static let paneTabVerticalPadding: CGFloat = 4
+    static let paneTabRailHeight: CGFloat = 28
+    static let paneTabHorizontalInset: CGFloat = 8
+    static let paneTabMinimumWidth: CGFloat = 128
     static let paneTabCloseButtonSize: CGFloat = 20
+
+    static func paneTabWidth(available: CGFloat, count: Int) -> CGFloat {
+        max(paneTabMinimumWidth, available / CGFloat(max(1, count)))
+    }
 
     /// Shared vertical breathing room for the left workspace rows and the
     /// right agent-panel rows so the two sidebars keep the same density.

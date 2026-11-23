@@ -1,0 +1,16 @@
+cask "kookoo" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "@URL@"
+  name "Kookoo"
+  desc "Native macOS terminal for AI coding agents"
+  homepage "https://github.com/uuuyuqi/kookoo"
+
+  depends_on arch: :arm64
+  depends_on macos: :sonoma
+
+  app "Kookoo.app"
+
+  caveats "Preview build, not Apple-notarized. Managed Macs may require an approved distribution."
+end

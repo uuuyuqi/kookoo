@@ -76,6 +76,7 @@ private struct PaneView: View {
         let paneOpacity = isFocused ? 1.0 : Self.inactivePaneOpacity
         VStack(spacing: 0) {
             TabBarView(pane: pane, workspace: workspace, store: store)
+                .accessibilityHidden(workspace.zoomedPaneId != nil && !workspace.isZoomed(pane.id))
             if let active = pane.activeTab {
                 TerminalTabHost(
                     tabs: pane.tabs,

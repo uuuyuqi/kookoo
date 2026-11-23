@@ -3,7 +3,7 @@ import SwiftUI
 struct TabBarItem: View {
     @Bindable var tab: Session
     let isActive: Bool
-    let isLeadingTab: Bool
+    let shortcut: String?
     let canCloseToRight: Bool
     let onActivate: () -> Void
     let onClose: () -> Void
@@ -34,40 +34,23 @@ struct TabBarItem: View {
                 action: onClose
             )
             .revealed(isHovered || isActive)
-        }
-        .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.62))
-        .padding(.horizontal, 11)
-        .padding(.vertical, Theme.paneTabVerticalPadding)
-        .background {
-            if !isActive && isHovered {
-                RoundedRectangle(cornerRadius: Theme.chromeSelectionCornerRadius, style: .continuous)
-                    .fill(Theme.chromeHover)
+            .accessibilityHidden(!isHovered && !isActive)
+            Spacer(minLength: 3)
+            if let shortcut {
+                Text(shortcut)
+                    .font(Theme.display(10))
+                    .foregroundStyle(Theme.chromeMuted)
+                    .fixedSize()
+                    .accessibilityHidden(true)
             }
         }
-        // Keep labels centered in the original header; only the selected
-        // decoration reaches into the former standalone separator row.
-        .frame(height: Theme.paneTabBarHeight)
-        .padding(.bottom, Theme.paneTabSeparatorHeight)
+        .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.62))
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: Theme.paneTabRailHeight)
         .background {
-            if isActive {
-                // Only paint outside the row. The tab contents, hit area,
-                // and spacing do not shift when selection changes.
-                let foot = Theme.paneTabFootRadius
-                let outline = AttachedTabOutline(
-                    flushLeading: isLeadingTab,
-                    foot: foot,
-                    cornerRadius: Theme.chromeSelectionCornerRadius,
-                    lineWidth: Theme.paneTabSeparatorHeight
-                )
-                outline.fillShape
-                    .fill(Color(nsColor: Theme.terminalSurface))
-                    .overlay {
-                        outline.stroke(Theme.chromeSeparator, lineWidth: Theme.paneTabSeparatorHeight)
-                    }
-                    .padding(.top, Theme.space1)
-                    .padding(.leading, -(isLeadingTab ? Theme.paneTabLeadingInset : foot))
-                    .padding(.trailing, -foot)
-                    .allowsHitTesting(false)
+            if isActive || isHovered {
+                Capsule().fill(isActive ? Color(nsColor: Theme.terminalSurface) : Theme.workspaceHoverSurface)
             }
         }
         .contentShape(Rectangle())
@@ -191,73 +174,5 @@ struct TabBarItem: View {
         let minutes = Int(seconds / 60)
         let rem = Int(seconds.truncatingRemainder(dividingBy: 60).rounded())
         return "\(minutes)m \(rem)s"
-    }
-}
-
-/// The open stroke follows the top and sides, then turns outward into the
-/// divider. The fill extends through the divider's lower half so a seam
-/// cannot peek through under the selected tab.
-struct AttachedTabOutline: Shape {
-    let flushLeading: Bool
-    let foot: CGFloat
-    let cornerRadius: CGFloat
-    let lineWidth: CGFloat
-    private var fillsToBottom = false
-
-    init(flushLeading: Bool, foot: CGFloat, cornerRadius: CGFloat, lineWidth: CGFloat) {
-        self.flushLeading = flushLeading
-        self.foot = foot
-        self.cornerRadius = cornerRadius
-        self.lineWidth = lineWidth
-    }
-
-    var fillShape: Self {
-        var copy = self
-        copy.fillsToBottom = true
-        return copy
-    }
-
-    func path(in rect: CGRect) -> Path {
-        let halfLine = lineWidth / 2
-        let outerLeft = flushLeading ? rect.minX : rect.minX + halfLine
-        let outerRight = rect.maxX - halfLine
-        let left = flushLeading ? outerLeft : outerLeft + foot
-        let right = outerRight - foot
-        let top = rect.minY + halfLine
-        let baseline = rect.maxY - halfLine
-        let radius = min(cornerRadius, (right - left) / 2)
-
-        var path = Path()
-        if flushLeading {
-            // The pane card supplies the left outline; don't double it.
-            path.move(to: CGPoint(x: outerLeft, y: top))
-        } else {
-            path.move(to: CGPoint(x: outerLeft, y: baseline))
-            path.addQuadCurve(
-                to: CGPoint(x: left, y: baseline - foot),
-                control: CGPoint(x: left, y: baseline)
-            )
-            path.addLine(to: CGPoint(x: left, y: top + radius))
-            path.addQuadCurve(
-                to: CGPoint(x: left + radius, y: top),
-                control: CGPoint(x: left, y: top)
-            )
-        }
-        path.addLine(to: CGPoint(x: right - radius, y: top))
-        path.addQuadCurve(
-            to: CGPoint(x: right, y: top + radius),
-            control: CGPoint(x: right, y: top)
-        )
-        path.addLine(to: CGPoint(x: right, y: baseline - foot))
-        path.addQuadCurve(
-            to: CGPoint(x: outerRight, y: baseline),
-            control: CGPoint(x: right, y: baseline)
-        )
-        if fillsToBottom {
-            path.addLine(to: CGPoint(x: outerRight, y: rect.maxY))
-            path.addLine(to: CGPoint(x: outerLeft, y: rect.maxY))
-            path.closeSubpath()
-        }
-        return path
     }
 }

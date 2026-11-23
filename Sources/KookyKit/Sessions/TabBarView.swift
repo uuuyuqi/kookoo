@@ -12,56 +12,66 @@ struct TabBarView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.space1) {
-                    ForEach(Array(pane.tabs.enumerated()), id: \.element.id) { index, tab in
-                        DraggableTabRow(
-                            tab: tab,
-                            pane: pane,
-                            workspace: workspace,
-                            store: store,
-                            myIndex: index,
-                            canCloseToRight: index < pane.tabs.count - 1
-                        )
+        HStack(spacing: Theme.space1) {
+            // Only the tab rail scrolls. Creation and split controls are
+            // separate, stable targets even in a narrow pane.
+            GeometryReader { geometry in
+                ScrollViewReader { scroll in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 0) {
+                            ForEach(Array(pane.tabs.enumerated()), id: \.element.id) { index, tab in
+                                DraggableTabRow(
+                                    tab: tab,
+                                    pane: pane,
+                                    workspace: workspace,
+                                    store: store,
+                                    myIndex: index,
+                                    canCloseToRight: index < pane.tabs.count - 1
+                                )
+                                .frame(width: Theme.paneTabWidth(
+                                    available: geometry.size.width,
+                                    count: pane.tabs.count
+                                ))
+                                .id(tab.id)
+                            }
+                        }
                     }
-                    addButton
+                    .onChange(of: pane.activeTabId) { _, id in
+                        // Keyboard selection and creation must reveal the new
+                        // tab even when not all tabs fit.
+                        if let id { scroll.scrollTo(id) }
+                    }
                 }
-                .padding(.leading, Theme.paneTabLeadingInset)
-                .padding(.trailing, 10)
             }
-            // Window zoom belongs to the tab area, not the pane/split
-            // controls. A double-click on pane zoom must never zoom the window.
+            .frame(height: Theme.paneTabRailHeight)
+            .background(Theme.paneTabRail, in: Capsule())
+            .clipShape(Capsule())
+            // Window zoom belongs only to the tab rail, never to the pane
+            // controls. Keep the existing native window double-click behavior.
             .background {
                 TabBarDoubleClickHandler {
                     NSApplication.shared.keyWindow?.performZoom(nil)
                 }
             }
 
-            // Split controls pinned to the trailing edge — outside the
-            // ScrollView so they stay put while the tabs scroll.
-            splitButtons.padding(.bottom, Theme.paneTabSeparatorHeight)
+            addButton
+            splitButtons
         }
-        .frame(height: Theme.paneTabBarHeight + Theme.paneTabSeparatorHeight)
-        .background(alignment: .bottom) {
-            Rectangle().fill(Theme.chromeSeparator).frame(height: Theme.paneTabSeparatorHeight)
-        }
-
+        .padding(.horizontal, Theme.paneTabHorizontalInset)
+        .frame(height: Theme.paneTabBarHeight)
     }
 
-    /// Split-right / split-down buttons. Mirror ⌘D / ⌘⇧D exactly: Split
-    /// Right is the `.horizontal` orientation (panes side by side), Split
-    /// Down is `.vertical` (panes stacked) — same mapping as
-    /// `AppDelegate.handleSplitRight` / `handleSplitDown`.
+    /// Split Right is side-by-side (.horizontal), as for ⌘D. Split Down
+    /// remains available in the tab context / application menu and via ⌘⇧D.
     private var splitButtons: some View {
-        HStack(spacing: Theme.chromeControlSpacing) {
+        HStack(spacing: Theme.space1) {
             if workspace.canZoom {
                 let isZoomed = workspace.isZoomed(pane.id)
                 HoverableIconButton(
                     systemName: isZoomed
                         ? "arrow.down.right.and.arrow.up.left"
                         : "arrow.up.left.and.arrow.down.right",
-                    fontSize: 12,
+                    fontSize: 11,
                     size: Theme.chromeToolbarButtonSize,
                     help: isZoomed ? "Exit zoom (⌘⇧E)" : "Zoom pane (⌘⇧E)"
                 ) {
@@ -69,28 +79,18 @@ struct TabBarView: View {
                         store.toggleZoom(in: workspace, paneId: pane.id)
                     }
                 }
-                .background(isZoomed ? Theme.chromeActive : .clear,
-                            in: RoundedRectangle(cornerRadius: Theme.chromeButtonCornerRadius))
+                .background(isZoomed ? Theme.paneTabRail : .clear, in: Capsule())
                 .accessibilityValue(isZoomed ? "Zoomed" : "Not zoomed")
             }
             HoverableIconButton(
                 systemName: "square.split.2x1",
-                fontSize: 12,
+                fontSize: 11,
                 size: Theme.chromeToolbarButtonSize,
                 help: "Split Right (⌘D)"
             ) {
                 store.splitPane(pane, orientation: .horizontal, in: workspace)
             }
-            HoverableIconButton(
-                systemName: "square.split.1x2",
-                fontSize: 12,
-                size: Theme.chromeToolbarButtonSize,
-                help: "Split Down (⌘⇧D)"
-            ) {
-                store.splitPane(pane, orientation: .vertical, in: workspace)
-            }
         }
-        .padding(.trailing, Theme.space2)
     }
 
     private var addButton: some View {
@@ -204,9 +204,9 @@ private struct AddTabButton: View {
                 isMenuOpen.toggle()
             }
         }
-        // Indicator sits in the gap just left of the `+` (offset by half its
-        // hit-area), not on the button itself, so it reads as "tab will land
-        // here, after the last one" rather than "drop on +".
+        .background(Theme.paneTabRail, in: Capsule())
+        // The pinned plus still accepts drops at the end of the tab strip,
+        // even while the last tab is scrolled out of view.
         .dropIndicator(active: isTargeted, on: .leading, offset: -3)
         .popover(isPresented: $isMenuOpen, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
@@ -269,7 +269,7 @@ private struct DraggableTabRow: View {
         TabBarItem(
             tab: tab,
             isActive: pane.activeTabId == tab.id,
-            isLeadingTab: myIndex == 0,
+            shortcut: MenuTag.shortcut(forTabIndex: myIndex, tabCount: pane.tabs.count),
             canCloseToRight: canCloseToRight,
             onActivate: { store.activateTab(tab, in: workspace) },
             onClose: { ConfirmCloseTab.request(tab, in: workspace, store: store) },

@@ -34,6 +34,7 @@ Six of the 20 built-in alternative icons, from soft pastels to neon and minimal 
 ## Features
 
 - Native split terminals, multiple workspaces and the existing agent launcher.
+- Ghostty-inspired tab rail with buttons to add a tab, split right, and zoom or restore an existing pane. Split Down remains available with **⌘⇧D** and from the tab menu.
 - Fix for surviving terminal views becoming blank when a split is closed (upstream issue #89 / PR #90).
 - Kookoo app icon and in-app branding.
 - **⌘B** cycles the left sidebar through expanded → icons only → hidden → expanded. **⌃⌘S** performs the same cycle.
@@ -59,6 +60,8 @@ For source builds, [`scripts/setup-libghostty.sh`](scripts/setup-libghostty.sh) 
 The Ghostty engine download is pinned by SHA-256. An optional `KOOKOO_SDK=/absolute/path/to/MacOSX.sdk` selects a compatible installed SDK for app builds without changing system settings.
 
 Outputs: `dist/Kookoo.app`, `dist/Kookoo-vX.Y.Z.dmg`.
+
+For maintainers, `bash scripts/render-homebrew-cask.sh dist/Kookoo-vX.Y.Z.dmg` emits a version- and SHA-256-pinned Homebrew Cask candidate for the packaged app. Homebrew installs the compiled DMG; it does not replace the Xcode build. CI tests the candidate against the actual DMG in a temporary tap. The rendering command does not publish to a tap.
 
 ### Signing and managed computers
 

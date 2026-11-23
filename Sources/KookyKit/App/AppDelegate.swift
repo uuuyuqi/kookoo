@@ -5,7 +5,7 @@ import SwiftUI
 /// single integer field on `NSMenuItem`, so we partition them: 1...9 for tabs
 /// (matching ⌘N), 101...109 for workspaces (⌥⌘N). The 100 offset keeps both
 /// sets identifiable from `menuNeedsUpdate`.
-private enum MenuTag {
+enum MenuTag {
     static let tabRange = 1...9
     /// ⌘9 jumps to the last tab, not the ninth — Ghostty, Warp and browsers.
     static let lastTab = 9
@@ -17,6 +17,18 @@ private enum MenuTag {
         let index = tag == lastTab ? tabCount - 1 : tag - 1
         return (0..<tabCount).contains(index) ? index : nil
     }
+    static func shortcut(forTabIndex index: Int, tabCount: Int) -> String? {
+        // ⌘1–8 select by position; ⌘9 always selects the final tab. Prefer
+        // the positional shortcut when both are valid for the same tab.
+        if index >= 0 && index < tabCount && index < lastTab - 1 {
+            return "⌘\(index + 1)"
+        }
+        if tabIndex(from: tab(lastTab), tabCount: tabCount) == index {
+            return "⌘\(lastTab)"
+        }
+        return nil
+    }
+
     static func workspaceIndex(from tag: Int) -> Int { tag - 101 }
     static func direction(_ direction: PaneDirection) -> Int { 201 + direction.rawValue }
     static func direction(from tag: Int) -> PaneDirection? { PaneDirection(rawValue: tag - 201) }

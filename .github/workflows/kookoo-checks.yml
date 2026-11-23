@@ -31,6 +31,11 @@ jobs:
           bash scripts/verify-package-icons.sh dist/Kookoo-*.dmg
           codesign --verify --deep --strict dist/Kookoo.app
           shasum -a 256 dist/Kookoo-*.dmg > dist/SHA256SUMS
+      - name: Verify Homebrew cask format, checksum and installation
+        run: |
+          bash scripts/render-homebrew-cask.sh dist/Kookoo-*.dmg > dist/kookoo.rb
+          ruby -c dist/kookoo.rb
+          bash scripts/tests/homebrew-cask-smoke.sh dist/Kookoo-*.dmg
       - name: Verify native UI changes
         run: bash scripts/tests/ui-fixes-smoke.sh dist/Kookoo.app
       - uses: actions/upload-artifact@v4
@@ -50,6 +55,7 @@ jobs:
           path: |
             dist/Kookoo-*.dmg
             dist/SHA256SUMS
+            dist/kookoo.rb
             dist/appcast.xml
           if-no-files-found: error
   updater-e2e:
