@@ -413,6 +413,10 @@ enum Theme {
     /// 28pt add/split controls with 3pt clearance above and below.
     static let paneTabBarHeight: CGFloat = 34
     static let paneTabRailHeight: CGFloat = 28
+    /// Leave the outer rail/controls centered; only the selected paint reaches
+    /// down into this bottom clearance and touches the terminal canvas.
+    static let paneTabJoinHeight = (paneTabBarHeight - paneTabRailHeight) / 2
+    static let paneTabSelectionRadius: CGFloat = 6
     static let paneTabHorizontalInset: CGFloat = 8
     static let paneTabMinimumWidth: CGFloat = 128
     static let paneTabCloseButtonSize: CGFloat = 20

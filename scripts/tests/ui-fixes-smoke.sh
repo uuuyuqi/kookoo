@@ -46,6 +46,21 @@ let app=AXUIElementCreateApplication(pid)
 NSRunningApplication(processIdentifier:pid)?.activate(options:[.activateIgnoringOtherApps])
 Thread.sleep(forTimeInterval:1)
 let menu=value(app,kAXMenuBarAttribute) as! AXUIElement
+if CommandLine.arguments.last == "--dark" {
+ guard let darkWindow=(value(app,kAXWindowsAttribute) as? [AXUIElement])?.first else {fatalError("Missing dark terminal")}
+ key(17,flags:.maskCommand)
+ key(18,flags:.maskCommand)
+ capture("ghostty-attached-dark")
+ let image = NSBitmapImageRep(data: try! Data(contentsOf: URL(fileURLWithPath: out+"/ghostty-attached-dark.png")))!
+ let bounds = rect(darkWindow)
+ let scale = CGFloat(image.pixelsWide) / (NSScreen.main?.frame.width ?? CGFloat(image.pixelsWide))
+ let pixel = image.colorAt(x:Int((bounds.midX+50)*scale),y:Int(bounds.midY*scale))?.usingColorSpace(.sRGB)
+ guard let pixel,max(pixel.redComponent,pixel.greenComponent,pixel.blueComponent)<0.4 else {
+  fatalError("Dark fixture did not render a dark terminal canvas")
+ }
+ print("PASS: selected tab and terminal share a dark Tokyo Night palette")
+ exit(0)
+}
 guard let cycle=find(menu,"循环切换侧边栏"), (value(cycle,kAXMenuItemCmdCharAttribute) as? String)?.lowercased() == "b" else { dump(app);fatalError("Missing Command+B cycle menu") }
 capture("sidebar-full")
 for name in ["sidebar-compact","sidebar-hidden","sidebar-restored"] {
@@ -176,16 +191,17 @@ print("PASS: intermediate widths track pointer continuously and remain unchanged
 print("PASS: real bidirectional sidebar drag to 52pt rail, retained expanded width, Command+B compatibility and stable window geometry")
 // Multiple real workspace rows, including a harness-status icon. Emit only
 // the documented OSC status marker in an isolated shell; do not run an agent.
+func focusPane(at point:CGPoint) {
+ for type in [CGEventType.leftMouseDown,.leftMouseUp] {
+  CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
+ }
+ Thread.sleep(forTimeInterval:0.3)
+}
 func typeShell(_ text:String, at target:CGPoint? = nil, screenshot:String? = nil, focus:Bool = true) {
  // Return keyboard focus to the terminal after the inline rename editor.
  let w=rect(window),e=edge()
  let point=target ?? CGPoint(x:(e.maxX+w.maxX)/2,y:w.midY)
- if focus {
-  for type in [CGEventType.leftMouseDown,.leftMouseUp] {
-   CGEvent(mouseEventSource:nil,mouseType:type,mouseCursorPosition:point,mouseButton:.left)!.post(tap:.cghidEventTap)
-  }
-  Thread.sleep(forTimeInterval:0.3)
- }
+ if focus { focusPane(at:point) }
  // CGEvent Unicode payloads are bounded: send small chunks so a long
  // printf command is not silently truncated before the OSC marker closes.
  let chars=Array(text.utf16)
@@ -266,6 +282,11 @@ let zoomName="缩放窗格（⌘⇧E）"
 let restoreName="退出缩放（⌘⇧E）"
 // Cmd+T yields a normal terminal, even when the add button opens a picker.
 key(17,flags:.maskCommand)
+key(17,flags:.maskCommand)
+for (shortcut,name) in [(18,"first"),(19,"middle"),(20,"last")] as [(CGKeyCode,String)] {
+ key(shortcut,flags:.maskCommand)
+ capture("ghostty-attached-"+name)
+}
 key(18,flags:.maskCommand)
 Thread.sleep(forTimeInterval:0.75)
 capture("ghostty-tab-rail")
@@ -282,6 +303,11 @@ guard let rightTTY=shellMarker("right"),rightTTY != originalTTY else {
  dump(window);fatalError("New right terminal was not focused after toolbar split")
 }
 capture("ghostty-pane-split")
+let leftPoint=CGPoint(x:rect(splits[0]).midX-130,y:rect(window).midY)
+focusPane(at:leftPoint)
+key(25,flags:.maskCommand) // ⌘9 jumps to the last tab in the narrow scroller.
+capture("ghostty-attached-narrow")
+key(18,flags:.maskCommand)
 let originalZoomX=rect(zooms[0]).midX
 press(zooms[0])
 let restore=oneToolbar(restoreName)
@@ -339,5 +365,15 @@ rc=$?
 set -e
 if [[ "$rc" != 0 ]]; then /usr/sbin/screencapture -x "$OUT/failure.png" || true; fi
 cat "$OUT/RESULT.txt"
-[[ "$rc" == 0 ]] && codesign --verify --deep --strict "$APP"
-exit "$rc"
+[[ "$rc" == 0 ]] || exit "$rc"
+# Exercise a non-default dark terminal palette in a second isolated app.
+kill "$PID" 2>/dev/null || true
+wait "$PID" 2>/dev/null || true
+PID=''
+export HOME="$WORK/dark-home" CFFIXED_USER_HOME="$WORK/dark-home" XDG_CONFIG_HOME="$WORK/dark-home/.config"
+mkdir -p "$HOME/.kookoo" "$XDG_CONFIG_HOME"
+printf '%s\n' '{"appearance":{"themeSchemaVersion":2,"mode":"dark","darkTheme":"kookoo:tokyo-night"}}' > "$HOME/.kookoo/settings.json"
+"$APP/Contents/MacOS/Kookoo" -AppleLanguages '(zh-Hans)' > "$OUT/dark-app.log" 2>&1 & PID=$!
+sleep 5
+swift "$WORK/ui.swift" "$PID" "$OUT" "$APP" "$WORK" --dark | tee "$OUT/DARK.txt"
+codesign --verify --deep --strict "$APP"

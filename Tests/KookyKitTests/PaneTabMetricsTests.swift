@@ -18,6 +18,19 @@ final class PaneTabMetricsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(Theme.paneTabHorizontalInset, 8)
     }
 
+    func testSelectedTabHasSmallUpperCornersAndNoLowerSeam() {
+        let height = Theme.paneTabRailHeight + Theme.paneTabJoinHeight
+        let frame = CGRect(x: 0, y: 0, width: Theme.paneTabMinimumWidth, height: height)
+        let fill = PaneTabSelectionShape(radius: Theme.paneTabSelectionRadius).path(in: frame)
+        XCTAssertEqual(Theme.paneTabRailHeight + 2 * Theme.paneTabJoinHeight, Theme.paneTabBarHeight)
+        for x in [CGFloat(0.5), frame.midX, frame.maxX - 0.5] {
+            XCTAssertTrue(fill.contains(CGPoint(x: x, y: height - 0.25)))
+        }
+        XCTAssertFalse(fill.contains(CGPoint(x: 0.5, y: 0.5)))
+        XCTAssertFalse(fill.contains(CGPoint(x: frame.maxX - 0.5, y: 0.5)))
+        XCTAssertTrue(fill.contains(CGPoint(x: frame.midX, y: 0.5)))
+    }
+
     func testTabsFillAvailableRailOrScrollAtMinimumWidth() {
         XCTAssertEqual(Theme.paneTabWidth(available: 360, count: 2), 180)
         XCTAssertEqual(Theme.paneTabWidth(available: 300, count: 1), 300)

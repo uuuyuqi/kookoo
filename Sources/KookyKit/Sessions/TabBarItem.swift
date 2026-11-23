@@ -49,8 +49,14 @@ struct TabBarItem: View {
         .frame(maxWidth: .infinity)
         .frame(height: Theme.paneTabRailHeight)
         .background {
-            if isActive || isHovered {
-                Capsule().fill(isActive ? Color(nsColor: Theme.terminalSurface) : Theme.workspaceHoverSurface)
+            if !isActive && isHovered {
+                Capsule().fill(Theme.workspaceHoverSurface)
+            }
+        }
+        .padding(.bottom, Theme.paneTabJoinHeight)
+        .background {
+            if isActive {
+                PaneTabSelectionShape(radius: Theme.paneTabSelectionRadius).fill(Color(nsColor: Theme.terminalSurface))
             }
         }
         .contentShape(Rectangle())
@@ -175,4 +181,22 @@ struct TabBarItem: View {
         let rem = Int(seconds.truncatingRemainder(dividingBy: 60).rounded())
         return "\(minutes)m \(rem)s"
     }
+}
+
+/// The selected tab opens straight into the pane; neither end wraps back
+/// underneath the title. The inactive track can still keep its rounded cap.
+struct PaneTabSelectionShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        // Shape geometry may be evaluated off the main actor, so keep its
+        // metric local to this value at the point of construction.
+        UnevenRoundedRectangle(
+            topLeadingRadius: radius,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: radius,
+            style: .circular
+        ).path(in: rect)
+    }
+
+    let radius: CGFloat
 }

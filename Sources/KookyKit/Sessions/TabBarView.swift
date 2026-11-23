@@ -12,7 +12,7 @@ struct TabBarView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: Theme.space1) {
+        HStack(alignment: .top, spacing: Theme.space1) {
             // Only the tab rail scrolls. Creation and split controls are
             // separate, stable targets even in a narrow pane.
             GeometryReader { geometry in
@@ -43,9 +43,13 @@ struct TabBarView: View {
                     }
                 }
             }
-            .frame(height: Theme.paneTabRailHeight)
-            .background(Theme.paneTabRail, in: Capsule())
-            .clipShape(Capsule())
+            .frame(height: Theme.paneTabRailHeight + Theme.paneTabJoinHeight)
+            .background(alignment: .top) {
+                Capsule().fill(Theme.paneTabRail).frame(height: Theme.paneTabRailHeight)
+            }
+            // The capsule only paints the inactive rail; masking the full
+            // scroll host with it would round off the active tab's lower edge.
+            // ScrollView still clips horizontally at the viewport boundaries.
             // Window zoom belongs only to the tab rail, never to the pane
             // controls. Keep the existing native window double-click behavior.
             .background {
@@ -58,7 +62,7 @@ struct TabBarView: View {
             splitButtons
         }
         .padding(.horizontal, Theme.paneTabHorizontalInset)
-        .frame(height: Theme.paneTabBarHeight)
+        .frame(height: Theme.paneTabBarHeight, alignment: .bottom)
     }
 
     /// Split Right is side-by-side (.horizontal), as for ⌘D. Split Down
