@@ -2,6 +2,12 @@
 
 Notable changes per release. Tagged commits use `vX.Y.Z` shortform.
 
+## v0.1.18 — 2026-11-26
+
+- Terminal tabs use compact, independent selection chips rather than joining the split pane below.
+- Add controls to zoom the current pane and create a side-by-side split.
+- Verify the packaged app can be installed through Homebrew.
+
 ## v0.1.17 — 2026-11-21
 
 - The app icon picker shows up to 16 icons per page, with previous and next buttons and a page counter.
