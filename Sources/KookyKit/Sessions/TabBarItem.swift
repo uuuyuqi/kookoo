@@ -3,7 +3,6 @@ import SwiftUI
 struct TabBarItem: View {
     @Bindable var tab: Session
     let isActive: Bool
-    let shortcut: String?
     let canCloseToRight: Bool
     let onActivate: () -> Void
     let onClose: () -> Void
@@ -26,6 +25,7 @@ struct TabBarItem: View {
             Text(tab.title)
                 .font(Theme.display(12, weight: isActive ? .medium : .regular))
                 .lineLimit(1)
+            Spacer(minLength: 3)
             HoverableIconButton(
                 systemName: "xmark",
                 fontSize: 9,
@@ -35,14 +35,7 @@ struct TabBarItem: View {
             )
             .revealed(isHovered || isActive)
             .accessibilityHidden(!isHovered && !isActive)
-            Spacer(minLength: 3)
-            if let shortcut {
-                Text(shortcut)
-                    .font(Theme.display(10))
-                    .foregroundStyle(Theme.chromeMuted)
-                    .fixedSize()
-                    .accessibilityHidden(true)
-            }
+            .accessibilityIdentifier("pane-tab-close")
         }
         .foregroundStyle(isActive ? Theme.chromeForeground : Theme.chromeForeground.opacity(0.62))
         .padding(.horizontal, 12)

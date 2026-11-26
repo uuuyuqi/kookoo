@@ -269,7 +269,6 @@ private struct DraggableTabRow: View {
         TabBarItem(
             tab: tab,
             isActive: pane.activeTabId == tab.id,
-            shortcut: MenuTag.shortcut(forTabIndex: myIndex, tabCount: pane.tabs.count),
             canCloseToRight: canCloseToRight,
             onActivate: { store.activateTab(tab, in: workspace) },
             onClose: { ConfirmCloseTab.request(tab, in: workspace, store: store) },
